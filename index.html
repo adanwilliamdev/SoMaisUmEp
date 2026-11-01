@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claquete · séries e filmes</title>
+<meta name="theme-color" content="#12121c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎬%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=Instrument+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="topo">
+    <a class="marca" href="#series" style="text-decoration:none;color:inherit"><i aria-hidden="true"></i> Claquete</a>
+    <nav class="menu" aria-label="Principal">
+      <a href="#series">Séries</a>
+      <a href="#filmes">Filmes</a>
+      <a href="#tops">Tops</a>
+    </nav>
+  </header>
+  <main id="app"></main>
+  <footer class="rodape">
+    <span>Tudo fica salvo neste navegador.</span>
+    <button class="btn sec mini" data-act="backup">Backup</button>
+    <button class="btn sec mini" data-act="config">Configurar TMDb</button>
+    <span>Dados e imagens: TMDB. Este produto usa a API do TMDB, mas não é endossado nem certificado por ele.</span>
+  </footer>
+</div>
+<dialog id="dlg"></dialog>
+
+<script src="app.js" defer></script>
+</body>
+</html>

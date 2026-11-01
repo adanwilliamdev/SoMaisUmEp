@@ -1,45 +1,40 @@
 # Claquete
 
-Descubra filmes e séries e leia a sinopse em português — com elenco, trailer, onde assistir (Brasil) e títulos parecidos.
-Next.js 14 (App Router) + TMDb API + Supabase (cache opcional).
+Meu diário pessoal de séries e filmes: acompanhe temporadas e episódios, marque o que já viu e monte seus tops 10.
+Site estático (HTML + CSS + JS), sem build e sem servidor.
 
-## O que tem
+## Recursos
 
-- **Home** com abas *Em alta / Filmes / Séries*, ordenação (populares, mais bem avaliados, lançamentos), filtro por gênero e paginação — tudo por URL, funciona até sem JavaScript.
-- **Busca** de filmes e séries com paginação.
-- **Página do título**: sinopse, tagline, nota, duração, direção/criação, elenco, trailer (YouTube, só carrega após o clique), **onde assistir no Brasil** (JustWatch), títulos parecidos, link para o IMDb.
-- **Minha lista**: salve títulos para ver depois (fica no navegador, sincroniza entre abas).
-- **SEO**: metadados por título, Open Graph, JSON-LD (`Movie`/`TVSeries`), `sitemap.xml`, `robots.txt`.
-- **Robustez**: timeout + retry com backoff no TMDb, páginas de erro/404/loading, cache *stale-if-error* (se o TMDb cair, serve o cache antigo), Supabase **opcional**.
-- **Segurança**: validação de todos os parâmetros de URL, headers de segurança, service role só no servidor (`server-only`).
-- **Qualidade**: testes (Vitest), checagem de tipos e CI no GitHub Actions.
+- **Séries**: progresso por episódio e por temporada, próximo episódio, botão "+1 episódio".
+- **Filmes**: lista com "na fila" e "assistidos".
+- **Tops 10**: quantos rankings quiser, com reordenação.
+- **TMDb (opcional)**: busca o nome, a capa, a sinopse, o ano, a nota e o número real de episódios de cada temporada.
+- Tema claro/escuro automático e capa própria como alternativa ao TMDb.
 
-## Como rodar
+## Hospedar na Vercel
 
-1. `npm install`
-2. Crie uma conta em themoviedb.org (Configurações › API) e copie `.env.example` para `.env.local`. Use `TMDB_API_KEY` (v3) **ou** `TMDB_READ_TOKEN` (token v4).
-3. *(Opcional)* Para cache persistente, rode `supabase/schema.sql` no SQL Editor do Supabase e preencha `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. Se já usava a v1, rode o arquivo de novo: ele só adiciona a coluna `dados`.
-4. Baixe o logo oficial do TMDB e salve como `public/tmdb.svg`.
-5. `npm run dev` e abra http://localhost:3000
+1. Suba esta pasta para um repositório no GitHub.
+2. Em vercel.com, clique em **Add New › Project** e importe o repositório.
+3. Em *Framework Preset* deixe **Other**. Não precisa de build command nem de output directory.
+4. Clique em **Deploy**.
 
-## Scripts
+Alternativa pelo terminal: `npm i -g vercel` e depois `vercel` dentro desta pasta.
 
-| Comando | O que faz |
-|---|---|
-| `npm run dev` | servidor de desenvolvimento |
-| `npm run build` / `npm start` | build e execução de produção |
-| `npm run typecheck` | checagem de tipos (TypeScript strict) |
-| `npm test` | testes unitários |
-| `npm run check` | typecheck + testes |
+Para testar localmente: `npx serve .` (ou abra o `index.html` no navegador).
 
-## Como funciona
+## Configurar o TMDb
 
-- `lib/tipos.ts` — tipos e utilitários seguros para cliente e servidor.
-- `lib/mapeamento.ts` — funções puras que transformam as respostas do TMDb (testadas).
-- `lib/params.ts` — leitura/validação dos parâmetros de URL.
-- `lib/tmdb.ts` — acesso ao TMDb (servidor) + cache. O título é lido do Supabase; se não existir ou tiver mais de `CACHE_DIAS` (padrão 7), busca no TMDb com **uma única chamada** (`append_to_response`) e grava.
-- `app/` — páginas, componentes e estilos.
+1. Crie uma conta em themoviedb.org e gere uma chave em *Configurações › API*.
+2. No site, clique em **Configurar TMDb** (rodapé) e cole a chave v3 ou o token de leitura v4.
+3. Ao adicionar uma série ou filme, use o campo **Buscar no TMDb**.
 
-## Créditos (obrigatório)
+A chave fica só no navegador, nunca no código.
 
-This product uses the TMDB API but is not endorsed or certified by TMDB. Dados de streaming por JustWatch. (já incluso no rodapé)
+## Seus dados
+
+Tudo é salvo no `localStorage` do navegador, então cada aparelho tem a sua própria lista.
+Use o botão **Backup** no rodapé para copiar seus dados e **Importar** para restaurar ou levar para outro aparelho.
+
+## Créditos
+
+Este produto usa a API do TMDB, mas não é endossado nem certificado por ele.
