@@ -1,0 +1,9 @@
+{
+  "name": "claquete",
+  "version": "3.0.0",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,16 +1,73 @@
-const KEY = 'claquete-pessoal-v1';
 const $ = s => document.querySelector(s);
 const app = $('#app'), dlg = $('#dlg');
 const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+const uid = () => crypto.randomUUID();
 
-function load() {
-  try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && Array.isArray(j.series)) return { series: j.series, tops: Array.isArray(j.tops) ? j.tops : [] }; } catch (e) {}
-  return { series: [], tops: [] };
+let S = { series: [], tops: [] }, filtro = 'todas', aberta = null, novaCapa;
+let logado = false, remoto = {}, fila = Promise.resolve(), pendentes = 0;
+
+/* ---------- servidor ---------- */
+async function api(url, opt = {}) {
+  const r = await fetch(url, { credentials: 'same-origin', method: opt.method || 'GET', headers: { 'Content-Type': 'application/json' }, body: opt.body ? JSON.stringify(opt.body) : undefined });
+  if (r.status === 401) throw Object.assign(new Error('Não autorizado'), { auth: true });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
+  return j;
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { alert('Não foi possível salvar (armazenamento cheio?).'); } }
+const chaves = () => {
+  const o = {};
+  S.series.forEach(s => o['T' + s.id] = JSON.stringify(s));
+  S.tops.forEach(t => o['P' + t.id] = JSON.stringify(t));
+  return o;
+};
+function status(t, erro) { const el = $('#status'); if (el) { el.textContent = t; el.style.color = erro ? '#e5484d' : ''; } }
 
-let S = load(), filtro = 'todas', aberta = null, novaCapa;
+// Chamado após qualquer alteração: envia ao banco só o que mudou, em fila.
+function save() { pendentes++; status('Salvando…'); fila = fila.then(sync); }
+async function sync() {
+  try {
+    const atual = chaves(), T = [], P = [], del = { titulos: [], tops: [] };
+    for (const k in atual) if (atual[k] !== remoto[k]) (k[0] === 'T' ? T : P).push(JSON.parse(atual[k]));
+    for (const k in remoto) if (!(k in atual)) del[k[0] === 'T' ? 'titulos' : 'tops'].push(k.slice(1));
+    const reqs = [];
+    for (let i = 0; i < T.length; i += 15) reqs.push({ titulos: T.slice(i, i + 15) });
+    if (P.length) reqs.push({ tops: P });
+    if (del.titulos.length || del.tops.length) reqs.push({ del });
+    for (const body of reqs) await api('/api/sync', { method: 'POST', body });
+    remoto = atual; pendentes--;
+    if (!pendentes) status('Salvo ✓');
+  } catch (e) {
+    pendentes--;
+    if (e.auth) return telaLogin();
+    status('Erro ao salvar: ' + e.message + '. Será reenviado na próxima alteração.', true);
+  }
+}
+addEventListener('beforeunload', e => { if (pendentes > 0) e.preventDefault(); });
+
+async function iniciar() {
+  app.innerHTML = '<p class="sub">Carregando…</p>';
+  try {
+    const d = await api('/api/dados');
+    S = { series: d.series || [], tops: d.tops || [] }; remoto = chaves(); logado = true;
+    status('Salvo ✓'); render();
+  } catch (e) {
+    if (e.auth) telaLogin();
+    else app.innerHTML = `<div class="vazio">Não foi possível carregar seus dados: ${esc(e.message)}<br><br><button class="btn mini" data-act="recarregar">Tentar de novo</button></div>`;
+  }
+}
+function telaLogin() {
+  logado = false; if (dlg.open) dlg.close();
+  app.innerHTML = `<h1>Entrar</h1><p class="sub">Digite a senha para acessar sua estante.</p>
+    <div class="nova-top"><input type="password" id="senha" placeholder="Senha" autocomplete="current-password" aria-label="Senha"><button class="btn" data-act="entrar">Entrar</button></div>
+    <p class="aviso" id="msg" role="alert"></p>`;
+  $('#senha').focus();
+}
+async function entrar() {
+  const m = $('#msg'); m.textContent = '';
+  try { await api('/api/login', { method: 'POST', body: { senha: $('#senha').value } }); iniciar(); }
+  catch (e) { m.textContent = e.auth ? 'Senha incorreta.' : e.message; }
+}
+
 
 /* ---------- helpers ---------- */
 const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
@@ -105,12 +162,11 @@ function formSerie(id, tipoNovo) {
   f.nt.addEventListener('input', () => desenha());
   const busca = async () => {
     const q = $('#tq').value.trim(), res = $('#res'); if (!q) return;
-    if (!getKey()) { res.innerHTML = '<p class="aviso">Configure sua chave do TMDb no rodapé primeiro.</p>'; return; }
     res.innerHTML = '<p class="aviso">Buscando…</p>';
     try {
-      const L = (await tmdb(mv ? '/search/movie' : '/search/tv', { query: q })).results.slice(0, 6);
-      res.innerHTML = L.length ? L.map(x => `<button type="button" class="r" data-tid="${x.id}"><div class="p">${x.poster_path ? `<img src="${IMG}${x.poster_path}" alt="">` : ''}</div><span><b>${esc(x.name || x.title)}</b><small>${esc((x.first_air_date || x.release_date || '').slice(0, 4))}</small></span></button>`).join('') : '<p class="aviso">Nada encontrado.</p>';
-    } catch (e) { res.innerHTML = `<p class="aviso">${e.message === 'chave' ? 'Chave inválida.' : 'Não foi possível falar com o TMDb.'}</p>`; }
+      const L = (await tmdb({ acao: 'busca', tipo, q })).resultados;
+      res.innerHTML = L.length ? L.map(x => `<button type="button" class="r" data-tid="${x.id}"><div class="p">${x.poster ? `<img src="${esc(x.poster)}" alt="">` : ''}</div><span><b>${esc(x.nome)}</b><small>${esc(x.ano)}</small></span></button>`).join('') : '<p class="aviso">Nada encontrado.</p>';
+    } catch (e) { res.innerHTML = `<p class="aviso">${esc(e.auth ? 'Sessão expirada. Recarregue a página.' : e.message)}</p>`; }
   };
   $('#tb').addEventListener('click', busca);
   $('#tq').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); busca(); } });
@@ -118,27 +174,23 @@ function formSerie(id, tipoNovo) {
     const b = ev.target.closest('[data-tid]'); if (!b) return;
     b.disabled = true;
     try {
-      const d = await tmdb((mv ? '/movie/' : '/tv/') + b.dataset.tid);
-      if (mv) f.nome.value = d.title;
-      else {
-        const ss = d.seasons.filter(x => x.season_number > 0 && x.episode_count > 0);
-        if (!ss.length) throw new Error('rede');
-        f.nome.value = d.name; f.nt.value = ss.length; desenha(ss.map(x => x.episode_count));
-      }
-      if (d.poster_path) novaCapa = IMG + d.poster_path;
+      const d = await tmdb({ acao: 'detalhe', tipo, id: b.dataset.tid });
+      f.nome.value = d.nome;
+      if (!mv) { if (!d.eps.length) throw new Error('Esta série não tem temporadas no TMDb.'); f.nt.value = d.eps.length; desenha(d.eps); }
+      if (d.poster) novaCapa = d.poster;
       previa();
-      meta = { sinopse: d.overview || '', ano: (d.first_air_date || d.release_date || '').slice(0, 4), duracao: d.runtime || null, nota: d.vote_average ? Math.round(d.vote_average * 10) / 10 : null, tmdb: d.id };
+      meta = { sinopse: d.sinopse, ano: d.ano, duracao: d.duracao, nota: d.nota, tmdb: d.tmdb };
       $('#res').innerHTML = '<p class="aviso">Dados preenchidos ✓ Confira e salve.</p>';
-    } catch (e) { $('#res').innerHTML = '<p class="aviso">Não foi possível carregar essa série.</p>'; }
+    } catch (e) { $('#res').innerHTML = `<p class="aviso">${esc(e.auth ? 'Sessão expirada. Recarregue a página.' : e.message)}</p>`; }
   });
   f.capa.addEventListener('change', () => {
     const file = f.capa.files[0]; if (!file) return;
     const r = new FileReader();
     r.onload = () => { const im = new Image(); im.onload = () => {
-      const W = 300, H = 450, c = document.createElement('canvas'); c.width = W; c.height = H;
+      const W = 240, H = 360, c = document.createElement('canvas'); c.width = W; c.height = H;
       const k = Math.max(W / im.width, H / im.height), w = im.width * k, h = im.height * k;
       c.getContext('2d').drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
-      novaCapa = c.toDataURL('image/jpeg', .8); previa(); };
+      novaCapa = c.toDataURL('image/jpeg', .7); previa(); };
       im.src = r.result; };
     r.readAsDataURL(file);
   });
@@ -148,7 +200,7 @@ function formSerie(id, tipoNovo) {
     const nome = f.nome.value.trim(); if (!nome) return;
     const sid = f.dataset.id, ex = sid ? achar(sid) : null;
     if (ex) { Object.assign(ex, meta); ex.nome = nome; ex.capa = novaCapa; ex.vis = eps.map((n, i) => Math.min(ex.vis[i] || 0, n)); ex.eps = eps; aberta = ex.id; }
-    else { const n = { ...meta, tipo, id: uid(), nome, capa: novaCapa, eps, vis: eps.map(() => 0) }; S.series.unshift(n); aberta = null; }
+    else { const n = { ...meta, tipo, id: uid(), criado: Date.now(), nome, capa: novaCapa, eps, vis: eps.map(() => 0) }; S.series.unshift(n); aberta = null; }
     save(); render();
     if (aberta) pintaDetalhe(); else dlg.close();
   });
@@ -186,32 +238,13 @@ function addItem(tid) {
   const novo = document.querySelector(`[data-top="${tid}"] .add input`); if (novo) novo.focus();
 }
 
-/* ---------- TMDb ---------- */
-const TK = 'claquete-tmdb-key', IMG = 'https://image.tmdb.org/t/p/w342';
-const getKey = () => { try { return localStorage.getItem(TK) || ''; } catch (e) { return ''; } };
-async function tmdb(path, params = {}) {
-  const k = getKey(); if (!k) throw new Error('sem-chave');
-  const u = new URL('https://api.themoviedb.org/3' + path);
-  u.searchParams.set('language', 'pt-BR');
-  Object.entries(params).forEach(([a, b]) => u.searchParams.set(a, b));
-  const h = {};
-  if (k.length > 40) h.Authorization = 'Bearer ' + k; else u.searchParams.set('api_key', k);
-  const r = await fetch(u, { headers: h });
-  if (!r.ok) throw new Error(r.status === 401 ? 'chave' : 'rede');
-  return r.json();
-}
-function config() {
-  aberta = null;
-  dlg.innerHTML = `<h2>TMDb</h2><p class="sub" style="margin-top:6px">Cole sua chave de API (v3) ou o token de leitura (v4), em themoviedb.org › Configurações › API. Ela fica salva só neste navegador.</p>
-    <label>Chave<input type="text" id="tk" autocomplete="off" value="${esc(getKey())}"></label>
-    <div class="rodape-dlg"><button class="btn sec" data-act="fechar">Cancelar</button><button class="btn" data-act="salva-chave">Salvar</button></div>`;
-  dlg.showModal();
-}
+/* ---------- TMDb (via servidor) ---------- */
+const tmdb = params => api('/api/tmdb?' + new URLSearchParams(params));
 
 /* ---------- backup ---------- */
 function backup() {
   aberta = null;
-  dlg.innerHTML = `<h2>Backup</h2><p class="sub" style="margin-top:6px">Copie o texto abaixo para guardar seus dados. Para restaurar, cole um backup e clique em Importar.</p>
+  dlg.innerHTML = `<h2>Backup</h2><p class="sub" style="margin-top:6px">Copie o texto abaixo para guardar seus dados. Para importar, cole um backup (inclusive o da versão antiga) e clique em Importar. Itens com o mesmo id são substituídos; os demais são mantidos.</p>
     <textarea id="bk" aria-label="Dados">${esc(JSON.stringify(S))}</textarea>
     <div class="rodape-dlg"><button class="btn sec" data-act="fechar">Fechar</button><button class="btn" data-act="importar">Importar</button></div>`;
   dlg.showModal(); $('#bk').select();
@@ -219,6 +252,7 @@ function backup() {
 
 /* ---------- render e eventos ---------- */
 function render() {
+  if (!logado) return;
   const h = location.hash, aba = h === '#tops' ? '#tops' : h === '#filmes' ? '#filmes' : '#series';
   document.querySelectorAll('.menu a').forEach(a => {
     if (a.getAttribute('href') === aba) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -253,7 +287,7 @@ document.addEventListener('click', e => {
     S.series = S.series.filter(x => x.id !== s.id);
     S.tops.forEach(tp => tp.itens.forEach(it => { if (it.sid === s.id) delete it.sid; }));
     aberta = null; save(); dlg.close(); render(); });
-  else if (a === 'novo-top') { const v = $('#nt').value.trim(); if (v) { S.tops.unshift({ id: uid(), nome: v, itens: [] }); save(); render(); } }
+  else if (a === 'novo-top') { const v = $('#nt').value.trim(); if (v) { S.tops.unshift({ id: uid(), criado: Date.now(), nome: v, itens: [] }); save(); render(); } }
   else if (a === 'del-top' && t) confirma(b, () => { S.tops = S.tops.filter(x => x.id !== tid); save(); render(); });
   else if (a === 'add-item' && t) addItem(tid);
   else if (a === 'tira' && t) { t.itens.splice(i, 1); save(); render(); }
@@ -261,19 +295,23 @@ document.addEventListener('click', e => {
     const j = a === 'sobe' ? i - 1 : i + 1;
     if (j >= 0 && j < t.itens.length) { [t.itens[i], t.itens[j]] = [t.itens[j], t.itens[i]]; save(); render(); }
   }
-  else if (a === 'config') config();
-  else if (a === 'salva-chave') { try { localStorage.setItem(TK, $('#tk').value.trim()); } catch (err) {} dlg.close(); }
+  else if (a === 'entrar') entrar();
+  else if (a === 'recarregar') iniciar();
+  else if (a === 'sair') api('/api/logout', { method: 'POST' }).catch(() => {}).then(() => { S = { series: [], tops: [] }; telaLogin(); });
   else if (a === 'backup') backup();
   else if (a === 'importar') {
-    try { const j = JSON.parse($('#bk').value); if (!Array.isArray(j.series)) throw 0; S = { series: j.series, tops: j.tops || [] }; save(); dlg.close(); render(); }
+    try { const j = JSON.parse($('#bk').value); if (!Array.isArray(j.series)) throw 0; const t0 = Date.now(), marca = (l, k) => (l || []).filter(x => x && x.id).map((x, i) => ({ criado: t0 - i, ...x }));
+      const mescla = (novos, atuais) => { const ids = new Set(novos.map(x => x.id)); return [...novos, ...atuais.filter(x => !ids.has(x.id))]; };
+      S = { series: mescla(marca(j.series), S.series), tops: mescla(marca(j.tops), S.tops) }; save(); dlg.close(); render(); }
     catch (err) { alert('Backup inválido.'); }
   }
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   if (e.target.matches('.add input')) { e.preventDefault(); addItem(e.target.closest('[data-top]').dataset.top); }
+  else if (e.target.id === 'senha') { e.preventDefault(); entrar(); }
   else if (e.target.id === 'nt') { e.preventDefault(); document.querySelector('[data-act="novo-top"]').click(); }
 });
 dlg.addEventListener('close', () => { aberta = null; });
 
-render();
+iniciar();
