@@ -1,5 +1,7 @@
 const { rota, erro } = require('./_lib');
 
+const PAIS = 'BR';
+
 const IMG = 'https://image.tmdb.org/t/p/w342';
 const poster = p => (p ? IMG + p : null);
 const ano = x => (x.first_air_date || x.release_date || '').slice(0, 4);
@@ -43,9 +45,17 @@ module.exports = rota('GET', async (req, res) => {
     const d = await chamar('/' + tipo + '/' + id);
     return res.json({
       tmdb: d.id, nome: d.name || d.title, ano: ano(d), sinopse: d.overview || '', poster: poster(d.poster_path),
-      nota: d.vote_average ? Math.round(d.vote_average * 10) / 10 : null, duracao: d.runtime || null,
+      nota: d.vote_average ? Math.round(d.vote_average * 10) / 10 : null,
+      duracao: d.runtime || (d.episode_run_time || [])[0] || (d.last_episode_to_air && d.last_episode_to_air.runtime) || null,
       eps: (d.seasons || []).filter(s => s.season_number > 0 && s.episode_count > 0).map(s => s.episode_count),
     });
+  }
+  // Onde assistir (dados de streaming do TMDb, fornecidos pelo JustWatch)
+  if (acao === 'streaming' && /^\d{1,9}$/.test(String(id || ''))) {
+    const d = await chamar('/' + tipo + '/' + id + '/watch/providers');
+    const r = (d.results || {})[PAIS] || {};
+    const lista = a => (a || []).slice(0, 12).map(p => ({ nome: p.provider_name, logo: p.logo_path ? 'https://image.tmdb.org/t/p/w92' + p.logo_path : null }));
+    return res.json({ pais: PAIS, link: r.link || null, assinatura: lista(r.flatrate), gratis: lista(r.free), alugar: lista(r.rent), comprar: lista(r.buy) });
   }
   throw erro('Ação inválida');
 });

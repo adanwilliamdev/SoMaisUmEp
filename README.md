@@ -1,84 +1,89 @@
 # Claquete
 
-Meu diário pessoal de séries e filmes: progresso por episódio e temporada, filmes assistidos e tops 10.
-Front-end estático + funções serverless da Vercel + banco Postgres no Neon.
+Seu diário de séries e filmes: progresso por episódio e temporada, filmes assistidos, tops 10 e estatísticas.
+Front-end estático (PWA instalável) + funções serverless da Vercel + Postgres no Neon. Cada pessoa cria a própria conta e tem a própria biblioteca.
 
 ```
-public/        site (index.html, style.css, app.js)
-api/           funções serverless (login, dados, sync, tmdb)
+public/        site (index.html, style.css, manifest.json, sw.js, js/ em módulos, icons/)
+api/           funções serverless (login, cadastro, logout, dados, sync, capa, tmdb)
 neon/          schema.sql
+test/          testes (node --test)
 ```
 
-## Como funciona
+## O que tem
 
-- O navegador só fala com `/api/*`. A chave do TMDb e a connection string do banco ficam em **variáveis de ambiente** no servidor e nunca chegam ao navegador.
-- Os dados ficam no **Neon** (tabelas `titulos` e `tops`). O site envia ao banco só o que mudou, a cada alteração, numa transação.
-- O acesso é protegido por **uma senha** (`APP_PASSWORD`). Após o login, um cookie assinado (HttpOnly, 30 dias) libera a API.
-- A busca do TMDb passa pelo servidor, então a chave não aparece no código nem na rede do navegador.
+- **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
+- **Estante**: busca por nome, ordenação (recentes, nome, nota, último visto), filtros e a fileira "Continuar assistindo".
+- **TMDb**: busca ao cadastrar, botão "Atualizar do TMDb" e verificação automática (1x por dia por série) de temporadas e episódios novos, sem perder progresso. Em cada título, "Onde assistir" (Brasil).
+- **Minha avaliação**: nota e resenha pessoais por título.
+- **Estatísticas**: tempo assistido, contagens, nota média e gráfico por mês.
+- **Tops 10**: arraste a alça ⋮⋮ (ou use as setas do teclado com a alça selecionada).
+- **Backup**: baixar/importar arquivo `.json`.
+- **Tema claro/escuro** pelo botão no topo.
+- **Contas**: senha com scrypt, bloqueio temporário após tentativas erradas (por IP e por e-mail, guardado no banco) e "Sair de todos os dispositivos".
+- **Segurança de dados**: salvamento com nova tentativa automática, aviso de "sem conexão", cópia local, e detecção de edição em dois aparelhos (campo `atualizado`); ao voltar para a aba, os dados são recarregados.
 
 ## 1. Neon
 
-1. No Neon Console (console.neon.tech), crie um projeto.
-2. Abra o **SQL Editor** e rode o conteúdo de `neon/schema.sql`.
-3. Clique em **Connect**, escolha a opção *pooled connection* e copie a connection string. Ela é o valor de `DATABASE_URL` e é segredo: não coloque no GitHub.
+1. No Neon Console, crie um projeto.
+2. Abra o **SQL Editor** e rode `neon/schema.sql` (seguro rodar de novo, **inclusive para atualizar um banco da versão antiga**).
+3. Em **Connect**, copie a connection string *pooled* → `DATABASE_URL`.
 
-Atalho: na Vercel, em **Storage** (ou Marketplace), a integração com o Neon cria o banco e já define `DATABASE_URL` no projeto. Nesse caso, falta só rodar o `schema.sql`.
+> **Atualizando da versão de uma senha só?** Rode o novo `schema.sql`, faça o deploy e **crie a sua conta**: a primeira conta criada herda todos os dados que já existiam.
 
 ## 2. TMDb
 
-Em themoviedb.org › Configurações › API, copie o **Token de Leitura da API (v4)**. A chave v3 também funciona (`TMDB_API_KEY`).
+Em themoviedb.org › Configurações › API, copie o **Token de Leitura da API (v4)** → `TMDB_READ_TOKEN` (ou a chave v3 em `TMDB_API_KEY`).
 
 ## 3. Vercel
 
-1. Suba este projeto para um repositório no GitHub (os arquivos precisam estar na raiz do repositório).
-2. Na Vercel, importe o repositório. Deixe o *Framework Preset* como **Other**.
-3. Antes de publicar, em **Settings › Environment Variables**, crie as variáveis abaixo (veja também `.env.example`):
+1. Suba o projeto para o GitHub (arquivos na raiz) e importe na Vercel, *Framework Preset* **Other**.
+2. Em **Settings › Environment Variables** (veja `.env.example`):
 
 | Variável | Valor |
 |---|---|
-| `APP_PASSWORD` | a senha para entrar no site (use uma frase longa) |
 | `SESSION_SECRET` | texto aleatório longo (`openssl rand -hex 32`) |
 | `DATABASE_URL` | connection string do Neon |
-| `TMDB_READ_TOKEN` | token v4 do TMDb (ou use `TMDB_API_KEY`) |
+| `TMDB_READ_TOKEN` | token v4 do TMDb (ou `TMDB_API_KEY`) |
+| `BLOB_READ_WRITE_TOKEN` | *(opcional)* criado ao conectar um **Vercel Blob** (Storage › Create › Blob) |
+| `CADASTRO_ABERTO` | *(opcional)* `false` fecha novos cadastros depois da primeira conta |
 
-4. Clique em **Deploy**. Se você alterar variáveis depois, faça um **Redeploy**.
+`APP_PASSWORD` não é mais usada. Se mudar variáveis, faça um **Redeploy**.
 
-Se alguma variável faltar, o site mostra qual é.
+### Capas no Vercel Blob (opcional)
+
+Com o Blob conectado, as capas que você envia vão para o Blob e só o link fica no banco, então a lista carrega leve. As capas antigas (base64) são migradas automaticamente, algumas por vez, ao abrir o app. Sem o Blob, tudo continua funcionando como antes (capa pequena no banco).
 
 ## Se aparecer "Erro no servidor"
 
-O app mostra a causa quando é um problema conhecido. Confira, nesta ordem:
+1. **Banco desatualizado:** rode `neon/schema.sql` no SQL Editor do Neon.
+2. **`DATABASE_URL`:** deve ser a connection string *pooled*, sem espaços ou aspas.
+3. **Variáveis em todos os ambientes** (Production/Preview) e **Redeploy** depois de mudar.
+4. **Detalhe técnico:** Vercel › Deployments › Functions/Logs.
 
-1. **Tabelas:** rode `neon/schema.sql` no SQL Editor do Neon (é seguro rodar de novo).
-2. **`DATABASE_URL`:** em Vercel › Settings › Environment Variables, deve ser a connection string *pooled* do Neon, sem espaços ou aspas.
-3. **Variáveis em todos os ambientes:** marque Production (e Preview, se usar) e faça um **Redeploy** depois de mudar qualquer valor.
-4. **Detalhe técnico:** Vercel › Deployments › Functions/Logs mostra o erro completo.
+## Cache e atualização do app
 
-## Cache de `style.css` e `app.js`
-
-`vercel.json` manda a CDN e o navegador guardarem `.css` e `.js` por 1 ano (`immutable`). Para o navegador buscar a versão nova depois de mudar um deles, **troque o número em `?v=` no `index.html`** (ex.: `style.css?v=3.2.1`).
+CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker mostra a versão em cache na hora e busca a nova em segundo plano; para forçar a renovação do cache offline em um deploy novo, troque `VERSAO` em `public/sw.js`.
 
 ## Rodar localmente
 
 ```
-npm i -g vercel
 npm install
+npm test            # testes das regras e da validação da API
+npm i -g vercel
 vercel link
 vercel env pull .env.local
 vercel dev
 ```
 
-## Trazer os dados da versão antiga
-
-Na versão antiga (que salvava no navegador), abra **Backup** no rodapé e copie o texto.
-No site novo, abra **Backup**, cole o texto e clique em **Importar**. Itens com o mesmo id são substituídos e os demais são mantidos.
-
 ## Observações
 
-- Pensado para uso pessoal (uma senha, um usuário). Para várias pessoas, o caminho é trocar a senha por login de usuários (por exemplo Auth.js) e acrescentar uma coluna `user_id` nas tabelas.
-- Capas enviadas por você são reduzidas e guardadas no próprio banco. As do TMDb são só links.
+- Edição em dois aparelhos ao mesmo tempo: se o outro aparelho gravou primeiro, o app combina as versões. O progresso nunca regride (vale o maior número de episódios por temporada) e os demais campos seguem a versão do servidor. Um "+1 episódio" feito ao mesmo tempo nos dois lados pode contar uma vez só.
+- O limite de tentativas de login usa a tabela `tentativas` no Neon: 5 erros por e-mail (ou 20 por IP) bloqueiam por 15 min, dobrando a cada 3 erros extras (máx. 24 h).
+- "Sair de todos os dispositivos" aumenta a versão da conta; trocar `SESSION_SECRET` derruba **todas as contas**.
 - A Vercel limita o corpo de cada requisição a 4,5 MB. O site já envia os dados em lotes pequenos.
+- O gráfico por mês só conta o que for marcado a partir desta versão (o que já estava marcado não tem data).
 
 ## Créditos
 
-Este produto usa a API do TMDB, mas não é endossado nem certificado por ele.
+Este produto usa a API do TMDB, mas não é endossado nem certificado por ele. Dados de streaming: JustWatch, via TMDb.

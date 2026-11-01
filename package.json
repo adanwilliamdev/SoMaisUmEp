@@ -1,9 +1,13 @@
 {
   "name": "claquete",
-  "version": "3.2.0",
+  "version": "4.0.0",
   "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.0"
+    "@neondatabase/serverless": "^1.0.0",
+    "@vercel/blob": "^1.0.0"
   },
   "engines": { "node": ">=20" }
 }
