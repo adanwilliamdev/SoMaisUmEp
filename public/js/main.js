@@ -42,7 +42,7 @@ function patchCard(id, mudouEstado) {
   const s = achar(id); if (!s) return;
   $('#stats').innerHTML = V.htmlStats(tipoAtual());
   document.querySelectorAll(`.card[data-id="${id}"]`).forEach(el => {
-    const t = document.createElement('template'); t.innerHTML = V.cardHtml(s, +el.style.getPropertyValue('--i') || 0);
+    const t = document.createElement('template'); t.innerHTML = (el.classList.contains('cc') ? V.cardContinuar : V.cardHtml)(s, +el.style.getPropertyValue('--i') || 0);
     el.replaceWith(t.content.firstElementChild);
   });
   revela();

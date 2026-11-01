@@ -13,18 +13,35 @@ export function esqueleto(hash) {
   const caixa = n => Array.from({ length: n }, () => '<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>').join('');
   const corpo = hash === '#tops'
     ? '<div class="tops"><div class="sk sk-top"></div><div class="sk sk-top"></div></div>'
-    : `<div class="stats"><div class="sk sk-stat"></div><div class="sk sk-stat"></div><div class="sk sk-stat"></div></div><div class="grade">${caixa(8)}</div>`;
+    : `<div class="stats"><div class="sk sk-stat"></div></div><div class="grade">${caixa(8)}</div>`;
   return `<div aria-busy="true"><span class="sr" role="status">Carregando…</span><div class="sk sk-h1"></div><div class="sk sk-sub"></div>${corpo}</div>`;
 }
 
 /* ---------- séries e filmes ---------- */
+const ICO_MAIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+const ICO_OK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
 export function cardHtml(s, n = 0) {
-  const mv = tp(s) === 'movie', p = pct(s), prx = prox(s);
-  return `<article class="card" data-id="${s.id}" data-est="${estado(s)}" style="--i:${Math.min(n, 14)}">
-      <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}
-        ${mv ? '' : `<span class="sel">${p}%</span>`}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}<span class="prog"><i style="width:${p}%;display:block;height:100%"></i></span></button>
+  const mv = tp(s) === 'movie', p = pct(s), prx = prox(s), est = estado(s);
+  const chip = est === 'fim' ? '<span class="sel ok">✓ Concluído</span>' : est === 'assistindo' && !mv ? `<span class="sel">${p}%</span>` : '';
+  return `<article class="card" data-id="${s.id}" data-est="${est}" style="--i:${Math.min(n, 14)}">
+      <div class="poster">
+        <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}<span class="prog"><i style="width:${p}%"></i></span></button>
+        ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
+      </div>
       <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>
-      ${prx ? `<button class="btn sec mini mais" data-act="mais">${mv ? 'Marcar como visto' : '+1 episódio'}</button>` : ''}
+    </article>`;
+}
+
+// Cartão largo da fileira "Continuar assistindo"
+export function cardContinuar(s, n = 0) {
+  const p = pct(s), prx = prox(s);
+  return `<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" style="--i:${Math.min(n, 14)}">
+      <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}</button>
+      <div class="cc-info"><h3>${esc(s.nome)}</h3>
+        <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
+        <div class="barra"><i style="width:${p}%"></i></div><small class="cc-pct">${vis(s)} de ${tot(s)} · ${p}%</small></div>
+      ${prx ? `<button class="mais" data-act="mais" aria-label="+1 episódio de ${esc(s.nome)}" title="+1 episódio">${ICO_MAIS}<b>1</b></button>` : ''}
     </article>`;
 }
 
@@ -40,29 +57,35 @@ export function htmlStats(tipo) {
 export function htmlContinuar(tipo) {
   if (tipo !== 'tv' || UI.busca) return '';
   const c = continuar(L.series);
-  return c.length ? `<h2 class="sec-tit">Continuar assistindo</h2><div class="faixa-cards">${c.map((s, n) => cardHtml(s, n)).join('')}</div>` : '';
+  return c.length ? `<h2 class="sec-tit">Continuar assistindo</h2><div class="faixa-cards">${c.map((s, n) => cardContinuar(s, n)).join('')}</div>` : '';
 }
 
+const VAZIO_ICO = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>';
 export function htmlLista(tipo) {
   const mv = tipo === 'movie', lista = listaDe(tipo), total = L.series.filter(s => tp(s) === tipo).length;
   if (lista.length) return `<div class="grade">${lista.map((s, n) => cardHtml(s, n)).join('')}</div>`;
-  return `<div class="vazio">${UI.busca ? `Nada encontrado para “${esc(UI.busca)}”.` : total ? 'Nada neste filtro.' : mv ? 'Nenhum filme ainda. Adicione o primeiro.' : 'Sua estante está vazia. Adicione a primeira série para começar.'}</div>`;
+  if (UI.busca) return `<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${esc(UI.busca)}”.</p></div>`;
+  if (total) return `<div class="vazio">${VAZIO_ICO}<p>Nada neste filtro.</p></div>`;
+  return `<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série para acompanhar cada episódio.'}</p>
+    <button class="btn" data-act="nova" data-tipo="${tipo}">${mv ? '+ Adicionar filme' : '+ Adicionar série'}</button></div>`;
 }
 
+const LUPA = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
 export function viewLista(tipo) {
   const mv = tipo === 'movie';
   const fs = mv ? [['todas', 'Todos'], ['quero', 'Na fila'], ['fim', 'Assistidos']] : [['todas', 'Todas'], ['assistindo', 'Assistindo'], ['quero', 'Na fila'], ['fim', 'Concluídas']];
   if (!fs.some(([k]) => k === UI.filtro)) UI.filtro = 'todas';
   const chips = fs.map(([k, r]) => `<button class="chip" data-act="filtro" data-k="${k}" aria-pressed="${UI.filtro === k}">${r}</button>`).join('');
-  return `<h1>${mv ? 'Meus filmes' : 'Minhas séries'}</h1>
-    <p class="sub">${mv ? 'Registre o que você já viu e o que quer ver.' : 'Acompanhe cada temporada e episódio.'}</p>
+  return `<div class="cabeca"><div><h1>${mv ? 'Meus filmes' : 'Minhas séries'}</h1>
+      <p class="sub">${mv ? 'Registre o que você já viu e o que quer ver.' : 'Acompanhe cada temporada e episódio.'}</p></div>
+      <button class="btn nova" data-act="nova" data-tipo="${tipo}"><span aria-hidden="true">+</span><span class="rot">${mv ? 'Novo filme' : 'Nova série'}</span></button></div>
     <div class="stats" id="stats">${htmlStats(tipo)}</div>
     <div id="continuar">${htmlContinuar(tipo)}</div>
-    <div class="barra-acoes">${chips}<span class="esp"></span><button class="btn" data-act="nova" data-tipo="${tipo}">${mv ? '+ Novo filme' : '+ Nova série'}</button></div>
     <div class="ferramentas">
-      <input type="search" id="busca" placeholder="Buscar por nome" aria-label="Buscar por nome" value="${esc(UI.busca)}" autocomplete="off" enterkeyhint="search">
+      <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${esc(UI.busca)}" autocomplete="off" enterkeyhint="search"></label>
       <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => `<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
     </div>
+    <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
     <div id="lista">${htmlLista(tipo)}</div>`;
 }
 
@@ -85,10 +108,13 @@ export function htmlDetalhe(s, onde) {
       <button class="btn sec mini" data-act="temp-tudo" data-s="${i}">Marcar toda</button>
       <button class="btn sec mini" data-act="temp-zero" data-s="${i}">Zerar</button></div><div class="eps">${c}</div></div>`;
   }).join('');
+  const urlHero = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
+  const pilulas = [mv ? 'Filme' : 'Série', s.ano, s.nota ? '★ ' + s.nota : '', s.duracao ? s.duracao + (mv ? ' min' : ' min/ep') : ''].filter(Boolean).map(x => `<span class="pilula">${esc(x)}</span>`).join('');
   return `<div data-id="${s.id}">
+    <div class="hero" style="${urlHero ? `--cover:url(${s.capa})` : `--h:${hue(s.nome)}`}"></div>
     <div class="cab"><div class="mini-capa">${capa(s.nome, s.capa, true)}</div>
-      <div style="flex:1"><h2>${esc(s.nome)}</h2><div class="barra"><i style="width:${p}%"></i></div>
-      <small style="color:var(--mut)">${[s.ano, s.nota ? '★ ' + s.nota : ''].filter(Boolean).join(' · ')}${s.ano || s.nota ? '<br>' : ''}${mv ? (s.duracao ? s.duracao + ' min · ' : '') + rotulo(s) : vis(s) + ' de ' + tot(s) + ' episódios · ' + rotulo(s)}</small></div></div>
+      <div class="cab-info"><h2>${esc(s.nome)}</h2><div class="pilulas">${pilulas}</div><div class="barra"><i style="width:${p}%"></i></div>
+      <small>${mv ? rotulo(s) : vis(s) + ' de ' + tot(s) + ' episódios · ' + rotulo(s)}</small></div></div>
     ${s.sinopse ? `<p class="sin">${esc(s.sinopse)}</p>` : ''}
     ${temps}
     <section class="bloco"><h3>Onde assistir</h3><div id="onde">${htmlOnde(onde)}</div></section>
@@ -119,8 +145,8 @@ export function viewTops() {
       ${t.itens.length < 10 ? `<div class="add"><input type="text" list="nomes" maxlength="80" placeholder="Série ou filme" aria-label="Adicionar título"><button class="btn mini" data-act="add-item">Adicionar</button></div>` : ''}
     </section>`;
   }).join('');
-  return `<h1>Meus tops 10</h1>
-    <p class="sub">Monte rankings do seu jeito. Arraste a alça ⋮⋮ para mudar a posição.</p>
+  return `<div class="cabeca"><div><h1>Meus tops 10</h1>
+    <p class="sub">Monte rankings do seu jeito. Arraste a alça ⋮⋮ para mudar a posição.</p></div></div>
     <div class="nova-top"><input type="text" id="nt" maxlength="60" placeholder="Nome do top (ex.: Melhores séries de 2026)" aria-label="Nome do novo top"><button class="btn" data-act="novo-top">Criar</button></div>
     ${L.tops.length ? `<div class="tops">${cards}</div>` : '<div class="vazio">Nenhum top criado ainda.</div>'}${dl}`;
 }
@@ -144,7 +170,7 @@ export function viewStats() {
     [r.concluidas, 'séries concluídas'], [r.notaMedia == null ? '—' : r.notaMedia, `nota média (${r.nNotas} ${r.nNotas === 1 ? 'título' : 'títulos'})`],
   ];
   const faltam = L.series.filter(s => s.tmdb && !s.duracao && vis(s) > 0).length;
-  return `<h1>Estatísticas</h1><p class="sub">Seu histórico de séries e filmes.</p>
+  return `<div class="cabeca"><div><h1>Estatísticas</h1><p class="sub">Seu histórico de séries e filmes.</p></div></div>
     <div class="stats grande">${cards.map(([n, t]) => `<div class="stat"><b>${n}</b><span>${t}</span></div>`).join('')}</div>
     ${r.semDuracao ? `<p class="aviso">${r.semDuracao} ${r.semDuracao === 1 ? 'título' : 'títulos'} sem duração informada não entram na conta de tempo. ${faltam ? `<button class="btn sec mini" data-act="completar-duracoes">Completar pelo TMDb</button>` : 'Edite o título ou ligue-o ao TMDb para completar.'}</p>` : ''}
     <h2 class="sec-tit">Por mês <small style="font-weight:400;color:var(--mut)">· ${totalAno} nos últimos 12 meses</small></h2>
@@ -155,7 +181,7 @@ export function viewStats() {
 /* ---------- entrar / criar conta ---------- */
 export function viewAuth(modo = 'entrar') {
   const nova = modo === 'criar';
-  return `<div class="auth"><h1>${nova ? 'Criar conta' : 'Entrar'}</h1>
+  return `<div class="auth"><div class="auth-logo" aria-hidden="true"><i></i></div><h1>${nova ? 'Criar conta' : 'Entrar'}</h1>
     <p class="sub">${nova ? 'Cada pessoa tem a própria estante de séries e filmes.' : 'Entre para acessar sua estante.'}</p>
     <div class="abas" role="group" aria-label="Entrar ou criar conta">
       <button class="chip" data-act="auth-modo" data-m="entrar" aria-pressed="${!nova}" type="button">Entrar</button>

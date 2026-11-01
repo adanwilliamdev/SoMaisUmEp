@@ -1,7 +1,7 @@
 // Service worker do Claquete: abre o app rápido e funciona sem internet.
 // Dados (/api) nunca passam pelo cache: o app guarda a própria cópia no aparelho (loja.js).
 // Ao publicar uma versão nova, troque o número abaixo para renovar o cache.
-const VERSAO = 'claquete-v4.0.0';
+const VERSAO = 'claquete-v4.1.0';
 const SHELL = VERSAO + '-shell', IMAGENS = VERSAO + '-img', EXTERNO = VERSAO + '-ext';
 const ARQUIVOS = [
   '/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png',

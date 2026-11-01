@@ -10,7 +10,7 @@ neon/          schema.sql
 test/          testes (node --test)
 ```
 
-## O que tem
+## O que tem (v4.1: layout renovado)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
 - **Estante**: busca por nome, ordenação (recentes, nome, nota, último visto), filtros e a fileira "Continuar assistindo".
