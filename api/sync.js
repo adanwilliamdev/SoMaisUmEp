@@ -31,13 +31,20 @@ function top(x) {
 const ids = a => (Array.isArray(a) ? a : []).filter(i => typeof i === 'string' && ID.test(i)).slice(0, 200);
 
 module.exports = rota('POST', async (req, res) => {
-  const b = req.body || {}, d = b.del || {};
+  const sql = db(), b = req.body || {}, d = b.del || {};
   const T = (b.titulos || []).slice(0, 50).map(titulo), P = (b.tops || []).slice(0, 50).map(top);
-  const ops = [];
-  if (T.length) ops.push(db().from('titulos').upsert(T, { onConflict: 'id' }));
-  if (P.length) ops.push(db().from('tops').upsert(P, { onConflict: 'id' }));
-  if (ids(d.titulos).length) ops.push(db().from('titulos').delete().in('id', ids(d.titulos)));
-  if (ids(d.tops).length) ops.push(db().from('tops').delete().in('id', ids(d.tops)));
-  for (const r of await Promise.all(ops)) if (r.error) throw r.error;
+  const q = [];
+  for (const t of T) q.push(sql`
+    insert into titulos (id, tipo, nome, capa, sinopse, ano, nota, duracao, tmdb, eps, vis, criado)
+    values (${t.id}, ${t.tipo}, ${t.nome}, ${t.capa}, ${t.sinopse}, ${t.ano}, ${t.nota}, ${t.duracao}, ${t.tmdb}, ${t.eps}, ${t.vis}, ${t.criado})
+    on conflict (id) do update set tipo = excluded.tipo, nome = excluded.nome, capa = excluded.capa, sinopse = excluded.sinopse,
+      ano = excluded.ano, nota = excluded.nota, duracao = excluded.duracao, tmdb = excluded.tmdb, eps = excluded.eps, vis = excluded.vis`);
+  for (const t of P) q.push(sql`
+    insert into tops (id, nome, itens, criado)
+    values (${t.id}, ${t.nome}, ${JSON.stringify(t.itens)}::jsonb, ${t.criado})
+    on conflict (id) do update set nome = excluded.nome, itens = excluded.itens`);
+  if (ids(d.titulos).length) q.push(sql`delete from titulos where id = any(${ids(d.titulos)})`);
+  if (ids(d.tops).length) q.push(sql`delete from tops where id = any(${ids(d.tops)})`);
+  if (q.length) await sql.transaction(q); // tudo ou nada
   res.json({ ok: true });
 });

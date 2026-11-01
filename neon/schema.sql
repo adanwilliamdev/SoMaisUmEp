@@ -1,4 +1,4 @@
--- Rode no SQL Editor do Supabase. Seguro para rodar de novo.
+-- Rode no SQL Editor do Neon Console. Seguro para rodar de novo.
 create table if not exists titulos (
   id       text primary key,
   tipo     text not null default 'tv' check (tipo in ('tv', 'movie')),
@@ -20,7 +20,4 @@ create table if not exists tops (
   itens   jsonb not null default '[]',   -- [{ "t": "título", "sid": "id do título (opcional)" }]
   criado  bigint not null default (extract(epoch from now()) * 1000)::bigint
 );
-
--- RLS ligado e sem policies: ninguém acessa pelo navegador, só o servidor (service role).
-alter table titulos enable row level security;
-alter table tops enable row level security;
+-- O acesso é só pelo servidor, com a connection string (DATABASE_URL).

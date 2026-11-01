@@ -1,9 +1,9 @@
 {
   "name": "claquete",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0"
+    "@neondatabase/serverless": "^1.0.0"
   },
-  "engines": { "node": ">=18" }
+  "engines": { "node": ">=20" }
 }
