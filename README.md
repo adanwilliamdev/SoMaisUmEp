@@ -45,6 +45,19 @@ Em themoviedb.org › Configurações › API, copie o **Token de Leitura da API
 
 Se alguma variável faltar, o site mostra qual é.
 
+## Se aparecer "Erro no servidor"
+
+O app mostra a causa quando é um problema conhecido. Confira, nesta ordem:
+
+1. **Tabelas:** rode `neon/schema.sql` no SQL Editor do Neon (é seguro rodar de novo).
+2. **`DATABASE_URL`:** em Vercel › Settings › Environment Variables, deve ser a connection string *pooled* do Neon, sem espaços ou aspas.
+3. **Variáveis em todos os ambientes:** marque Production (e Preview, se usar) e faça um **Redeploy** depois de mudar qualquer valor.
+4. **Detalhe técnico:** Vercel › Deployments › Functions/Logs mostra o erro completo.
+
+## Cache de `style.css` e `app.js`
+
+`vercel.json` manda a CDN e o navegador guardarem `.css` e `.js` por 1 ano (`immutable`). Para o navegador buscar a versão nova depois de mudar um deles, **troque o número em `?v=` no `index.html`** (ex.: `style.css?v=3.2.1`).
+
 ## Rodar localmente
 
 ```

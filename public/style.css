@@ -1,6 +1,6 @@
-:root{--bg:#f4f2fb;--card:#fff;--tx:#1c1a2e;--mut:#6a6880;--line:rgba(28,26,46,.14);--acc:#6a4cff;--on:#fff;--fita:#12866c;--serif:"Fraunces",Georgia,serif;--sans:"Instrument Sans",system-ui,sans-serif;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12121c;--card:#1c1b2e;--tx:#f1effa;--mut:#a8a6bd;--line:rgba(241,239,250,.14);--acc:#9d8cff;--on:#14102b;--fita:#4fd1b0;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#12121c;--card:#1c1b2e;--tx:#f1effa;--mut:#a8a6bd;--line:rgba(241,239,250,.14);--acc:#9d8cff;--on:#14102b;--fita:#4fd1b0;color-scheme:dark}
+:root{--bg:#f4f2fb;--card:#fff;--tx:#1c1a2e;--mut:#58566e;--line:rgba(28,26,46,.14);--acc:#6a4cff;--on:#fff;--fita:#12866c;--glow:rgba(106,76,255,.4);--serif:"Fraunces",Georgia,serif;--sans:"Instrument Sans",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12121c;--card:#1c1b2e;--tx:#f1effa;--mut:#bfbdd3;--line:rgba(241,239,250,.18);--acc:#9d8cff;--on:#14102b;--fita:#4fd1b0;--glow:rgba(157,140,255,.38);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12121c;--card:#1c1b2e;--tx:#f1effa;--mut:#bfbdd3;--line:rgba(241,239,250,.18);--acc:#9d8cff;--on:#14102b;--fita:#4fd1b0;--glow:rgba(157,140,255,.38);color-scheme:dark}
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
 *,*::before,*::after{box-sizing:inherit;margin:0}
@@ -58,11 +58,11 @@ dialog::backdrop{background:rgba(0,0,0,.62)}
 .ep[aria-pressed=true]{background:var(--fita);border-color:var(--fita);color:#fff}
 .rodape-dlg{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
 label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:600;color:var(--mut);margin-bottom:12px}
-input[type=text],input[type=number],textarea{padding:10px 12px;border-radius:8px;border:2px solid var(--line);background:var(--bg);color:var(--tx);width:100%}
+input[type=text],input[type=number],input[type=password],textarea{padding:10px 12px;border-radius:8px;border:2px solid var(--line);background:var(--bg);color:var(--tx);width:100%}
 textarea{min-height:160px;font-family:monospace;font-size:.8rem}
 .eps-inputs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .nova-top{display:flex;gap:8px;max-width:520px;margin-bottom:24px}
-.tops{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:20px}
+.tops{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(310px,100%),1fr));gap:20px}
 .top{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
 .top-cab{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .top-cab h2{flex:1;font-size:1.25rem}
@@ -78,8 +78,6 @@ textarea{min-height:160px;font-family:monospace;font-size:.8rem}
 .mv button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:transparent;line-height:1}
 .add{display:flex;gap:8px;margin-top:12px}
 .rodape{margin-top:40px;color:var(--mut);font-size:.82rem;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-@media (max-width:480px){.cab .mini-capa{width:70px}}
 .res{display:grid;gap:6px;margin-bottom:12px}
 .res .r{display:flex;gap:10px;align-items:center;text-align:left;padding:6px;border-radius:8px;border:1.5px solid var(--line);background:transparent}
 .res .r:hover{border-color:var(--acc)}
@@ -88,3 +86,80 @@ textarea{min-height:160px;font-family:monospace;font-size:.8rem}
 .res small{display:block;color:var(--mut)}
 .aviso{color:var(--mut);font-size:.88rem}
 .sin{color:var(--mut);font-size:.92rem;line-height:1.55;margin:0 0 8px}
+
+/* ===== v3.2 · interação ===== */
+html{-webkit-text-size-adjust:100%}
+button,a,input,select,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn,.chip,.ep,.mv button,.menu a{transition:transform .12s ease,box-shadow .2s ease,background-color .2s,border-color .2s,color .2s}
+.btn:active,.chip:active,.ep:active,.mv button:active{transform:scale(.95)}
+.btn:not(.sec){box-shadow:0 4px 14px var(--glow)}
+.btn:not(.sec):hover{box-shadow:0 6px 20px var(--glow)}
+.btn.mini:not(.sec){box-shadow:0 2px 8px var(--glow)}
+.chip[aria-pressed=true]{box-shadow:0 3px 10px var(--glow)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.menu .ico{display:none}
+
+/* ===== imagens: aparecem com fade quando carregam ===== */
+.mini-capa,.top li .p,.res .p{background:var(--line)}
+img.fade{opacity:0;transform:scale(1.03);transition:opacity .4s ease,transform .5s ease}
+img.fade.ok{opacity:1;transform:none}
+
+/* ===== animações de entrada ===== */
+@keyframes sobe{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes aparece{from{opacity:0}to{opacity:1}}
+@keyframes folha{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
+.entra :is(.card,.top,.stat,.vazio){animation:sobe .42s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 35ms)}
+dialog[open]{animation:sobe .24s cubic-bezier(.2,.7,.2,1)}
+dialog[open]::backdrop{animation:aparece .24s ease-out}
+
+/* ===== esqueleto de carregamento ===== */
+@keyframes brilho{from{background-position:200% 0}to{background-position:-200% 0}}
+.sk{border-radius:10px;background:linear-gradient(100deg,color-mix(in srgb,var(--tx) 8%,transparent) 30%,color-mix(in srgb,var(--tx) 17%,transparent) 50%,color-mix(in srgb,var(--tx) 8%,transparent) 70%);background-size:200% 100%;animation:brilho 1.4s linear infinite}
+.sk-h1{height:clamp(2rem,5.5vw,3.1rem);width:min(320px,70%);margin:22px 0 10px}
+.sk-sub{height:1rem;width:min(420px,85%);margin-bottom:22px}
+.sk-stat{height:64px;width:118px}
+.sk-capa{aspect-ratio:2/3;border-radius:10px}
+.sk-l1{height:1rem;width:85%;margin:11px 0 6px}
+.sk-l2{height:.8rem;width:50%}
+.sk-top{height:300px;border-radius:14px}
+
+/* ===== telas pequenas: layout de app ===== */
+@media (max-width:720px){
+  .wrap{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  .topo{padding:16px 0 0}
+  .menu{position:fixed;left:0;right:0;bottom:0;z-index:20;gap:0;padding:0 6px env(safe-area-inset-bottom,0px);background:color-mix(in srgb,var(--card) 90%,transparent);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.18)}
+  .menu a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:60px;padding:8px 4px 7px;border-radius:0;font-size:.74rem;position:relative;color:var(--mut)}
+  .menu .ico{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .menu a[aria-current=page]{background:transparent;color:var(--acc)}
+  .menu a[aria-current=page]::before{content:"";position:absolute;top:0;left:28%;right:28%;height:3px;border-radius:0 0 4px 4px;background:var(--acc);box-shadow:0 2px 10px var(--glow)}
+  .menu a:active{transform:scale(.92)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stat{min-width:0;padding:10px 12px}
+  dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:20px 20px 0 0;max-height:92vh;max-height:92dvh;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+  dialog[open]{animation:folha .3s cubic-bezier(.2,.8,.2,1)}
+}
+@media (max-width:480px){
+  .grade{grid-template-columns:repeat(2,1fr);gap:12px}
+  .cab .mini-capa{width:70px}
+  .ph span{font-size:2.4rem}
+  .top li{display:grid;grid-template-columns:34px 34px 1fr;gap:8px 10px}
+  .top li .mv{grid-column:1/-1;justify-content:flex-end}
+}
+
+/* ===== telas touch: alvos de pelo menos 44x44 ===== */
+@media (pointer:coarse){
+  .ep{width:44px;height:44px;font-size:.92rem}
+  .eps{gap:8px}
+  .mv{gap:6px}
+  .mv button{width:44px;height:44px;font-size:1.05rem}
+  .btn,.chip{min-height:44px}
+  .btn.mini{min-height:44px;min-width:44px;padding:8px 14px}
+  .menu a{min-height:44px}
+  input[type=text],input[type=number],input[type=password],textarea{font-size:16px;min-height:44px}
+  textarea{min-height:160px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after,dialog[open]::backdrop{transition:none!important;animation:none!important;scroll-behavior:auto!important}
+  img.fade{opacity:1;transform:none}
+}

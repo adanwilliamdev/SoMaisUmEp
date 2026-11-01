@@ -4,7 +4,7 @@ const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp
 const uid = () => crypto.randomUUID();
 
 let S = { series: [], tops: [] }, filtro = 'todas', aberta = null, novaCapa;
-let logado = false, remoto = {}, fila = Promise.resolve(), pendentes = 0;
+let logado = false, remoto = {}, fila = Promise.resolve(), pendentes = 0, animar = true;
 
 /* ---------- servidor ---------- */
 async function api(url, opt = {}) {
@@ -44,15 +44,22 @@ async function sync() {
 }
 addEventListener('beforeunload', e => { if (pendentes > 0) e.preventDefault(); });
 
+function esqueleto() {
+  const caixa = n => Array.from({ length: n }, () => '<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>').join('');
+  const corpo = location.hash === '#tops'
+    ? '<div class="tops"><div class="sk sk-top"></div><div class="sk sk-top"></div></div>'
+    : `<div class="stats"><div class="sk sk-stat"></div><div class="sk sk-stat"></div><div class="sk sk-stat"></div></div><div class="grade">${caixa(8)}</div>`;
+  return `<div aria-busy="true"><span class="sr" role="status">Carregando…</span><div class="sk sk-h1"></div><div class="sk sk-sub"></div>${corpo}</div>`;
+}
 async function iniciar() {
-  app.innerHTML = '<p class="sub">Carregando…</p>';
+  app.innerHTML = esqueleto();
   try {
     const d = await api('/api/dados');
-    S = { series: d.series || [], tops: d.tops || [] }; remoto = chaves(); logado = true;
+    S = { series: d.series || [], tops: d.tops || [] }; remoto = chaves(); logado = true; animar = true;
     status('Salvo ✓'); render();
   } catch (e) {
     if (e.auth) telaLogin();
-    else app.innerHTML = `<div class="vazio">Não foi possível carregar seus dados: ${esc(e.message)}<br><br><button class="btn mini" data-act="recarregar">Tentar de novo</button></div>`;
+    else app.innerHTML = `<div class="vazio">Não foi possível carregar seus dados: ${esc(e.message)}<br><small>Se persistir, confira as variáveis de ambiente e o banco (veja o README, "Se aparecer erro no servidor").</small><br><br><button class="btn mini" data-act="recarregar">Tentar de novo</button></div>`;
   }
 }
 function telaLogin() {
@@ -75,8 +82,8 @@ const tot = s => s.eps.reduce((a, b) => a + b, 0);
 const vis = s => s.vis.reduce((a, b) => a + b, 0);
 const estado = s => { const v = vis(s); return v === 0 ? 'quero' : v >= tot(s) ? 'fim' : 'assistindo'; };
 const prox = s => { for (let i = 0; i < s.eps.length; i++) if (s.vis[i] < s.eps[i]) return [i + 1, s.vis[i] + 1]; return null; };
-const capa = (nome, img) => img
-  ? `<img src="${esc(img)}" alt="" loading="lazy">`
+const capa = (nome, img, urgente) => img
+  ? `<img class="fade" src="${esc(img)}" alt="" decoding="async" ${urgente ? 'fetchpriority="high"' : 'loading="lazy"'}>`
   : `<div class="ph" style="--h:${hue(nome)}"><span>${esc((String(nome).trim()[0] || '?').toUpperCase())}</span></div>`;
 const rotulo = s => { const p = prox(s), e = estado(s); if (tp(s) === 'movie') return e === 'fim' ? 'Assistido ✓' : 'Na fila'; return e === 'fim' ? 'Concluída ✓' : e === 'quero' ? 'Na fila' : `Próximo: T${p[0]} · E${p[1]}`; };
 const achar = id => S.series.find(s => s.id === id);
@@ -90,9 +97,9 @@ function viewLista(tipo) {
   const lista = L.filter(s => filtro === 'todas' || estado(s) === filtro);
   const fim = L.filter(s => estado(s) === 'fim').length, eps = L.reduce((a, s) => a + vis(s), 0);
   const chips = fs.map(([k, r]) => `<button class="chip" data-act="filtro" data-k="${k}" aria-pressed="${filtro === k}">${r}</button>`).join('');
-  const cards = lista.map(s => {
+  const cards = lista.map((s, n) => {
     const pct = Math.round(vis(s) / tot(s) * 100), p = prox(s);
-    return `<article class="card" data-id="${s.id}">
+    return `<article class="card" data-id="${s.id}" style="--i:${Math.min(n, 14)}">
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}
         ${mv ? '' : `<span class="sel">${pct}%</span>`}<span class="prog"><i style="width:${pct}%;display:block;height:100%"></i></span></button>
       <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>
@@ -120,7 +127,7 @@ function pintaDetalhe() {
       <button class="btn sec mini" data-act="temp-zero" data-s="${i}">Zerar</button></div><div class="eps">${chips}</div></div>`;
   }).join('');
   dlg.innerHTML = `<div data-id="${s.id}">
-    <div class="cab"><div class="mini-capa">${capa(s.nome, s.capa)}</div>
+    <div class="cab"><div class="mini-capa">${capa(s.nome, s.capa, true)}</div>
       <div style="flex:1"><h2>${esc(s.nome)}</h2><div class="barra"><i style="width:${pct}%"></i></div>
       <small style="color:var(--mut)">${[s.ano, s.nota ? '★ ' + s.nota : ''].filter(Boolean).join(' · ')}${s.ano || s.nota ? '<br>' : ''}${mv ? (s.duracao ? s.duracao + ' min · ' : '') + rotulo(s) : vis(s) + ' de ' + tot(s) + ' episódios · ' + rotulo(s)}</small></div></div>
     ${s.sinopse ? `<p class="sin">${esc(s.sinopse)}</p>` : ''}
@@ -130,6 +137,7 @@ function pintaDetalhe() {
       <button class="btn sec" data-act="editar">Editar</button>
       <button class="btn" data-act="fechar">Fechar</button></div></div>`;
   if (!dlg.open) dlg.showModal();
+  revela();
 }
 
 function formSerie(id, tipoNovo) {
@@ -211,13 +219,13 @@ function formSerie(id, tipoNovo) {
 /* ---------- tops ---------- */
 function viewTops() {
   const dl = `<datalist id="nomes">${S.series.map(s => `<option value="${esc(s.nome)}"></option>`).join('')}</datalist>`;
-  const cards = S.tops.map(t => {
+  const cards = S.tops.map((t, n) => {
     const li = t.itens.map((it, i) => {
       const s = it.sid ? achar(it.sid) : null;
       return `<li data-i="${i}"><span class="n">${i + 1}</span><div class="p">${capa(it.t, s && s.capa)}</div><span class="t">${esc(it.t)}</span>
         <span class="mv"><button data-act="sobe" aria-label="Subir" ${i === 0 ? 'disabled' : ''}>↑</button><button data-act="desce" aria-label="Descer" ${i === t.itens.length - 1 ? 'disabled' : ''}>↓</button><button data-act="tira" aria-label="Remover">✕</button></span></li>`;
     }).join('');
-    return `<section class="top" data-top="${t.id}">
+    return `<section class="top" data-top="${t.id}" style="--i:${Math.min(n, 8)}">
       <div class="top-cab"><h2>${esc(t.nome)}</h2><small>${t.itens.length}/10</small><button class="btn sec perigo mini" data-act="del-top">Excluir</button></div>
       ${li ? `<ol>${li}</ol>` : '<p style="color:var(--mut);font-size:.9rem">Lista vazia. Adicione seu primeiro título.</p>'}
       ${t.itens.length < 10 ? `<div class="add"><input type="text" list="nomes" maxlength="80" placeholder="Série ou filme" aria-label="Adicionar título"><button class="btn mini" data-act="add-item">Adicionar</button></div>` : ''}
@@ -257,9 +265,17 @@ function render() {
   document.querySelectorAll('.menu a').forEach(a => {
     if (a.getAttribute('href') === aba) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
+  app.classList.toggle('entra', animar); animar = false; // anima só ao trocar de aba/filtro, não a cada +1 episódio
   app.innerHTML = aba === '#tops' ? viewTops() : viewLista(aba === '#filmes' ? 'movie' : 'tv');
+  revela();
 }
-addEventListener('hashchange', render);
+addEventListener('hashchange', () => { animar = true; scrollTo({ top: 0, behavior: 'instant' }); render(); });
+
+// Imagens entram com fade quando terminam de carregar (load/error não borbulham: captura).
+const mostra = e => { if (e.target.tagName === 'IMG') e.target.classList.add('ok'); };
+document.addEventListener('load', mostra, true);
+document.addEventListener('error', mostra, true);
+const revela = () => document.querySelectorAll('img.fade:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) i.classList.add('ok'); });
 
 function confirma(b, fn) {
   if (b.dataset.sure) { fn(); return; }
@@ -272,7 +288,7 @@ document.addEventListener('click', e => {
   const a = b.dataset.act, id = (b.closest('[data-id]') || {}).dataset?.id;
   const top = b.closest('[data-top]'), tid = top && top.dataset.top, li = b.closest('li'), i = li ? +li.dataset.i : -1;
   const s = id ? achar(id) : null, t = tid ? S.tops.find(x => x.id === tid) : null;
-  if (a === 'filtro') { filtro = b.dataset.k; render(); }
+  if (a === 'filtro') { filtro = b.dataset.k; animar = true; render(); }
   else if (a === 'nova') formSerie(null, b.dataset.tipo);
   else if (a === 'abrir') { aberta = id || aberta || (b.closest('form') || {}).dataset?.id; if (aberta) pintaDetalhe(); }
   else if (a === 'fechar') { aberta = null; dlg.close(); }
