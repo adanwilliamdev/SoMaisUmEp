@@ -122,3 +122,24 @@ test('estatísticas: tempo, contagens e meses', async () => {
   assert.equal(duracaoTexto(90), '1 h 30 min');
   assert.equal(duracaoTexto(45), '45 min');
 });
+
+test('duplicados: mesmo TMDb ou mesmo nome (sem acento/caixa) no mesmo tipo', async () => {
+  const { mesmoTitulo, acharDuplicado } = await R();
+  const a = serie({ id: '1', nome: 'Coração de Ferro', tmdb: 10, ano: '2020' });
+  assert.ok(mesmoTitulo(a, serie({ id: '2', nome: 'qualquer outro nome', tmdb: 10 })));          // mesmo TMDb
+  assert.ok(mesmoTitulo(a, serie({ id: '2', nome: '  CORACAO  de   ferro ', tmdb: undefined })));  // mesmo nome
+  assert.ok(!mesmoTitulo(a, serie({ id: '2', nome: 'Coração de Ferro', tmdb: 11 })));            // TMDb diferente
+  assert.ok(!mesmoTitulo(a, serie({ id: '2', nome: 'Coração de Ferro', ano: '1990' })));         // remake: anos diferentes
+  assert.ok(!mesmoTitulo(a, { ...serie({ id: '2', nome: 'Coração de Ferro' }), tipo: 'movie' })); // filme x série
+  assert.equal(acharDuplicado([a], serie({ id: '9', nome: 'coracao de ferro' })).id, '1');
+  assert.equal(acharDuplicado([a], serie({ id: '1', nome: 'Coração de Ferro' }), '1'), null);    // editando o próprio item
+});
+
+test('importar: ignora títulos que já existem e repetidos dentro do arquivo', async () => {
+  const { semDuplicados } = await R();
+  const atuais = [serie({ id: '1', nome: 'Dune', tmdb: 5 })];
+  const novos = [serie({ id: 'x', nome: 'Dune', tmdb: 5 }), serie({ id: 'y', nome: 'Alien' }), serie({ id: 'z', nome: 'alien' }), serie({ id: '1', nome: 'Dune', tmdb: 5 })];
+  const { aceitos, repetidos } = semDuplicados(novos, atuais);
+  assert.deepEqual(aceitos.map(s => s.id), ['y', '1']);   // mesmo id = atualização do item existente, continua valendo
+  assert.deepEqual(repetidos.map(s => s.id), ['x', 'z']);
+});

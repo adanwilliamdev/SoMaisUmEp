@@ -41,6 +41,34 @@ export function continuar(series, max = 12) {
   return ordenar(series.filter(s => tp(s) === 'tv' && estado(s) === 'assistindo'), 'visto').slice(0, max);
 }
 
+/* ---------- itens duplicados ---------- */
+// Dois itens são o mesmo título quando têm o mesmo tipo (série/filme) e:
+//  - o mesmo id do TMDb (quando os dois têm); ou
+//  - o mesmo nome (ignorando acento, maiúsculas e espaços repetidos), desde que não haja
+//    sinal claro de que são obras diferentes (TMDb diferente ou anos diferentes, como em remakes).
+const nomeChave = t => normaliza(t).replace(/\s+/g, ' ');
+
+export function mesmoTitulo(a, b) {
+  if (!a || !b || tp(a) !== tp(b)) return false;
+  if (a.tmdb && b.tmdb) return a.tmdb === b.tmdb;
+  if (nomeChave(a.nome) !== nomeChave(b.nome)) return false;
+  if (a.ano && b.ano && a.ano !== b.ano) return false;
+  return true;
+}
+
+// Procura na lista um título igual ao candidato. `ignorarId` serve ao editar (não comparar consigo mesmo).
+export const acharDuplicado = (lista, cand, ignorarId = null) => lista.find(x => x.id !== ignorarId && mesmoTitulo(x, cand)) || null;
+
+// Para importar backup: separa o que entra do que já existe (ou está repetido dentro do próprio arquivo).
+export function semDuplicados(novos, atuais) {
+  const aceitos = [], repetidos = [];
+  for (const n of novos) {
+    const ja = atuais.some(x => x.id !== n.id && mesmoTitulo(x, n)) || aceitos.some(x => x.id !== n.id && mesmoTitulo(x, n));
+    (ja ? repetidos : aceitos).push(n);
+  }
+  return { aceitos, repetidos };
+}
+
 /* ---------- progresso e histórico ---------- */
 export const mesDe = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
 

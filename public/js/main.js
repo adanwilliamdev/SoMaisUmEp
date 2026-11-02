@@ -1,7 +1,7 @@
 import { $, esc, uid, status, aviso, guardar, ler } from './util.js';
 import { api, tmdb } from './api.js';
 import { L, achar, save, carregar, ligar, ligarRede, recarregarSuave, limparSnap, zerar, pendente } from './loja.js';
-import { tp, vis, estado, prox, registrarProgresso } from './regras.js';
+import { tp, vis, estado, prox, registrarProgresso, acharDuplicado, semDuplicados } from './regras.js';
 import * as V from './views.js';
 import { enviarCapa, migrarCapas } from './capas.js';
 import { atualizarDoTmdb, atualizarAutomatico, completarDuracoes, ondeAssistir } from './tmdbsync.js';
@@ -154,6 +154,7 @@ function formSerie(id, tipoNovo) {
       <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? esc(s.nome) : ''}"></label>
       <label>Buscar no TMDb (opcional)<span style="display:flex;gap:8px"><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
       <div id="res" class="res"></div>
+      <div id="dup"></div>
       <div id="blocotemp" ${mv ? 'hidden' : ''}><label>Número de temporadas<input type="number" name="nt" min="1" max="30" value="${s ? s.eps.length : 1}"></label>
       <div style="font-size:.82rem;font-weight:600;color:var(--mut);margin-bottom:6px">Episódios por temporada</div>
       <div class="eps-inputs" id="temps"></div><br></div>
@@ -162,6 +163,13 @@ function formSerie(id, tipoNovo) {
       <div class="rodape-dlg"><button type="button" class="btn sec" data-act="${s ? 'abrir' : 'fechar'}">Cancelar</button><button class="btn" type="submit">Salvar</button></div>
     </form>`;
   const f = $('#f');
+  let salvando = false;
+  // Avisa (sem bloquear a tela) quando o título já está na estante; o botão leva até ele.
+  const avisoDup = cand => {
+    const d = acharDuplicado(L.series, cand, s && s.id);
+    $('#dup').innerHTML = d ? `<p class="aviso">⚠️ <b>${esc(d.nome)}</b>${d.ano ? ' (' + esc(d.ano) + ')' : ''} já está na sua estante. <button type="button" class="btn mini sec" data-act="abrir" data-id="${esc(d.id)}">Abrir o existente</button></p>` : '';
+    return d;
+  };
   const desenha = arr => {
     const n = Math.max(1, Math.min(30, +f.nt.value || 1));
     const atual = [...document.querySelectorAll('#temps input')].map(i => +i.value);
@@ -171,6 +179,7 @@ function formSerie(id, tipoNovo) {
   const previa = () => { $('#previa').innerHTML = novaCapa ? `<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div style="width:56px;aspect-ratio:2/3;border-radius:6px;overflow:hidden"><img src="${esc(novaCapa)}" alt="" style="width:100%;height:100%;object-fit:cover"></div><button type="button" class="btn sec mini" data-act="semcapa">Remover capa</button></div>` : ''; };
   desenha(); previa();
   f.nt.addEventListener('input', () => desenha());
+  f.nome.addEventListener('input', () => avisoDup({ tipo, nome: f.nome.value, ano: meta.ano, tmdb: meta.tmdb }));
   const busca = async () => {
     const q = $('#tq').value.trim(), res = $('#res'); if (!q) return;
     res.innerHTML = '<p class="aviso">Buscando…</p>';
@@ -192,6 +201,7 @@ function formSerie(id, tipoNovo) {
       previa();
       meta = { sinopse: d.sinopse, ano: d.ano, duracao: d.duracao, nota: d.nota, tmdb: d.tmdb };
       $('#res').innerHTML = '<p class="aviso">Dados preenchidos ✓ Confira e salve.</p>';
+      avisoDup({ tipo, nome: d.nome, ano: d.ano, tmdb: d.tmdb });
     } catch (e) { $('#res').innerHTML = `<p class="aviso">${esc(e.auth ? 'Sessão expirada. Recarregue a página.' : e.message)}</p>`; }
   });
   f.capa.addEventListener('change', () => {
@@ -208,7 +218,9 @@ function formSerie(id, tipoNovo) {
   f.addEventListener('submit', async ev => {
     ev.preventDefault();
     const eps = mv ? [1] : [...document.querySelectorAll('#temps input')].map(i => Math.max(1, Math.min(999, +i.value || 1)));
-    const nome = f.nome.value.trim(); if (!nome) return;
+    const nome = f.nome.value.trim(); if (!nome || salvando) return;
+    if (avisoDup({ tipo, nome, ano: meta.ano, tmdb: meta.tmdb })) { aviso('Esse título já está na sua estante.'); return; }
+    salvando = true;
     const ok = f.querySelector('[type=submit]'); ok.disabled = true;
     const capaFinal = novaCapa && novaCapa.startsWith('data:') ? await enviarCapa(novaCapa) : novaCapa; // Blob, se configurado
     const sid = f.dataset.id, ex = sid ? achar(sid) : null;
@@ -287,9 +299,11 @@ function importar(texto) {
   const t0 = Date.now(), limpo = ({ atualizado, base, ...x }) => x;
   const marca = (l, ok) => (l || []).filter(x => x && typeof x.id === 'string' && ok(x)).map((x, i) => ({ criado: t0 - i, ...limpo(x) }));
   const mescla = (novos, atuais) => { const ids = new Set(novos.map(x => x.id)); return [...novos, ...atuais.filter(x => !ids.has(x.id))]; };
-  L.series = mescla(marca(j.series, x => x.nome && Array.isArray(x.eps) && Array.isArray(x.vis)), L.series);
+  const { aceitos, repetidos } = semDuplicados(marca(j.series, x => x.nome && Array.isArray(x.eps) && Array.isArray(x.vis)), L.series);
+  L.series = mescla(aceitos, L.series);
   L.tops = mescla(marca(j.tops, x => Array.isArray(x.itens)), L.tops);
-  save(); dlg.close(); render(); aviso('Backup importado.');
+  save(); dlg.close(); render();
+  aviso(repetidos.length ? `Backup importado. ${repetidos.length} ${repetidos.length === 1 ? 'título repetido foi ignorado' : 'títulos repetidos foram ignorados'}.` : 'Backup importado.');
 }
 dlg.addEventListener('change', e => {
   if (e.target.id !== 'bkarq' || !e.target.files[0]) return;
