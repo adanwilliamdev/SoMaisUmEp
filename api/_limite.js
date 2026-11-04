@@ -9,6 +9,9 @@ const bloqueioMs = (falhas, limite = 5) => (falhas < limite ? 0 : Math.min(15 * 
 const hash = v => crypto.createHash('sha256').update(String(v)).digest('hex').slice(0, 32);
 const ipDe = req => String((req.headers['x-forwarded-for'] || '').split(',')[0] || req.headers['x-real-ip'] || (req.socket && req.socket.remoteAddress) || 'desconhecido').trim();
 const chaves = (req, email) => [{ k: 'ip:' + hash(ipDe(req)), limite: 20 }, ...(email ? [{ k: 'em:' + hash(email), limite: 5 }] : [])];
+// Contadores separados por finalidade (ex.: 'rs' = recuperar senha), para não misturar com os do login.
+const chavesDe = (req, prefixo, { ip = 20, alvo = null, limiteAlvo = 5 } = {}) =>
+  [{ k: prefixo + '-ip:' + hash(ipDe(req)), limite: ip }, ...(alvo ? [{ k: prefixo + ':' + hash(alvo), limite: limiteAlvo }] : [])];
 
 async function verificar(sql, lista) {
   const rows = await sql`select ate from tentativas where chave = any(${lista.map(c => c.k)}) and ate > ${Date.now()}`;
@@ -33,4 +36,4 @@ async function registrarFalha(sql, lista) {
 
 const limpar = (sql, lista) => sql`delete from tentativas where chave = any(${lista.map(c => c.k)})`;
 
-module.exports = { bloqueioMs, chaves, verificar, registrarFalha, limpar, ipDe };
+module.exports = { bloqueioMs, chaves, chavesDe, hash, verificar, registrarFalha, limpar, ipDe };

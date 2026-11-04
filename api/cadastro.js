@@ -22,6 +22,8 @@ module.exports = rota('POST', async (req, res) => {
     q.push(sql`update tops set user_id = ${u.id} where user_id is null`);
   }
   const [criado] = await sql.transaction(q);
+  // Decisão consciente: avisar que o e-mail já existe revela quem tem conta (enumeração de usuários). Num app pessoal,
+  // a clareza para quem tenta se cadastrar de novo vale mais; o login e a recuperação de senha, esses sim, não revelam nada.
   if (!criado.length) throw erro('Este e-mail já está cadastrado. Entre com a sua senha.', 409);
   criarSessao(res, u);
   res.json({ ok: true, usuario: { id: u.id, nome, email } });

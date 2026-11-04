@@ -67,10 +67,33 @@ document.addEventListener('error', mostra, true);
 function revela() { document.querySelectorAll('img.fade:not(.ok)').forEach(i => { if (i.complete && i.naturalWidth) i.classList.add('ok'); }); }
 
 /* ---------- entrar / criar conta ---------- */
+// Link de redefinição de senha do e-mail: "/#redefinir=<token>". O token sai da barra de endereço na hora.
+let tokenReset = null;
+{ const m = /^#redefinir=([a-f0-9]{64})$/.exec(location.hash); if (m) { tokenReset = m[1]; history.replaceState(null, '', location.pathname + location.search); } }
+
 function telaAuth(modo = 'entrar') {
   logado = false; document.body.classList.add('deslogado'); if (dlg.open) dlg.close();
-  app.classList.remove('entra'); app.innerHTML = V.viewAuth(modo);
-  const f = $('#fa'); (modo === 'criar' ? f.nome : f.email).focus();
+  app.classList.remove('entra');
+  app.innerHTML = modo === 'esqueci' ? V.viewEsqueci() : modo === 'redefinir' ? V.viewRedefinir() : V.viewAuth(modo);
+  ({ criar: () => $('#fa').nome, redefinir: () => $('#fr').senha, esqueci: () => $('#fe').email }[modo] || (() => $('#fa').email))().focus();
+}
+async function enviarEsqueci(f) {
+  const m = $('#msg'), btn = f.querySelector('[type=submit]');
+  m.textContent = ''; btn.disabled = true;
+  try {
+    await api('/api/esqueci', { method: 'POST', body: { email: f.email.value } });
+    f.innerHTML = '<p class="aviso">Se esse e-mail tiver uma conta, o link já está a caminho (olhe também o spam). Ele vale por 1 hora.</p>';
+  } catch (e) { m.textContent = e.message; btn.disabled = false; }
+}
+async function enviarRedefinir(f) {
+  const m = $('#msg'), btn = f.querySelector('[type=submit]');
+  m.textContent = '';
+  if (f.senha.value !== f.senha2.value) { m.textContent = 'As senhas não são iguais.'; return; }
+  btn.disabled = true;
+  try {
+    await api('/api/redefinir', { method: 'POST', body: { token: tokenReset, senha: f.senha.value } });
+    tokenReset = null; telaAuth('entrar'); aviso('Senha alterada! Entre com a nova senha.');
+  } catch (e) { m.textContent = e.message; btn.disabled = false; }
 }
 async function enviarAuth(f) {
   const m = $('#msg'), criar = f.dataset.modo === 'criar', btn = f.querySelector('[type=submit]');
@@ -316,8 +339,28 @@ function conta() {
   aberta = null;
   dlg.innerHTML = `<h2>Minha conta</h2><p class="sub topo6"><b>${esc(L.usuario.nome)}</b><br>${esc(L.usuario.email)}</p>
     <p class="aviso">“Sair de todos os dispositivos” encerra a sessão deste e de todos os outros aparelhos onde você entrou.</p>
+    <div class="rodape-dlg esq"><button class="btn sec" data-act="conta-senha">Trocar senha</button><button class="btn sec" data-act="conta-email">Trocar e-mail</button><button class="btn sec perigo" data-act="conta-excluir">Excluir conta</button></div>
     <div class="rodape-dlg"><button class="btn sec perigo" data-act="sair-todos">Sair de todos os dispositivos</button><button class="btn sec" data-act="sair">Sair</button><button class="btn" data-act="fechar">Fechar</button></div>`;
-  dlg.showModal();
+  if (!dlg.open) dlg.showModal();
+}
+function formConta(acao) {
+  dlg.innerHTML = V.viewFormConta(acao, L.usuario.email);
+  if (!dlg.open) dlg.showModal();
+  dlg.querySelector('input').focus();
+}
+async function enviarConta(f) {
+  const m = $('#msgc'), btn = f.querySelector('[type=submit]'), acao = f.dataset.acao;
+  m.textContent = '';
+  if (acao === 'senha' && f.nova.value !== f.nova2.value) { m.textContent = 'As senhas novas não são iguais.'; return; }
+  if (acao === 'excluir' && !confirm('Excluir a conta definitivamente? Isso não pode ser desfeito.')) return;
+  btn.disabled = true;
+  const body = { acao, senha: f.atual.value, ...(acao === 'senha' ? { nova: f.nova.value } : acao === 'email' ? { email: f.email.value } : {}) };
+  try {
+    const r = await api('/api/conta', { method: 'POST', body });
+    if (acao === 'excluir') { dlg.close(); limparSnap(); zerar(); for (const k in onde) delete onde[k]; telaAuth('criar'); aviso('Conta excluída.'); }
+    else if (acao === 'email') { L.usuario.email = r.email; aviso('E-mail alterado.'); conta(); }
+    else { aviso('Senha alterada. Os outros aparelhos foram desconectados.'); conta(); }
+  } catch (e) { m.textContent = e.message; btn.disabled = false; }
 }
 
 /* ---------- tema claro/escuro ---------- */
@@ -387,12 +430,16 @@ document.addEventListener('click', async e => {
   else if (a === 'sair-todos') confirma(b, () => sair(true));
   else if (a === 'backup') backup();
   else if (a === 'conta') conta();
+  else if (a === 'conta-senha' || a === 'conta-email' || a === 'conta-excluir') formConta(a.slice(6));
   else if (a === 'tema') alternarTema();
   else if (a === 'exportar') exportar();
   else if (a === 'importar') importar($('#bk').value);
 });
 
-document.addEventListener('submit', e => { if (e.target.id === 'fa') { e.preventDefault(); enviarAuth(e.target); } });
+document.addEventListener('submit', e => {
+  const f = e.target, enviar = { fa: enviarAuth, fe: enviarEsqueci, fr: enviarRedefinir, fc: enviarConta }[f.id];
+  if (enviar) { e.preventDefault(); enviar(f); }
+});
 
 document.addEventListener('input', e => { if (e.target.id === 'busca') { V.UI.busca = e.target.value; renderLista(); } });
 document.addEventListener('change', e => {
@@ -426,4 +473,4 @@ if ('serviceWorker' in navigator) addEventListener('load', () => navigator.servi
 
 pintaTema();
 ligarRede();
-iniciar();
+if (tokenReset) telaAuth('redefinir'); else iniciar();
