@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs><clipPath id="braco"><rect x="88" y="168" width="336" height="58" rx="12"/></clipPath></defs>
-  <rect width="512" height="512" rx="112" fill="#101433"/>
+  <rect width="512" height="512" rx="112" fill="#161616"/>
   <rect x="88" y="244" width="336" height="176" rx="20" fill="#ffffff"/>
-  <path d="M228 288v88l76-44z" fill="#101433"/>
+  <path d="M228 288v88l76-44z" fill="#161616"/>
   <g transform="rotate(-14 88 226)">
     <g clip-path="url(#braco)">
       <rect x="88" y="168" width="336" height="58" fill="#ffc61a"/>
-      <path d="M132 168h44l-32 58h-44zM220 168h44l-32 58h-44zM308 168h44l-32 58h-44zM396 168h44l-32 58h-44z" fill="#101433"/>
+      <path d="M132 168h44l-32 58h-44zM220 168h44l-32 58h-44zM308 168h44l-32 58h-44zM396 168h44l-32 58h-44z" fill="#161616"/>
     </g>
   </g>
 </svg>

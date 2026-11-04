@@ -370,7 +370,7 @@ const escuro = () => (document.documentElement.dataset.theme || (matchMedia('(pr
 function pintaTema() {
   const b = $('#tema'), d = escuro();
   b.innerHTML = d ? SOL : LUA; b.setAttribute('aria-label', d ? 'Mudar para o tema claro' : 'Mudar para o tema escuro');
-  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = d ? '#0e1020' : '#f1f1f4';
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = d ? '#121212' : '#f2f2f2';
 }
 function alternarTema() {
   const novo = escuro() ? 'light' : 'dark';

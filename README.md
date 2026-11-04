@@ -26,7 +26,7 @@ test/          testes (node --test)
 
 ## Identidade visual (v4.4)
 
-Linguagem de cartaz do cinema brasileiro, em duas cores: **tinta índigo** (`--tx`/`--acc`) e **amarelo-sol** (`--sol`, usado só para progresso, episódios vistos e botão +1). Sombras duras de serigrafia nos botões e pôsteres. Tipografia: **Bricolage Grotesque** (uma só família; títulos em largura condensada 75 / peso 800, texto em largura normal). Todas as cores e raios são tokens em `:root` no topo de `public/style.css` (claro, escuro automático e `data-theme`). O ícone do app é `public/icons/icon.svg` e os PNGs são gerados a partir dele.
+Linguagem de cartaz do cinema brasileiro, em duas cores: **grafite** (`--tx`/`--acc`) e **amarelo-sol** (`--sol`, usado só para progresso, episódios vistos e botão +1). Sombras duras de serigrafia nos botões e pôsteres. Tipografia: **Archivo** (uma só família, títulos em peso 700). Todas as cores e raios são tokens em `:root` no topo de `public/style.css` (claro, escuro automático e `data-theme`). O ícone do app é `public/icons/icon.svg` e os PNGs são gerados a partir dele.
 
 ## 1. Neon
 
