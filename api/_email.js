@@ -22,7 +22,7 @@ async function enviar({ para, assunto, html, texto }) {
 function emailRedefinir(nome, token) {
   const link = `${baseUrl()}/#redefinir=${token}`;
   return {
-    assunto: 'Claquete: redefinir sua senha',
+    assunto: 'SóMaisUmEp: redefinir sua senha',
     texto: `Olá, ${nome}!\n\nPara criar uma nova senha, abra o link (vale por 1 hora e só funciona uma vez):\n${link}\n\nSe não foi você, ignore este e-mail: sua senha continua a mesma.`,
     html: `<p>Olá, ${esc(nome)}!</p><p>Para criar uma nova senha, <a href="${esc(link)}">clique aqui</a>. O link vale por 1 hora e só funciona uma vez.</p><p style="color:#666">Se não foi você, ignore este e-mail: sua senha continua a mesma.</p>`,
     link,

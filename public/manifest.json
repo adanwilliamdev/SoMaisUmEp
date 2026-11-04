@@ -1,7 +1,7 @@
 {
-  "name": "Claquete · séries e filmes",
-  "short_name": "Claquete",
-  "description": "Seu diário de séries e filmes: progresso por episódio, filmes assistidos e tops 10.",
+  "name": "SóMaisUmEp · séries e filmes",
+  "short_name": "SóMaisUmEp",
+  "description": "Marque cada episódio, saiba qual é o próximo e guarde seus filmes e tops 10.",
   "lang": "pt-BR",
   "dir": "ltr",
   "id": "/",
@@ -9,8 +9,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#121212",
-  "theme_color": "#121212",
+  "background_color": "#120f1e",
+  "theme_color": "#120f1e",
   "categories": ["entertainment", "lifestyle"],
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

@@ -23,25 +23,39 @@ const ICO_OK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5
 
 export function cardHtml(s, n = 0) {
   const mv = tp(s) === 'movie', p = pct(s), prx = prox(s), est = estado(s);
-  const chip = est === 'fim' ? '<span class="sel ok">✓ Concluído</span>' : est === 'assistindo' && !mv ? `<span class="sel">${p}%</span>` : '';
+  const chip = est === 'fim' ? '<span class="sel ok">Concluído</span>' : '';
   return `<article class="card" data-id="${s.id}" data-est="${est}" data-i="${Math.min(n, 14)}">
       <div class="poster">
-        <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}<span class="prog"><i data-w="${p}"></i></span></button>
+        <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
         ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
       </div>
+      ${mv ? '' : `<div class="linha" aria-hidden="true"><i data-w="${p}"></i></div>`}
       <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>
     </article>`;
 }
 
-// Cartão largo da fileira "Continuar assistindo"
+// Fileira "Continuar assistindo": o primeiro título é o destaque (o que você viu por último); os outros viram linhas compactas.
 export function cardContinuar(s, n = 0) {
   const p = pct(s), prx = prox(s);
-  return `<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
+  const botao = (cls, miolo) => prx ? `<button class="mais ${cls}" data-act="mais" aria-label="+1 episódio de ${esc(s.nome)}" title="+1 episódio">${miolo}</button>` : '';
+  if (n > 0) {
+    return `<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}</button>
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
         <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
-        <div class="barra"><i data-w="${p}"></i></div><small class="cc-pct">${vis(s)} de ${tot(s)} · ${p}%</small></div>
-      ${prx ? `<button class="mais" data-act="mais" aria-label="+1 episódio de ${esc(s.nome)}" title="+1 episódio">${ICO_MAIS}<b>1</b></button>` : ''}
+        <div class="linha" aria-hidden="true"><i data-w="${p}"></i></div></div>
+      ${botao('', ICO_MAIS + '<b>1</b>')}
+    </article>`;
+  }
+  const urlFundo = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
+  return `<article class="card cc cc-hero" data-id="${s.id}" data-est="${estado(s)}" data-i="0">
+      <div class="cc-fundo" aria-hidden="true" ${urlFundo ? `data-cover="${esc(s.capa)}"` : `data-h="${hue(s.nome)}"`}></div>
+      <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa, true)}</button>
+      <div class="cc-info"><h3>${esc(s.nome)}</h3>
+        <p class="cc-ep">${prx ? `T${prx[0]} E${prx[1]}` : ''}</p>
+        <div class="linha" aria-hidden="true"><i data-w="${p}"></i></div>
+        <small>Próximo episódio: ${vis(s)} de ${tot(s)} vistos</small></div>
+      ${botao('mais-grande', '<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>')}
     </article>`;
 }
 
@@ -57,7 +71,10 @@ export function htmlStats(tipo) {
 export function htmlContinuar(tipo) {
   if (tipo !== 'tv' || UI.busca) return '';
   const c = continuar(L.series);
-  return c.length ? `<h2 class="sec-tit">Continuar assistindo</h2><div class="faixa-cards">${c.map((s, n) => cardContinuar(s, n)).join('')}</div>` : '';
+  if (!c.length) return '';
+  const [destaque, ...resto] = c;
+  return `<section class="fila" aria-labelledby="t-fila"><h2 class="sec-tit" id="t-fila">Continuar assistindo</h2>
+    <div class="fila-grade${resto.length ? '' : ' so-um'}">${cardContinuar(destaque, 0)}${resto.length ? `<div class="fila-resto">${resto.map((s, n) => cardContinuar(s, n + 1)).join('')}</div>` : ''}</div></section>`;
 }
 
 const VAZIO_ICO = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>';
@@ -66,7 +83,7 @@ export function htmlLista(tipo) {
   if (lista.length) return `<div class="grade">${lista.map((s, n) => cardHtml(s, n)).join('')}</div>`;
   if (UI.busca) return `<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${esc(UI.busca)}”.</p></div>`;
   if (total) return `<div class="vazio">${VAZIO_ICO}<p>Nada neste filtro.</p></div>`;
-  return `<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série para acompanhar cada episódio.'}</p>
+  return `<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série e marque o episódio de hoje.'}</p>
     <button class="btn" data-act="nova" data-tipo="${tipo}">${mv ? '+ Adicionar filme' : '+ Adicionar série'}</button></div>`;
 }
 
@@ -82,10 +99,10 @@ export function viewLista(tipo) {
     <div class="stats" id="stats">${htmlStats(tipo)}</div>
     <div id="continuar">${htmlContinuar(tipo)}</div>
     <div class="ferramentas">
+      <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
       <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${esc(UI.busca)}" autocomplete="off" enterkeyhint="search"></label>
       <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => `<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
     </div>
-    <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
     <div id="lista">${htmlLista(tipo)}</div>`;
 }
 
@@ -179,9 +196,15 @@ export function viewStats() {
 }
 
 /* ---------- entrar / criar conta ---------- */
+// Duas colunas: a marca em letras grandes e o formulário.
+const casca = corpo => `<div class="auth"><div class="auth-marca"><span class="auth-logo" aria-hidden="true"></span>
+    <p class="auth-nome"><span class="sr">SóMaisUmEp</span><span aria-hidden="true">Só<br>Mais<br>Um<br>Ep</span></p>
+    <p class="auth-frase">Marque cada episódio e saiba sempre qual é o próximo.</p></div>
+    <div class="auth-form">${corpo}</div></div>`;
+
 export function viewAuth(modo = 'entrar') {
   const nova = modo === 'criar';
-  return `<div class="auth"><div class="auth-logo" aria-hidden="true"><i></i></div><h1>${nova ? 'Criar conta' : 'Entrar'}</h1>
+  return casca(`<h1>${nova ? 'Criar conta' : 'Entrar'}</h1>
     <p class="sub">${nova ? 'Cada pessoa tem a própria estante de séries e filmes.' : 'Entre para acessar sua estante.'}</p>
     <div class="abas" role="group" aria-label="Entrar ou criar conta">
       <button class="chip" data-act="auth-modo" data-m="entrar" aria-pressed="${!nova}" type="button">Entrar</button>
@@ -193,26 +216,26 @@ export function viewAuth(modo = 'entrar') {
       <p class="aviso" id="msg" role="alert"></p>
       <button class="btn" type="submit">${nova ? 'Criar conta e entrar' : 'Entrar'}</button>
     </form>
-    ${nova ? '' : '<p class="auth-rodape"><button type="button" class="link" data-act="auth-modo" data-m="esqueci">Esqueci minha senha</button></p>'}</div>`;
+    ${nova ? '' : '<p class="auth-rodape"><button type="button" class="link" data-act="auth-modo" data-m="esqueci">Esqueci minha senha</button></p>'}`);
 }
 
-export const viewEsqueci = () => `<div class="auth"><div class="auth-logo" aria-hidden="true"><i></i></div><h1>Recuperar senha</h1>
+export const viewEsqueci = () => casca(`<h1>Recuperar senha</h1>
     <p class="sub">Informe o e-mail da sua conta e enviaremos um link para criar uma nova senha.</p>
     <form id="fe" novalidate>
       <label>E-mail<input type="text" name="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="username" required></label>
       <p class="aviso" id="msg" role="alert"></p>
       <button class="btn" type="submit">Enviar link</button>
     </form>
-    <p class="auth-rodape"><button type="button" class="link" data-act="auth-modo" data-m="entrar">Voltar para entrar</button></p></div>`;
+    <p class="auth-rodape"><button type="button" class="link" data-act="auth-modo" data-m="entrar">Voltar para entrar</button></p>`);
 
-export const viewRedefinir = () => `<div class="auth"><div class="auth-logo" aria-hidden="true"><i></i></div><h1>Nova senha</h1>
+export const viewRedefinir = () => casca(`<h1>Nova senha</h1>
     <p class="sub">Escolha uma nova senha para a sua conta. Você será desconectado dos outros aparelhos.</p>
     <form id="fr" novalidate>
       <label>Nova senha (mínimo 8 caracteres)<input type="password" name="senha" autocomplete="new-password" required></label>
       <label>Repita a nova senha<input type="password" name="senha2" autocomplete="new-password" required></label>
       <p class="aviso" id="msg" role="alert"></p>
       <button class="btn" type="submit">Salvar nova senha</button>
-    </form></div>`;
+    </form>`);
 
 // Formulários da conta (dentro do diálogo "Minha conta"): trocar senha, trocar e-mail, excluir conta.
 export function viewFormConta(acao, email = '') {

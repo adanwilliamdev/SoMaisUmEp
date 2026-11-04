@@ -3,28 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Claquete · séries e filmes</title>
-<meta name="description" content="Seu diário de séries e filmes: progresso por episódio, filmes assistidos e tops 10.">
-<meta name="theme-color" content="#121212">
+<title>SóMaisUmEp · séries e filmes</title>
+<meta name="description" content="Marque cada episódio, saiba qual é o próximo e guarde seus filmes e tops 10. Seu diário de séries e filmes.">
+<meta name="theme-color" content="#120f1e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Claquete">
+<meta name="apple-mobile-web-app-title" content="SóMaisUmEp">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap">
 <link rel="stylesheet" href="/style.css">
 <script src="/tema.js"></script>
 <link rel="modulepreload" href="/js/main.js">
 </head>
 <body class="deslogado">
 <div id="faixa" class="faixa" role="status" hidden></div>
-<div class="wrap">
-  <header class="topo">
-    <a class="marca marca-link" href="#series"><i aria-hidden="true"></i> Claquete</a>
+<div class="casa">
+  <header class="rail">
+    <a class="marca marca-link" href="#series" aria-label="SóMaisUmEp, início"><i aria-hidden="true"></i><span>SóMaisUmEp</span></a>
     <nav class="menu" aria-label="Principal">
       <a href="#series"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Séries</span></a>
       <a href="#filmes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg><span>Filmes</span></a>
@@ -36,13 +36,15 @@
       <button class="icone conta" id="conta" data-act="conta" type="button" aria-label="Minha conta"></button>
     </div>
   </header>
-  <main id="app"></main>
-  <footer class="rodape">
-    <span id="status" role="status"></span>
-    <button class="btn sec mini" data-act="backup">Backup</button>
-    <button class="btn sec mini" data-act="sair">Sair</button>
-    <span>Dados e imagens: TMDB; streaming: JustWatch. Este produto usa a API do TMDB, mas não é endossado nem certificado por ele.</span>
-  </footer>
+  <div class="palco">
+    <main id="app"></main>
+    <footer class="rodape">
+      <span id="status" role="status"></span>
+      <button class="btn sec mini" data-act="backup">Backup</button>
+      <button class="btn sec mini" data-act="sair">Sair</button>
+      <span>Dados e imagens: TMDB; streaming: JustWatch. Este produto usa a API do TMDB, mas não é endossado nem certificado por ele.</span>
+    </footer>
+  </div>
 </div>
 <div id="avisos" class="avisos" aria-live="polite"></div>
 <dialog id="dlg"></dialog>

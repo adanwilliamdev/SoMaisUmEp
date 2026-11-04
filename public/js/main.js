@@ -311,10 +311,10 @@ function backup() {
   dlg.showModal();
 }
 function exportar() {
-  const dados = { app: 'claquete', versao: 4, exportado: new Date().toISOString(), series: L.series, tops: L.tops };
+  const dados = { app: 'somaisumep', versao: 4, exportado: new Date().toISOString(), series: L.series, tops: L.tops };
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' }));
-  a.download = `claquete-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `somaisumep-backup-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 function importar(texto) {
@@ -370,7 +370,7 @@ const escuro = () => (document.documentElement.dataset.theme || (matchMedia('(pr
 function pintaTema() {
   const b = $('#tema'), d = escuro();
   b.innerHTML = d ? SOL : LUA; b.setAttribute('aria-label', d ? 'Mudar para o tema claro' : 'Mudar para o tema escuro');
-  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = d ? '#121212' : '#f2f2f2';
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = d ? '#120f1e' : '#f1eef8';
 }
 function alternarTema() {
   const novo = escuro() ? 'light' : 'dark';

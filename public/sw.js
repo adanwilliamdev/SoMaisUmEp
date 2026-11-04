@@ -1,11 +1,11 @@
-// Service worker do Claquete: abre o app rápido e funciona sem internet.
+// Service worker do SóMaisUmEp: abre o app rápido e funciona sem internet.
 // Imagens e fontes de outros sites são buscadas pelo próprio service worker, por isso esses
 // endereços também precisam estar em connect-src no vercel.json.
 // Dados (/api) nunca passam pelo cache: o app guarda a própria cópia no aparelho (loja.js).
 // Ao publicar uma versão nova, troque o número abaixo para renovar o cache.
 // Código (js/css/html/manifest) usa REDE PRIMEIRO: assim todos os módulos vêm do mesmo deploy e nunca se misturam
 // versões; o cache só serve quando está offline. Ícones e imagens usam cache primeiro.
-const VERSAO = 'claquete-v4.4.0';
+const VERSAO = 'somaisumep-v5.0.0';
 const SHELL = VERSAO + '-shell', IMAGENS = VERSAO + '-img', EXTERNO = VERSAO + '-ext';
 const ARQUIVOS = [
   '/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png',

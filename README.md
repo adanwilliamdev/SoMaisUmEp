@@ -1,4 +1,4 @@
-# Claquete
+# SóMaisUmEp
 
 Seu diário de séries e filmes: progresso por episódio e temporada, filmes assistidos, tops 10 e estatísticas.
 Front-end estático (PWA instalável) + funções serverless da Vercel + Postgres no Neon. Cada pessoa cria a própria conta e tem a própria biblioteca.
@@ -11,7 +11,7 @@ scripts/       migrar.js (aplica as migrações no banco)
 test/          testes (node --test)
 ```
 
-## O que tem (v4.4)
+## O que tem (v5.0)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
 - **Estante**: busca por nome, ordenação (recentes, nome, nota, último visto), filtros e a fileira "Continuar assistindo".
@@ -20,7 +20,8 @@ test/          testes (node --test)
 - **Estatísticas**: tempo assistido, contagens, nota média e gráfico por mês.
 - **Tops 10**: arraste a alça ⋮⋮ (ou use as setas do teclado com a alça selecionada).
 - **Backup**: baixar/importar arquivo `.json`.
-- **Tema claro/escuro** pelo botão no topo.
+- **Layout novo (v5)**: barra lateral no computador e abas embaixo no celular; o título que você viu por último vira o destaque "Só mais um ep" (+1 episódio com um toque); detalhes abrem num painel lateral (folha no celular); o próximo episódio de cada temporada fica marcado.
+- **Tema claro/escuro** pelo botão no canto da barra (segue o do aparelho por padrão).
 - **Contas**: senha com scrypt, bloqueio temporário após tentativas erradas (por IP e por e-mail, guardado no banco), "Sair de todos os dispositivos", **"Esqueci minha senha"** por e-mail, trocar senha, trocar e-mail e **excluir conta** (apaga tudo, inclusive as capas).
 - **Segurança de dados**: salvamento com nova tentativa automática, aviso de "sem conexão", cópia local, e detecção de edição em dois aparelhos (campo `atualizado`); ao voltar para a aba, os dados são recarregados.
 
@@ -68,7 +69,7 @@ Com o Blob conectado, as capas que você envia vão para o Blob e só o link fic
 ### Recuperação de senha por e-mail (opcional)
 
 1. Crie uma conta no [Resend](https://resend.com), verifique o seu domínio e gere uma chave de API.
-2. Defina `RESEND_API_KEY`, `EMAIL_FROM` (ex.: `Claquete <contato@seudominio.com>`) e `APP_URL` (o endereço do site, sem barra no final) e faça um **Redeploy**.
+2. Defina `RESEND_API_KEY`, `EMAIL_FROM` (ex.: `SóMaisUmEp <contato@seudominio.com>`) e `APP_URL` (o endereço do site, sem barra no final) e faça um **Redeploy**.
 
 O link enviado vale por 1 hora, funciona uma vez só e encerra as sessões abertas em todos os aparelhos. O banco guarda só o hash do token. O pedido responde sempre igual, exista o e-mail ou não, e é limitado a 3 por e-mail e 10 por IP (a cada 15 min, com bloqueio crescente).
 

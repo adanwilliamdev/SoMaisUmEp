@@ -52,7 +52,7 @@ const base = extra => (t, v) => {
   if (/insert into tentativas/.test(t)) return [{ falhas: 1 }];
   return extra ? extra(t, v) || [] : [];
 };
-const envEmail = () => Object.assign(process.env, { RESEND_API_KEY: 're_teste', EMAIL_FROM: 'Claquete <oi@claquete.test>', APP_URL: 'https://claquete.test/' });
+const envEmail = () => Object.assign(process.env, { RESEND_API_KEY: 're_teste', EMAIL_FROM: 'SóMaisUmEp <oi@somaisumep.test>', APP_URL: 'https://somaisumep.test/' });
 
 /* ---------- ETag ---------- */
 test('etag: igual para os mesmos dados, diferente quando algo muda', () => {
@@ -128,7 +128,7 @@ test('esqueci: responde igual para e-mail existente e inexistente; só o existen
     assert.deepEqual(b.body, { ok: true }); assert.equal(enviados.length, 1);
     assert.equal(enviados[0].url, 'https://api.resend.com/emails');
     assert.deepEqual(enviados[0].body.to, ['ana@exemplo.com']);
-    const token = /https:\/\/claquete\.test\/#redefinir=([a-f0-9]{64})/.exec(enviados[0].body.text)[1];
+    const token = /https:\/\/somaisumep\.test\/#redefinir=([a-f0-9]{64})/.exec(enviados[0].body.text)[1];
     const ins = banco.consultas.find(c => /insert into reset_senha/.test(c.texto));
     assert.ok(ins.vals.includes(T.hashToken(token)) && !ins.vals.includes(token), 'o banco guarda só o hash');
   } finally { global.fetch = fetchOrig; }
