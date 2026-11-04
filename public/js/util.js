@@ -4,7 +4,7 @@ export const uid = () => crypto.randomUUID();
 export const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
 
 // Texto de status no rodapé
-export function status(t, erro) { const el = $('#status'); if (el) { el.textContent = t; el.style.color = erro ? '#e5484d' : ''; } }
+export function status(t, erro) { const el = $('#status'); if (el) { el.textContent = t; el.style.color = erro ? 'var(--perigo)' : ''; } }
 
 // Mensagem rápida (some sozinha)
 export function aviso(texto, ms = 4200) {

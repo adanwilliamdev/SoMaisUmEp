@@ -11,7 +11,7 @@ scripts/       migrar.js (aplica as migrações no banco)
 test/          testes (node --test)
 ```
 
-## O que tem (v4.2)
+## O que tem (v4.4)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
 - **Estante**: busca por nome, ordenação (recentes, nome, nota, último visto), filtros e a fileira "Continuar assistindo".
@@ -23,6 +23,10 @@ test/          testes (node --test)
 - **Tema claro/escuro** pelo botão no topo.
 - **Contas**: senha com scrypt, bloqueio temporário após tentativas erradas (por IP e por e-mail, guardado no banco), "Sair de todos os dispositivos", **"Esqueci minha senha"** por e-mail, trocar senha, trocar e-mail e **excluir conta** (apaga tudo, inclusive as capas).
 - **Segurança de dados**: salvamento com nova tentativa automática, aviso de "sem conexão", cópia local, e detecção de edição em dois aparelhos (campo `atualizado`); ao voltar para a aba, os dados são recarregados.
+
+## Identidade visual (v4.4)
+
+Linguagem de cartaz do cinema brasileiro, em duas cores: **tinta índigo** (`--tx`/`--acc`) e **amarelo-sol** (`--sol`, usado só para progresso, episódios vistos e botão +1). Sombras duras de serigrafia nos botões e pôsteres. Tipografia: **Bricolage Grotesque** (uma só família; títulos em largura condensada 75 / peso 800, texto em largura normal). Todas as cores e raios são tokens em `:root` no topo de `public/style.css` (claro, escuro automático e `data-theme`). O ícone do app é `public/icons/icon.svg` e os PNGs são gerados a partir dele.
 
 ## 1. Neon
 

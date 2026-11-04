@@ -5,7 +5,7 @@
 // Ao publicar uma versão nova, troque o número abaixo para renovar o cache.
 // Código (js/css/html/manifest) usa REDE PRIMEIRO: assim todos os módulos vêm do mesmo deploy e nunca se misturam
 // versões; o cache só serve quando está offline. Ícones e imagens usam cache primeiro.
-const VERSAO = 'claquete-v4.3.0';
+const VERSAO = 'claquete-v4.4.0';
 const SHELL = VERSAO + '-shell', IMAGENS = VERSAO + '-img', EXTERNO = VERSAO + '-ext';
 const ARQUIVOS = [
   '/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png',
