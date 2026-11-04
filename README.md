@@ -10,7 +10,7 @@ neon/          schema.sql
 test/          testes (node --test)
 ```
 
-## O que tem (v4.1: layout renovado)
+## O que tem (v4.2)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
 - **Estante**: busca por nome, ordenação (recentes, nome, nota, último visto), filtros e a fileira "Continuar assistindo".
@@ -63,7 +63,9 @@ Com o Blob conectado, as capas que você envia vão para o Blob e só o link fic
 
 ## Cache e atualização do app
 
-CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker mostra a versão em cache na hora e busca a nova em segundo plano; para forçar a renovação do cache offline em um deploy novo, troque `VERSAO` em `public/sw.js`.
+CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker busca o código **na rede primeiro** (todos os módulos do mesmo deploy, sem misturar versões) e só usa a cópia guardada quando está offline; ícones e imagens vêm do cache. Para renovar o cache offline em um deploy novo, troque `VERSAO` em `public/sw.js`.
+
+As respostas do TMDb (`/api/tmdb`) ficam em cache por 24 h na Vercel (`s-maxage`) e 1 h no navegador. O CSP não permite `style=""` no HTML: estilos que dependem de dados usam `data-h`/`data-i`/`data-w`/`data-cover`, aplicados por `aplicarEstilos()` em `public/js/util.js`.
 
 ## Rodar localmente
 

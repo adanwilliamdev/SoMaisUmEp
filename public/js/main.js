@@ -1,4 +1,4 @@
-import { $, esc, uid, status, aviso, guardar, ler } from './util.js';
+import { $, esc, uid, status, aviso, guardar, ler, observarEstilos } from './util.js';
 import { api, tmdb } from './api.js';
 import { L, achar, save, carregar, ligar, ligarRede, recarregarSuave, limparSnap, zerar, pendente } from './loja.js';
 import { tp, vis, estado, prox, registrarProgresso, acharDuplicado, semDuplicados } from './regras.js';
@@ -7,6 +7,7 @@ import { enviarCapa, migrarCapas } from './capas.js';
 import { atualizarDoTmdb, atualizarAutomatico, completarDuracoes, ondeAssistir } from './tmdbsync.js';
 
 const app = $('#app'), dlg = $('#dlg');
+observarEstilos(); // aplica os estilos vindos de data-* (o CSP não aceita style="" no HTML)
 let logado = false, aberta = null, novaCapa, animar = true;
 const onde = {}; // id -> 'carregando' | 'erro' | dados | null (cache da tela "Onde assistir")
 
@@ -152,11 +153,11 @@ function formSerie(id, tipoNovo) {
   dlg.innerHTML = `<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2><br>
     <form id="f" data-id="${s ? s.id : ''}">
       <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? esc(s.nome) : ''}"></label>
-      <label>Buscar no TMDb (opcional)<span style="display:flex;gap:8px"><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
+      <label>Buscar no TMDb (opcional)<span class="linha-busca"><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
       <div id="res" class="res"></div>
       <div id="dup"></div>
       <div id="blocotemp" ${mv ? 'hidden' : ''}><label>Número de temporadas<input type="number" name="nt" min="1" max="30" value="${s ? s.eps.length : 1}"></label>
-      <div style="font-size:.82rem;font-weight:600;color:var(--mut);margin-bottom:6px">Episódios por temporada</div>
+      <div class="rotulo-eps">Episódios por temporada</div>
       <div class="eps-inputs" id="temps"></div><br></div>
       <label>Capa (opcional)<input type="file" accept="image/*" name="capa"></label>
       <div id="previa"></div>
@@ -176,7 +177,7 @@ function formSerie(id, tipoNovo) {
     $('#temps').innerHTML = Array.from({ length: n }, (_, i) =>
       `<label>T${i + 1}<input type="number" min="1" max="999" value="${(arr && arr[i]) || atual[i] || (s && s.eps[i]) || 10}"></label>`).join('');
   };
-  const previa = () => { $('#previa').innerHTML = novaCapa ? `<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div style="width:56px;aspect-ratio:2/3;border-radius:6px;overflow:hidden"><img src="${esc(novaCapa)}" alt="" style="width:100%;height:100%;object-fit:cover"></div><button type="button" class="btn sec mini" data-act="semcapa">Remover capa</button></div>` : ''; };
+  const previa = () => { $('#previa').innerHTML = novaCapa ? `<div class="previa-cab"><div class="previa-img"><img src="${esc(novaCapa)}" alt="" ></div><button type="button" class="btn sec mini" data-act="semcapa">Remover capa</button></div>` : ''; };
   desenha(); previa();
   f.nt.addEventListener('input', () => desenha());
   f.nome.addEventListener('input', () => avisoDup({ tipo, nome: f.nome.value, ano: meta.ano, tmdb: meta.tmdb }));
@@ -277,7 +278,7 @@ document.addEventListener('pointercancel', soltar);
 /* ---------- backup ---------- */
 function backup() {
   aberta = null;
-  dlg.innerHTML = `<h2>Backup</h2><p class="sub" style="margin-top:6px">Baixe um arquivo com todos os seus dados ou importe um backup (inclusive o da versão antiga). Itens com o mesmo id são substituídos; os demais são mantidos.</p>
+  dlg.innerHTML = `<h2>Backup</h2><p class="sub topo6">Baixe um arquivo com todos os seus dados ou importe um backup (inclusive o da versão antiga). Itens com o mesmo id são substituídos; os demais são mantidos.</p>
     <div class="rodape-dlg esq"><button class="btn" data-act="exportar">Baixar backup (.json)</button>
       <label class="btn sec arq">Importar arquivo…<input type="file" id="bkarq" accept=".json,application/json" hidden></label></div>
     <details class="colar"><summary>Colar o texto de um backup</summary>
@@ -313,7 +314,7 @@ dlg.addEventListener('change', e => {
 /* ---------- conta ---------- */
 function conta() {
   aberta = null;
-  dlg.innerHTML = `<h2>Minha conta</h2><p class="sub" style="margin-top:6px"><b>${esc(L.usuario.nome)}</b><br>${esc(L.usuario.email)}</p>
+  dlg.innerHTML = `<h2>Minha conta</h2><p class="sub topo6"><b>${esc(L.usuario.nome)}</b><br>${esc(L.usuario.email)}</p>
     <p class="aviso">“Sair de todos os dispositivos” encerra a sessão deste e de todos os outros aparelhos onde você entrou.</p>
     <div class="rodape-dlg"><button class="btn sec perigo" data-act="sair-todos">Sair de todos os dispositivos</button><button class="btn sec" data-act="sair">Sair</button><button class="btn" data-act="fechar">Fechar</button></div>`;
   dlg.showModal();

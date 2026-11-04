@@ -32,6 +32,9 @@ async function chamar(path, params = {}) {
   return r.json();
 }
 
+// Dados do TMDb mudam pouco: cache de 24 h na Vercel e 1 h no navegador (só em respostas bem-sucedidas).
+const cache = (res, json) => { res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800'); return res.json(json); };
+
 module.exports = rota('GET', async (req, res) => {
   const { acao, tipo, q, id } = req.query;
   if (!['tv', 'movie'].includes(tipo)) throw erro('Tipo inválido');
@@ -39,11 +42,11 @@ module.exports = rota('GET', async (req, res) => {
     const t = String(q || '').trim().slice(0, 100);
     if (!t) throw erro('Digite um nome para buscar');
     const d = await chamar('/search/' + tipo, { query: t });
-    return res.json({ resultados: d.results.slice(0, 6).map(x => ({ id: x.id, nome: x.name || x.title, ano: ano(x), poster: poster(x.poster_path) })) });
+    return cache(res, { resultados: d.results.slice(0, 6).map(x => ({ id: x.id, nome: x.name || x.title, ano: ano(x), poster: poster(x.poster_path) })) });
   }
   if (acao === 'detalhe' && /^\d{1,9}$/.test(String(id || ''))) {
     const d = await chamar('/' + tipo + '/' + id);
-    return res.json({
+    return cache(res, {
       tmdb: d.id, nome: d.name || d.title, ano: ano(d), sinopse: d.overview || '', poster: poster(d.poster_path),
       nota: d.vote_average ? Math.round(d.vote_average * 10) / 10 : null,
       duracao: d.runtime || (d.episode_run_time || [])[0] || (d.last_episode_to_air && d.last_episode_to_air.runtime) || null,
@@ -55,7 +58,7 @@ module.exports = rota('GET', async (req, res) => {
     const d = await chamar('/' + tipo + '/' + id + '/watch/providers');
     const r = (d.results || {})[PAIS] || {};
     const lista = a => (a || []).slice(0, 12).map(p => ({ nome: p.provider_name, logo: p.logo_path ? 'https://image.tmdb.org/t/p/w92' + p.logo_path : null }));
-    return res.json({ pais: PAIS, link: r.link || null, assinatura: lista(r.flatrate), gratis: lista(r.free), alugar: lista(r.rent), comprar: lista(r.buy) });
+    return cache(res, { pais: PAIS, link: r.link || null, assinatura: lista(r.flatrate), gratis: lista(r.free), alugar: lista(r.rent), comprar: lista(r.buy) });
   }
   throw erro('Ação inválida');
 });

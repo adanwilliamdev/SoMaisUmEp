@@ -3,7 +3,9 @@
 // endereços também precisam estar em connect-src no vercel.json.
 // Dados (/api) nunca passam pelo cache: o app guarda a própria cópia no aparelho (loja.js).
 // Ao publicar uma versão nova, troque o número abaixo para renovar o cache.
-const VERSAO = 'claquete-v4.1.1';
+// Código (js/css/html/manifest) usa REDE PRIMEIRO: assim todos os módulos vêm do mesmo deploy e nunca se misturam
+// versões; o cache só serve quando está offline. Ícones e imagens usam cache primeiro.
+const VERSAO = 'claquete-v4.2.0';
 const SHELL = VERSAO + '-shell', IMAGENS = VERSAO + '-img', EXTERNO = VERSAO + '-ext';
 const ARQUIVOS = [
   '/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png',
@@ -30,6 +32,19 @@ async function antigoEnovo(req, nome, limite) {
   return guardado || (await rede) || Response.error();
 }
 
+// Rede primeiro; se falhar (offline), usa a cópia guardada.
+async function redePrimeiro(req, nome) {
+  const c = await caches.open(nome);
+  try {
+    const r = await fetch(req);
+    if (r && r.ok) c.put(req, r.clone());
+    return r;
+  } catch (err) {
+    return (await c.match(req)) || Response.error();
+  }
+}
+const CODIGO = /\.(?:js|css|json|html)$/;
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -42,7 +57,7 @@ self.addEventListener('fetch', e => {
         .catch(() => caches.match('/')));
       return;
     }
-    e.respondWith(antigoEnovo(req, SHELL));
+    e.respondWith(CODIGO.test(url.pathname) ? redePrimeiro(req, SHELL) : antigoEnovo(req, SHELL));
     return;
   }
   if (url.hostname === 'image.tmdb.org' || url.hostname.endsWith('.public.blob.vercel-storage.com')) { e.respondWith(antigoEnovo(req, IMAGENS, 250)); return; }

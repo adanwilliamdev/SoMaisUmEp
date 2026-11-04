@@ -25,3 +25,23 @@ export const guardar = (k, v) => { try { localStorage.setItem(k, typeof v === 's
 export const ler = (k, padrao = null) => { try { const v = localStorage.getItem(k); return v == null ? padrao : v; } catch (e) { return padrao; } };
 export const lerJSON = (k, padrao = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? padrao; } catch (e) { return padrao; } };
 export const apagar = k => { try { localStorage.removeItem(k); } catch (e) { /* ignora */ } };
+
+// Estilos que dependem de dados (cor, atraso, largura, capa). Como o CSP não aceita style="" no HTML,
+// o HTML traz data-h / data-i / data-w / data-cover e estes viram propriedades CSS logo após a inserção.
+const ESTILOS = '[data-h],[data-i],[data-w],[data-cover]';
+export function aplicarEstilos(raiz = document) {
+  const lista = raiz.matches && raiz.matches(ESTILOS) ? [raiz] : [];
+  lista.push(...raiz.querySelectorAll(ESTILOS));
+  for (const el of lista) {
+    const d = el.dataset;
+    if (d.h != null) el.style.setProperty('--h', d.h);
+    if (d.i != null) el.style.setProperty('--i', d.i);
+    if (d.w != null) el.style.width = d.w + '%';
+    if (d.cover != null) el.style.setProperty('--cover', `url("${d.cover.replace(/["\\\n]/g, '')}")`);
+  }
+}
+export function observarEstilos() {
+  aplicarEstilos();
+  new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) aplicarEstilos(n); })
+    .observe(document.body, { childList: true, subtree: true });
+}

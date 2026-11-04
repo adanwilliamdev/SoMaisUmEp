@@ -7,7 +7,7 @@ export const UI = { filtro: 'todas', busca: '', ordem: ler('claq:ordem', 'recent
 
 export const capa = (nome, img, urgente) => img
   ? `<img class="fade" src="${esc(img)}" alt="" decoding="async" ${urgente ? 'fetchpriority="high"' : 'loading="lazy"'}>`
-  : `<div class="ph" style="--h:${hue(nome)}"><span>${esc((String(nome).trim()[0] || '?').toUpperCase())}</span></div>`;
+  : `<div class="ph" data-h="${hue(nome)}"><span>${esc((String(nome).trim()[0] || '?').toUpperCase())}</span></div>`;
 
 export function esqueleto(hash) {
   const caixa = n => Array.from({ length: n }, () => '<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>').join('');
@@ -24,9 +24,9 @@ const ICO_OK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5
 export function cardHtml(s, n = 0) {
   const mv = tp(s) === 'movie', p = pct(s), prx = prox(s), est = estado(s);
   const chip = est === 'fim' ? '<span class="sel ok">✓ Concluído</span>' : est === 'assistindo' && !mv ? `<span class="sel">${p}%</span>` : '';
-  return `<article class="card" data-id="${s.id}" data-est="${est}" style="--i:${Math.min(n, 14)}">
+  return `<article class="card" data-id="${s.id}" data-est="${est}" data-i="${Math.min(n, 14)}">
       <div class="poster">
-        <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}<span class="prog"><i style="width:${p}%"></i></span></button>
+        <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}<span class="prog"><i data-w="${p}"></i></span></button>
         ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
       </div>
       <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>
@@ -36,11 +36,11 @@ export function cardHtml(s, n = 0) {
 // Cartão largo da fileira "Continuar assistindo"
 export function cardContinuar(s, n = 0) {
   const p = pct(s), prx = prox(s);
-  return `<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" style="--i:${Math.min(n, 14)}">
+  return `<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}</button>
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
         <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
-        <div class="barra"><i style="width:${p}%"></i></div><small class="cc-pct">${vis(s)} de ${tot(s)} · ${p}%</small></div>
+        <div class="barra"><i data-w="${p}"></i></div><small class="cc-pct">${vis(s)} de ${tot(s)} · ${p}%</small></div>
       ${prx ? `<button class="mais" data-act="mais" aria-label="+1 episódio de ${esc(s.nome)}" title="+1 episódio">${ICO_MAIS}<b>1</b></button>` : ''}
     </article>`;
 }
@@ -104,16 +104,16 @@ export function htmlDetalhe(s, onde) {
   const temps = mv ? `<div class="temp"><button class="btn${vis(s) ? ' sec' : ''}" data-act="visto">${vis(s) ? 'Desmarcar como visto' : 'Marcar como visto'}</button></div>` : s.eps.map((n, i) => {
     let c = '';
     for (let e = 1; e <= n; e++) c += `<button class="ep" data-act="ep" data-s="${i}" data-e="${e}" aria-pressed="${s.vis[i] >= e}" aria-label="Episódio ${e}">${e}</button>`;
-    return `<div class="temp"><div class="temp-cab"><b>Temporada ${i + 1} <span style="color:var(--mut);font-weight:400">· ${s.vis[i]}/${n}</span></b>
+    return `<div class="temp"><div class="temp-cab"><b>Temporada ${i + 1} <span class="mut-leve">· ${s.vis[i]}/${n}</span></b>
       <button class="btn sec mini" data-act="temp-tudo" data-s="${i}">Marcar toda</button>
       <button class="btn sec mini" data-act="temp-zero" data-s="${i}">Zerar</button></div><div class="eps">${c}</div></div>`;
   }).join('');
   const urlHero = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
   const pilulas = [mv ? 'Filme' : 'Série', s.ano, s.nota ? '★ ' + s.nota : '', s.duracao ? s.duracao + (mv ? ' min' : ' min/ep') : ''].filter(Boolean).map(x => `<span class="pilula">${esc(x)}</span>`).join('');
   return `<div data-id="${s.id}">
-    <div class="hero" style="${urlHero ? `--cover:url(${s.capa})` : `--h:${hue(s.nome)}`}"></div>
+    <div class="hero" ${urlHero ? `data-cover="${esc(s.capa)}"` : `data-h="${hue(s.nome)}"`}></div>
     <div class="cab"><div class="mini-capa">${capa(s.nome, s.capa, true)}</div>
-      <div class="cab-info"><h2>${esc(s.nome)}</h2><div class="pilulas">${pilulas}</div><div class="barra"><i style="width:${p}%"></i></div>
+      <div class="cab-info"><h2>${esc(s.nome)}</h2><div class="pilulas">${pilulas}</div><div class="barra"><i data-w="${p}"></i></div>
       <small>${mv ? rotulo(s) : vis(s) + ' de ' + tot(s) + ' episódios · ' + rotulo(s)}</small></div></div>
     ${s.sinopse ? `<p class="sin">${esc(s.sinopse)}</p>` : ''}
     ${temps}
@@ -139,9 +139,9 @@ export function viewTops() {
         <span class="n">${i + 1}</span><div class="p">${capa(it.t, s && s.capa)}</div><span class="t">${esc(it.t)}</span>
         <span class="mv"><button data-act="tira" aria-label="Remover ${esc(it.t)}">✕</button></span></li>`;
     }).join('');
-    return `<section class="top" data-top="${t.id}" style="--i:${Math.min(n, 8)}">
+    return `<section class="top" data-top="${t.id}" data-i="${Math.min(n, 8)}">
       <div class="top-cab"><h2>${esc(t.nome)}</h2><small>${t.itens.length}/10</small><button class="btn sec perigo mini" data-act="del-top">Excluir</button></div>
-      ${li ? `<ol>${li}</ol>` : '<p style="color:var(--mut);font-size:.9rem">Lista vazia. Adicione seu primeiro título.</p>'}
+      ${li ? `<ol>${li}</ol>` : '<p class="mut-peq">Lista vazia. Adicione seu primeiro título.</p>'}
       ${t.itens.length < 10 ? `<div class="add"><input type="text" list="nomes" maxlength="80" placeholder="Série ou filme" aria-label="Adicionar título"><button class="btn mini" data-act="add-item">Adicionar</button></div>` : ''}
     </section>`;
   }).join('');
@@ -173,7 +173,7 @@ export function viewStats() {
   return `<div class="cabeca"><div><h1>Estatísticas</h1><p class="sub">Seu histórico de séries e filmes.</p></div></div>
     <div class="stats grande">${cards.map(([n, t]) => `<div class="stat"><b>${n}</b><span>${t}</span></div>`).join('')}</div>
     ${r.semDuracao ? `<p class="aviso">${r.semDuracao} ${r.semDuracao === 1 ? 'título' : 'títulos'} sem duração informada não entram na conta de tempo. ${faltam ? `<button class="btn sec mini" data-act="completar-duracoes">Completar pelo TMDb</button>` : 'Edite o título ou ligue-o ao TMDb para completar.'}</p>` : ''}
-    <h2 class="sec-tit">Por mês <small style="font-weight:400;color:var(--mut)">· ${totalAno} nos últimos 12 meses</small></h2>
+    <h2 class="sec-tit">Por mês <small class="mut-leve">· ${totalAno} nos últimos 12 meses</small></h2>
     <div class="graf-caixa">${graficoMeses(meses)}</div>
     <p class="aviso">O gráfico conta episódios e filmes marcados a partir desta versão do app; o que você já tinha marcado antes não tem data.</p>`;
 }
