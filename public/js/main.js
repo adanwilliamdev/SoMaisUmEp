@@ -1,10 +1,12 @@
-import { $, esc, uid, status, aviso, guardar, ler, observarEstilos } from './util.js';
+import { $, esc, uid, status, aviso, avisoDesfazer, desfazerUltimo, guardar, ler, lerJSON, observarEstilos } from './util.js';
 import { api, tmdb } from './api.js';
 import { L, achar, save, carregar, ligar, ligarRede, recarregarSuave, limparSnap, zerar, pendente } from './loja.js';
-import { tp, vis, estado, prox, registrarProgresso, acharDuplicado, semDuplicados } from './regras.js';
+import { tp, vis, estado, prox, registrarProgresso, acharDuplicado, semDuplicados, naEstante, sementes, lancamento, proximosLancamentos, hojeISO } from './regras.js';
 import * as V from './views.js';
 import { enviarCapa, migrarCapas } from './capas.js';
-import { atualizarDoTmdb, atualizarAutomatico, completarDuracoes, ondeAssistir } from './tmdbsync.js';
+import { atualizarDoTmdb, atualizarAutomatico, completarDuracoes, ondeAssistir, emAlta, parecidos, detalheTmdb } from './tmdbsync.js';
+import { lerZip, lerArquivo, consolidar, resumoImportacao, montarTitulo } from './importacao.js';
+import { gerarImagem, enviarImagem, definirLink, urlPublica, copiar } from './compartilhar.js';
 
 const app = $('#app'), dlg = $('#dlg');
 observarEstilos(); // aplica os estilos vindos de data-* (o CSP não aceita style="" no HTML)
@@ -12,7 +14,7 @@ let logado = false, aberta = null, novaCapa, animar = true;
 const onde = {}; // id -> 'carregando' | 'erro' | dados | null (cache da tela "Onde assistir")
 
 /* ---------- abas e renderização ---------- */
-const aba = () => (['#tops', '#filmes', '#stats'].includes(location.hash) ? location.hash : '#series');
+const aba = () => (['#tops', '#filmes', '#stats', '#descobrir'].includes(location.hash) ? location.hash : '#series');
 const tipoAtual = () => (aba() === '#filmes' ? 'movie' : 'tv');
 const naLista = () => aba() === '#series' || aba() === '#filmes';
 
@@ -21,8 +23,9 @@ function render() {
   const a = aba(), y = scrollY, manter = !animar;
   document.querySelectorAll('.menu a').forEach(l => { if (l.getAttribute('href') === a) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
   app.classList.toggle('entra', animar); animar = false; // anima só ao trocar de aba, não a cada +1 episódio
-  app.innerHTML = a === '#tops' ? V.viewTops() : a === '#stats' ? V.viewStats() : V.viewLista(tipoAtual());
+  app.innerHTML = a === '#tops' ? V.viewTops() : a === '#stats' ? V.viewStats() : a === '#descobrir' ? V.viewDescobrir(descDados()) : V.viewLista(tipoAtual());
   revela();
+  if (a === '#descobrir') carregaDescobrir(V.UI.descTipo);
   if (manter) scrollTo({ top: y, behavior: 'instant' });
 }
 
@@ -31,7 +34,7 @@ function renderLista(anim = false) {
   if (!naLista() || !$('#lista')) return render();
   const t = tipoAtual();
   app.classList.toggle('entra', anim);
-  $('#stats').innerHTML = V.htmlStats(t); $('#continuar').innerHTML = V.htmlContinuar(t); $('#lista').innerHTML = V.htmlLista(t);
+  $('#stats').innerHTML = V.htmlStats(t); $('#proximos').innerHTML = V.htmlProximos(t); $('#continuar').innerHTML = V.htmlContinuar(t); $('#lista').innerHTML = V.htmlLista(t);
   document.querySelectorAll('[data-act="filtro"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === V.UI.filtro));
   revela();
 }
@@ -48,14 +51,22 @@ function patchCard(id, mudouEstado) {
   });
   revela();
 }
-const refresca = () => { if (naLista()) renderLista(); else if (aba() === '#stats') render(); };
+const refresca = () => { if (naLista()) renderLista(); else if (aba() === '#stats') render(); else if (aba() === '#descobrir') pintaDesc(); };
 
 // Marca progresso: registra histórico, salva e atualiza só o que mudou na tela.
-function mexer(s, fn) {
-  const antes = vis(s), est = estado(s);
+// `rotuloDesfazer`: texto do aviso com botão "Desfazer" (só fora do painel de detalhes, onde o aviso ficaria atrás dele).
+function mexer(s, fn, rotuloDesfazer) {
+  const antes = vis(s), est = estado(s), ant = { vis: [...s.vis], visto_em: s.visto_em, hist: s.hist };
   fn(); registrarProgresso(s, antes); save();
   patchCard(s.id, est !== estado(s));
   if (aberta === s.id) pintaDetalhe();
+  if (rotuloDesfazer && !dlg.open) avisoDesfazer(rotuloDesfazer, () => {
+    const x = achar(s.id); if (!x) return;                              // foi excluído nesse meio tempo
+    const e0 = estado(x);
+    x.vis = ant.vis;
+    for (const k of ['visto_em', 'hist']) { if (ant[k] === undefined) delete x[k]; else x[k] = ant[k]; }
+    save(); patchCard(x.id, e0 !== estado(x));
+  });
 }
 
 addEventListener('hashchange', () => { animar = true; V.UI.busca = ''; scrollTo({ top: 0, behavior: 'instant' }); render(); });
@@ -112,7 +123,7 @@ async function sair(todos = false) {
   if (pendente() && !confirm('Há alterações que ainda não foram enviadas. Sair mesmo assim?')) return;
   try { await api('/api/logout', { method: 'POST', body: { todos } }); }
   catch (e) { if (todos) { aviso('Sem conexão: não foi possível encerrar as sessões agora.'); return; } }
-  limparSnap(); zerar(); for (const k in onde) delete onde[k]; telaAuth('entrar');
+  limparSnap(); zerar(); for (const k in onde) delete onde[k]; desc.tv = desc.movie = null; telaAuth('entrar');
 }
 
 /* ---------- início ---------- */
@@ -131,11 +142,24 @@ async function iniciar() {
 }
 // Tarefas em segundo plano depois de abrir: capas para o Blob e temporadas novas.
 async function depois() {
+  avisosDeHoje();
   try { await migrarCapas(); } catch (e) { /* tenta de novo na próxima abertura */ }
   await atualizarAutomatico({ aoMudar: (s, r) => {
-    aviso(r.voltouAssistir ? `Novos episódios de ${s.nome}!` : `${s.nome} atualizado (${r.mudou.join(', ')}).`);
+    const l = lancamento(s);
+    aviso(r.voltouAssistir || r.agendou ? `Novos episódios de ${s.nome}!${l ? ' ' + l.texto + '.' : ''}` : `${s.nome} atualizado (${r.mudou.join(', ')}).`);
     refresca();
   } });
+}
+
+// Uma vez por dia (por título): avisa o que sai hoje entre os títulos da estante.
+function avisosDeHoje() {
+  const hoje = hojeISO(), feito = lerJSON('claq:hoje', {}), vistos = feito.dia === hoje ? feito.ids || [] : [];
+  const novos = proximosLancamentos(L.series, { dias: 0, max: 99 }).filter(x => !vistos.includes(x.s.id));
+  if (!novos.length) return;
+  guardar('claq:hoje', { dia: hoje, ids: [...vistos, ...novos.map(x => x.s.id)] });
+  const n = novos.map(x => x.s.nome), mostra = n.slice(0, 3);
+  const lista = n.length > 3 ? `${mostra.join(', ')} e mais ${n.length - 3}` : mostra.length > 1 ? `${mostra.slice(0, -1).join(', ')} e ${mostra[mostra.length - 1]}` : mostra[0];
+  aviso(`Sai hoje: ${lista}`, 7000);
 }
 
 /* ---------- detalhe do título ---------- */
@@ -171,7 +195,7 @@ function formSerie(id, tipoNovo) {
   const s = id ? achar(id) : null;
   const tipo = s ? tp(s) : (tipoNovo || 'tv'), mv = tipo === 'movie';
   novaCapa = s ? s.capa : null;
-  let meta = s ? { sinopse: s.sinopse, ano: s.ano, duracao: s.duracao, nota: s.nota, tmdb: s.tmdb } : {};
+  let meta = s ? { sinopse: s.sinopse, ano: s.ano, duracao: s.duracao, nota: s.nota, tmdb: s.tmdb, proximo: s.proximo || null } : {};
   aberta = null;
   dlg.innerHTML = `<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2><br>
     <form id="f" data-id="${s ? s.id : ''}">
@@ -223,7 +247,7 @@ function formSerie(id, tipoNovo) {
       if (!mv) { if (!d.eps.length) throw new Error('Esta série não tem temporadas no TMDb.'); f.nt.value = d.eps.length; desenha(d.eps); }
       if (d.poster) novaCapa = d.poster;
       previa();
-      meta = { sinopse: d.sinopse, ano: d.ano, duracao: d.duracao, nota: d.nota, tmdb: d.tmdb };
+      meta = { sinopse: d.sinopse, ano: d.ano, duracao: d.duracao, nota: d.nota, tmdb: d.tmdb, proximo: d.proximo || null };
       $('#res').innerHTML = '<p class="aviso">Dados preenchidos ✓ Confira e salve.</p>';
       avisoDup({ tipo, nome: d.nome, ano: d.ano, tmdb: d.tmdb });
     } catch (e) { $('#res').innerHTML = `<p class="aviso">${esc(e.auth ? 'Sessão expirada. Recarregue a página.' : e.message)}</p>`; }
@@ -357,10 +381,149 @@ async function enviarConta(f) {
   const body = { acao, senha: f.atual.value, ...(acao === 'senha' ? { nova: f.nova.value } : acao === 'email' ? { email: f.email.value } : {}) };
   try {
     const r = await api('/api/conta', { method: 'POST', body });
-    if (acao === 'excluir') { dlg.close(); limparSnap(); zerar(); for (const k in onde) delete onde[k]; telaAuth('criar'); aviso('Conta excluída.'); }
+    if (acao === 'excluir') { dlg.close(); limparSnap(); zerar(); for (const k in onde) delete onde[k]; desc.tv = desc.movie = null; telaAuth('criar'); aviso('Conta excluída.'); }
     else if (acao === 'email') { L.usuario.email = r.email; aviso('E-mail alterado.'); conta(); }
     else { aviso('Senha alterada. Os outros aparelhos foram desconectados.'); conta(); }
   } catch (e) { m.textContent = e.message; btn.disabled = false; }
+}
+
+/* ---------- descobrir ---------- */
+const desc = { tv: null, movie: null };   // por tipo: { alta, parecidos } (lista, 'carregando', 'erro' ou null); guardado só durante a sessão
+let descAberto = null;                    // { x, tipo }: título do TMDb aberto no painel
+const descDados = () => desc[V.UI.descTipo] || { alta: 'carregando', parecidos: sementes(L.series, V.UI.descTipo).length ? 'carregando' : null };
+const descItem = (tipo, tid) => {
+  const d = desc[tipo] || {};
+  for (const l of [d.parecidos, d.alta]) if (Array.isArray(l)) { const x = l.find(y => String(y.id) === String(tid)); if (x) return x; }
+  return null;
+};
+function pintaDesc() { if (aba() === '#descobrir' && $('#desc')) { $('#desc').innerHTML = V.htmlDescobrir(V.UI.descTipo, descDados()); revela(); } }
+async function carregaDescobrir(tipo) {
+  if (desc[tipo]) return;
+  const sem = sementes(L.series, tipo).map(s => s.tmdb);
+  const d = desc[tipo] = { alta: 'carregando', parecidos: sem.length ? 'carregando' : null };
+  const pega = (campo, p) => p.then(r => { d[campo] = r; }, e => { d[campo] = 'erro'; if (e.auth) telaAuth('entrar'); }).then(pintaDesc);
+  await Promise.all([pega('alta', emAlta(tipo)), sem.length ? pega('parecidos', parecidos(tipo, sem)) : null]);
+}
+function abrirDescDetalhe(x, tipo) {
+  aberta = null; descAberto = { x, tipo };
+  const k = tipo + ':' + x.id;
+  dlg.innerHTML = V.htmlDescDetalhe(x, tipo, onde[k] === undefined ? 'carregando' : onde[k]);
+  if (!dlg.open) dlg.showModal();
+  revela();
+  if (onde[k] !== undefined) return;
+  onde[k] = 'carregando';
+  ondeAssistir({ tipo, tmdb: x.id }).then(r => { onde[k] = r; }, () => { onde[k] = 'erro'; }).then(() => {
+    const el = $('#onde'); if (el && descAberto && descAberto.x.id === x.id) el.innerHTML = V.htmlOnde(onde[k]);
+  });
+}
+dlg.addEventListener('close', () => { descAberto = null; });
+
+async function adicionarDesc(tipo, tid, botao) {
+  if (botao) botao.disabled = true;
+  try {
+    const d = await detalheTmdb(tipo, tid), mv = tipo === 'movie';
+    if (!mv && !d.eps.length) { aviso('Esta série ainda não tem temporadas no TMDb.'); return; }
+    const dup = acharDuplicado(L.series, { tipo, nome: d.nome, ano: d.ano, tmdb: d.tmdb });
+    if (dup) { aviso(`${dup.nome} já está na sua estante.`); pintaDesc(); return; }
+    const eps = mv ? [1] : d.eps;
+    const s = { tipo, id: uid(), criado: Date.now(), nome: d.nome, capa: d.poster, sinopse: d.sinopse || null, ano: d.ano || null, nota: d.nota, duracao: d.duracao, tmdb: d.tmdb, eps, vis: eps.map(() => 0), proximo: d.proximo || null };
+    L.series.unshift(s); save();
+    if (dlg.open && descAberto) dlg.close();                            // o aviso com "Desfazer" não aparece por cima do painel
+    pintaDesc();
+    avisoDesfazer(`${s.nome} adicionad${mv ? 'o' : 'a'} à estante`, () => { L.series = L.series.filter(x => x.id !== s.id); save(); pintaDesc(); });
+  } catch (e) { if (e.auth) telaAuth('entrar'); else aviso(e.rede ? 'Sem conexão com o TMDb.' : e.message); }
+  finally { if (botao && botao.isConnected) botao.disabled = false; }
+}
+
+/* ---------- compartilhar top (imagem e link) ---------- */
+let compart = null;   // { top, canvas, pronto }
+function pintaCompartilhar() {
+  const t = compart.top, codigo = L.links[t.id];
+  dlg.innerHTML = V.htmlCompartilhar(t, codigo, codigo ? urlPublica(codigo) : '');
+  if (!compart.pronto) return;
+  const prev = $('#share-prev'); prev.removeAttribute('aria-busy'); prev.replaceChildren(compart.canvas);
+  compart.canvas.setAttribute('role', 'img'); compart.canvas.setAttribute('aria-label', `Imagem do top ${t.nome}`);
+  dlg.querySelector('[data-act="img-enviar"]').disabled = false;
+  if (compart.semCapas) $('#share-msg').textContent = 'Não foi possível carregar as capas para a imagem; ela usa letras no lugar.';
+}
+async function abrirCompartilhar(t) {
+  aberta = null;
+  const c = compart = { top: t, canvas: document.createElement('canvas'), pronto: false, semCapas: false };
+  pintaCompartilhar(); if (!dlg.open) dlg.showModal();
+  const r = await gerarImagem(c.canvas, t);
+  if (compart !== c) return;                                              // fechou ou abriu outro
+  c.pronto = true; c.semCapas = r.semCapas;
+  if (dlg.open && $('#share-prev')) pintaCompartilhar();
+}
+async function mudarLink(t, ativo, b) {
+  if (b) b.disabled = true;
+  try { await definirLink(t, ativo); pintaCompartilhar(); if (ativo) aviso('Link criado.'); }
+  catch (e) { const m = $('#share-msg'); if (m) m.textContent = e.rede ? 'Sem conexão.' : e.message; if (b && b.isConnected) b.disabled = false; }
+}
+dlg.addEventListener('close', () => { compart = null; if (aba() === '#tops') render(); });
+
+/* ---------- importar (Trakt, Letterboxd, IMDb) ---------- */
+let imp = null;   // { entradas, fontes, parar, ids }
+function abrirImportar() {
+  aberta = null; imp = null;
+  dlg.innerHTML = V.htmlImportar();
+  if (!dlg.open) dlg.showModal();
+}
+dlg.addEventListener('close', () => { if (imp && !imp.rodando) imp = null; });
+dlg.addEventListener('change', e => { if (e.target.id === 'imparq' && e.target.files.length) lerArquivosImportacao([...e.target.files]); });
+async function lerArquivosImportacao(arquivos) {
+  const msg = $('#imp-msg'); msg.textContent = 'Lendo os arquivos…';
+  const todas = [], fontes = new Set();
+  try {
+    for (const f of arquivos) {
+      if (f.size > 60e6) throw new Error(`${f.name} é grande demais (máximo 60 MB).`);
+      const itens = /\.zip$/i.test(f.name) ? await lerZip(await f.arrayBuffer(), n => /\.csv$/i.test(n)) : [{ nome: f.name, texto: await f.text() }];
+      for (const it of itens) { const r = lerArquivo(it.nome, it.texto); if (r) { todas.push(...r.entradas); fontes.add(r.fonte); } }
+    }
+  } catch (e) { msg.textContent = e.message; return; }
+  const entradas = consolidar(todas);
+  if (!entradas.length) { msg.textContent = 'Não encontrei títulos nesses arquivos. Confira se são exports do Letterboxd, IMDb ou Trakt (veja as dicas acima).'; return; }
+  imp = { entradas, fontes: [...fontes], parar: false, ids: [], rodando: false };
+  dlg.innerHTML = V.htmlImportar({ previa: resumoImportacao(entradas), fontes: imp.fontes });
+}
+async function iniciarImportacao() {
+  const total = imp.entradas.length, t0 = Date.now(), naoAchou = [];
+  let feitos = 0, repetidos = 0, parou = false;
+  const andamento = () => { const pct = Math.round(feitos / total * 100); dlg.innerHTML = V.htmlImportar({ andamento: { pct, texto: `Buscando no TMDb… ${feitos} de ${total}` } }); };
+  imp.rodando = true; imp.parar = false; imp.ids = []; andamento();
+  const barra = () => dlg.querySelector('.imp-barra');
+  try {
+    for (let i = 0; i < total; i += 10) {
+      if (imp.parar) { parou = true; break; }
+      const lote = imp.entradas.slice(i, i + 10), novos = [];
+      const r = (await api('/api/importar', { method: 'POST', body: { itens: lote.map(e => ({ tipo: e.tipo, nome: e.nome, ano: e.ano, tmdb: e.tmdb, imdb: e.imdb })) } })).resultados;
+      lote.forEach((e, k) => {
+        const info = r[k], rot = e.nome + (e.ano ? ` (${e.ano})` : '');
+        if (!info || !info.ok) { naoAchou.push(rot); return; }
+        if (e.tipo === 'tv' && !info.eps.length) { naoAchou.push(rot + ' · sem temporadas no TMDb'); return; }
+        const cand = { tipo: e.tipo, nome: info.nome, ano: info.ano, tmdb: info.tmdb };
+        if (acharDuplicado(L.series, cand) || acharDuplicado(novos, cand)) { repetidos++; return; }
+        novos.push(montarTitulo(e, info, { id: uid(), criado: t0 - (i + k) }));
+      });
+      if (novos.length) { L.series.unshift(...novos); imp.ids.push(...novos.map(x => x.id)); save(); }
+      feitos += lote.length;
+      const b = barra(); if (b) { b.setAttribute('aria-valuenow', Math.round(feitos / total * 100)); b.firstElementChild.style.width = Math.round(feitos / total * 100) + '%'; }
+      const tx = $('#imp-txt'); if (tx) tx.textContent = `Buscando no TMDb… ${feitos} de ${total}`;
+    }
+  } catch (e) {
+    if (e.auth) { imp.rodando = false; telaAuth('entrar'); return; }
+    aviso(e.rede ? 'Sem conexão. A importação parou; o que já entrou foi mantido.' : e.message); parou = true;
+  }
+  imp.rodando = false;
+  V.UI.filtro = 'todas'; V.UI.busca = '';
+  dlg.innerHTML = V.htmlImportar({ fim: { novos: imp.ids.length, repetidos, naoAchou, parou } });
+  if (imp.ids.length) dlg.querySelector('.rodape-dlg').insertAdjacentHTML('afterbegin', '<button class="btn sec perigo" data-act="importar-desfazer">Desfazer importação</button>');
+  render();
+}
+function desfazerImportacao() {
+  const ids = new Set(imp.ids);
+  L.series = L.series.filter(s => !ids.has(s.id));
+  save(); imp = null; dlg.close(); render(); aviso('Importação desfeita.');
 }
 
 /* ---------- tema claro/escuro ---------- */
@@ -394,7 +557,7 @@ document.addEventListener('click', async e => {
   else if (a === 'nova') formSerie(null, b.dataset.tipo);
   else if (a === 'abrir') { aberta = id || aberta || (b.closest('form') || {}).dataset?.id; if (aberta) pintaDetalhe(); }
   else if (a === 'fechar') { dlg.close(); }
-  else if (a === 'mais' && s) { const p = prox(s); if (p) mexer(s, () => { s.vis[p[0] - 1]++; }); }
+  else if (a === 'mais' && s) { const p = prox(s); if (p) mexer(s, () => { s.vis[p[0] - 1]++; }, tp(s) === 'movie' ? `${s.nome} marcado como visto` : `${s.nome}: T${p[0]} E${p[1]} marcado`); }
   else if (a === 'ep' && s) { const k = +b.dataset.s, n = +b.dataset.e; mexer(s, () => { s.vis[k] = s.vis[k] === n ? n - 1 : n; }); }
   else if (a === 'temp-tudo' && s) mexer(s, () => { s.vis[+b.dataset.s] = s.eps[+b.dataset.s]; });
   else if (a === 'temp-zero' && s) mexer(s, () => { s.vis[+b.dataset.s] = 0; });
@@ -421,9 +584,20 @@ document.addEventListener('click', async e => {
     L.tops.forEach(tp2 => tp2.itens.forEach(it => { if (it.sid === s.id) delete it.sid; }));
     delete onde[s.id]; save(); dlg.close(); render(); });
   else if (a === 'novo-top') { const v = $('#nt').value.trim(); if (v) { L.tops.unshift({ id: uid(), criado: Date.now(), nome: v, itens: [] }); save(); render(); } }
-  else if (a === 'del-top' && t) confirma(b, () => { L.tops = L.tops.filter(x => x.id !== tid); save(); render(); });
+  else if (a === 'del-top' && t) confirma(b, () => {
+    const pos = L.tops.indexOf(t), codigo = L.links[tid];
+    L.tops = L.tops.filter(x => x.id !== tid); delete L.links[tid]; save(); render();
+    avisoDesfazer(`Top “${t.nome}” excluído${codigo ? ' (o link público foi desligado)' : ''}`, () => { L.tops.splice(Math.min(pos, L.tops.length), 0, t); save(); render(); }, 9000);
+  });
   else if (a === 'add-item' && t) addItem(tid);
-  else if (a === 'tira' && t) { t.itens.splice(i, 1); save(); render(); }
+  else if (a === 'tira' && t) {
+    const [item] = t.itens.splice(i, 1); save(); render();
+    avisoDesfazer(`${item.t} removido do top`, () => {
+      if (!L.tops.includes(t)) return;
+      if (t.itens.length >= 10) { aviso('O top já está cheio.'); return; }
+      t.itens.splice(Math.min(i, t.itens.length), 0, item); save(); render();
+    });
+  }
   else if (a === 'auth-modo') telaAuth(b.dataset.m);
   else if (a === 'recarregar') iniciar();
   else if (a === 'sair') sair(false);
@@ -434,6 +608,19 @@ document.addEventListener('click', async e => {
   else if (a === 'tema') alternarTema();
   else if (a === 'exportar') exportar();
   else if (a === 'importar') importar($('#bk').value);
+  else if (a === 'desc-tipo') { V.UI.descTipo = b.dataset.k; render(); }
+  else if (a === 'desc-recarregar') { desc[V.UI.descTipo] = null; render(); }
+  else if (a === 'desc-abrir') { const tipo = V.UI.descTipo, x = descItem(tipo, b.closest('[data-tid]').dataset.tid); if (x) abrirDescDetalhe(x, tipo); }
+  else if (a === 'desc-add') adicionarDesc(descAberto ? descAberto.tipo : V.UI.descTipo, b.closest('[data-tid]').dataset.tid, b);
+  else if (a === 'compartilhar' && t) abrirCompartilhar(t);
+  else if (a === 'img-enviar' && compart) { b.disabled = true; try { const r = await enviarImagem(compart.canvas, compart.top); if (r === 'baixado') aviso('Imagem baixada.'); } catch (err) { aviso(err.message); } b.disabled = false; }
+  else if (a === 'link-criar' && t) await mudarLink(t, true, b);
+  else if (a === 'link-desligar' && t) confirma(b, () => mudarLink(t, false, b));
+  else if (a === 'link-copiar' && t) { const ok = await copiar(urlPublica(L.links[t.id])); if (!ok) $('#share-url').select(); aviso(ok ? 'Link copiado.' : 'Selecione o link e copie.'); }
+  else if (a === 'importar-abrir') abrirImportar();
+  else if (a === 'importar-iniciar' && imp) iniciarImportacao();
+  else if (a === 'importar-parar' && imp) { imp.parar = true; b.disabled = true; b.textContent = 'Parando…'; }
+  else if (a === 'importar-desfazer' && imp) desfazerImportacao();
 });
 
 document.addEventListener('submit', e => {
@@ -447,6 +634,7 @@ document.addEventListener('change', e => {
 });
 
 document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName) && desfazerUltimo()) { e.preventDefault(); return; }
   const alca = e.target.closest && e.target.closest('[data-alca]');
   if (alca && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {   // reordenar pelo teclado
     e.preventDefault();

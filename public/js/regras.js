@@ -146,3 +146,42 @@ export function duracaoTexto(min) {
   if (h >= 48) return `${Math.round(h / 24 * 10) / 10} dias`;
   return h ? `${h} h${m ? ' ' + m + ' min' : ''}` : `${m} min`;
 }
+
+/* ---------- datas de lançamento ---------- */
+const DIAS_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+// 'AAAA-MM-DD' vira meia-noite no fuso do aparelho (new Date('AAAA-MM-DD') seria UTC e erraria o dia).
+export const dataLocal = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+export const hojeISO = (agora = Date.now()) => { const d = new Date(agora); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+export function diasAte(iso, agora = Date.now()) {
+  const d = dataLocal(iso), h = dataLocal(hojeISO(agora));
+  return d ? Math.round((d - h) / 864e5) : null;
+}
+
+// Próximo lançamento de um título, pronto para mostrar. null se não há data ou se ela já passou.
+export function lancamento(s, agora = Date.now()) {
+  const p = s.proximo, dias = p ? diasAte(p.d, agora) : null;
+  if (dias == null || dias < 0) return null;
+  const d = dataLocal(p.d);
+  const quando = dias === 0 ? 'hoje' : dias === 1 ? 'amanhã' : dias < 7 ? DIAS_SEMANA[d.getDay()] : `em ${d.getDate()} ${MESES[d.getMonth()]}`;
+  const quem = tp(s) === 'movie' ? 'Estreia' : p.e === 1 && p.t > 1 ? 'Nova temporada' : 'Novo ep';
+  return { dias, data: p.d, dia: d.getDate(), mes: MESES[d.getMonth()], t: p.t || null, e: p.e || null, quando, texto: `${quem} ${quando}`, hoje: dias === 0 };
+}
+
+// Lançamentos dos próximos `dias` dias (hoje incluído), do mais próximo ao mais distante. `tipo` filtra série/filme.
+export function proximosLancamentos(series, { tipo = null, agora = Date.now(), dias = 30, max = 8 } = {}) {
+  return series.filter(s => !tipo || tp(s) === tipo).map(s => ({ s, l: lancamento(s, agora) })).filter(x => x.l && x.l.dias <= dias)
+    .sort((a, b) => a.l.dias - b.l.dias || a.s.nome.localeCompare(b.s.nome, 'pt-BR')).slice(0, max);
+}
+
+// Títulos com data de lançamento já vencida ou de hoje: vale checar o TMDb de novo mais cedo.
+export const lancamentoVencido = (s, agora = Date.now()) => !!(s.proximo && diasAte(s.proximo.d, agora) <= 0);
+
+/* ---------- descobrir ---------- */
+// Títulos que servem de ponto de partida para "parecidos com o que você viu": já começados, ligados ao TMDb,
+// sem nota baixa. Quem você avaliou melhor vem antes; no empate, o visto mais recentemente.
+export function sementes(series, tipo, max = 5) {
+  return series.filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal == null || s.nota_pessoal >= 6))
+    .sort((a, b) => (b.nota_pessoal ?? 7) - (a.nota_pessoal ?? 7) || (b.visto_em || b.criado || 0) - (a.visto_em || a.criado || 0))
+    .slice(0, max);
+}
+export const naEstante = (series, tipo, tmdb) => series.some(s => tp(s) === tipo && s.tmdb === tmdb);

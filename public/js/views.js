@@ -1,9 +1,9 @@
 // Funções que montam o HTML das telas (sem eventos). Os eventos ficam em main.js.
 import { esc, hue, ler } from './util.js';
 import { L, achar } from './loja.js';
-import { tp, tot, vis, estado, prox, pct, rotulo, filtrar, ordenar, continuar, ORDENS, estatisticas, ultimosMeses, duracaoTexto } from './regras.js';
+import { tp, tot, vis, estado, prox, pct, rotulo, filtrar, ordenar, continuar, ORDENS, estatisticas, ultimosMeses, duracaoTexto, lancamento, proximosLancamentos, naEstante, sementes } from './regras.js';
 
-export const UI = { filtro: 'todas', busca: '', ordem: ler('claq:ordem', 'recente') };
+export const UI = { filtro: 'todas', busca: '', ordem: ler('claq:ordem', 'recente'), descTipo: 'tv' };
 
 export const capa = (nome, img, urgente) => img
   ? `<img class="fade" src="${esc(img)}" alt="" decoding="async" ${urgente ? 'fetchpriority="high"' : 'loading="lazy"'}>`
@@ -21,6 +21,9 @@ export function esqueleto(hash) {
 const ICO_MAIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 const ICO_OK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
+// Selo "Novo ep sexta" / "Estreia em 12 nov" (some sozinho quando a data passa).
+const chipLanc = s => { const l = lancamento(s); return l ? `<span class="lanc${l.dias <= 1 ? ' perto' : ''}">${esc(l.texto)}</span>` : ''; };
+
 export function cardHtml(s, n = 0) {
   const mv = tp(s) === 'movie', p = pct(s), prx = prox(s), est = estado(s);
   const chip = est === 'fim' ? '<span class="sel ok">Concluído</span>' : '';
@@ -30,7 +33,7 @@ export function cardHtml(s, n = 0) {
         ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
       </div>
       ${mv ? '' : `<div class="linha" aria-hidden="true"><i data-w="${p}"></i></div>`}
-      <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>
+      <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>${chipLanc(s)}
     </article>`;
 }
 
@@ -42,7 +45,7 @@ export function cardContinuar(s, n = 0) {
     return `<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}</button>
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
-        <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
+        <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>${chipLanc(s)}
         <div class="linha" aria-hidden="true"><i data-w="${p}"></i></div></div>
       ${botao('', ICO_MAIS + '<b>1</b>')}
     </article>`;
@@ -54,7 +57,7 @@ export function cardContinuar(s, n = 0) {
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
         <p class="cc-ep">${prx ? `T${prx[0]} E${prx[1]}` : ''}</p>
         <div class="linha" aria-hidden="true"><i data-w="${p}"></i></div>
-        <small>Próximo episódio: ${vis(s)} de ${tot(s)} vistos</small></div>
+        <small>Próximo episódio: ${vis(s)} de ${tot(s)} vistos</small>${chipLanc(s)}</div>
       ${botao('mais-grande', '<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>')}
     </article>`;
 }
@@ -66,6 +69,18 @@ export function htmlStats(tipo) {
   const fim = Ls.filter(s => estado(s) === 'fim').length, eps = Ls.reduce((a, s) => a + vis(s), 0);
   const stats = mv ? [[Ls.length, 'filmes'], [fim, 'assistidos'], [Ls.length - fim, 'na fila']] : [[Ls.length, 'séries'], [eps, 'episódios vistos'], [fim, 'concluídas']];
   return stats.map(([n, r]) => `<div class="stat"><b>${n}</b><span>${r}</span></div>`).join('');
+}
+
+// "Próximos lançamentos": o que sai nas próximas semanas entre os títulos da estante (série ou filme, conforme a aba).
+export function htmlProximos(tipo) {
+  if (UI.busca) return '';
+  const lista = proximosLancamentos(L.series, { tipo });
+  if (!lista.length) return '';
+  const mv = tipo === 'movie';
+  return `<section class="prox" aria-labelledby="t-prox"><h2 class="sec-tit" id="t-prox">${mv ? 'Próximas estreias' : 'Próximos episódios'}</h2>
+    <ul class="prox-lista">${lista.map(({ s, l }) => `<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${s.id}">
+      <button class="prox-b" data-act="abrir" aria-label="Abrir ${esc(s.nome)}"><span class="prox-data" aria-hidden="true"><b>${l.dia}</b>${esc(l.mes)}</span>
+      <span class="prox-txt"><b>${esc(s.nome)}</b><small>${l.t && l.e ? `T${l.t} · E${l.e} · ` : ''}${esc(l.quando)}</small></span></button></li>`).join('')}</ul></section>`;
 }
 
 export function htmlContinuar(tipo) {
@@ -84,7 +99,8 @@ export function htmlLista(tipo) {
   if (UI.busca) return `<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${esc(UI.busca)}”.</p></div>`;
   if (total) return `<div class="vazio">${VAZIO_ICO}<p>Nada neste filtro.</p></div>`;
   return `<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série e marque o episódio de hoje.'}</p>
-    <button class="btn" data-act="nova" data-tipo="${tipo}">${mv ? '+ Adicionar filme' : '+ Adicionar série'}</button></div>`;
+    <button class="btn" data-act="nova" data-tipo="${tipo}">${mv ? '+ Adicionar filme' : '+ Adicionar série'}</button>
+    <button class="link" data-act="importar-abrir">Já usa Trakt, Letterboxd ou IMDb? Importe sua lista</button></div>`;
 }
 
 const LUPA = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
@@ -97,6 +113,7 @@ export function viewLista(tipo) {
       <p class="sub">${mv ? 'Registre o que você já viu e o que quer ver.' : 'Acompanhe cada temporada e episódio.'}</p></div>
       <button class="btn nova" data-act="nova" data-tipo="${tipo}"><span aria-hidden="true">+</span><span class="rot">${mv ? 'Novo filme' : 'Nova série'}</span></button></div>
     <div class="stats" id="stats">${htmlStats(tipo)}</div>
+    <div id="proximos">${htmlProximos(tipo)}</div>
     <div id="continuar">${htmlContinuar(tipo)}</div>
     <div class="ferramentas">
       <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
@@ -126,7 +143,7 @@ export function htmlDetalhe(s, onde) {
       <button class="btn sec mini" data-act="temp-zero" data-s="${i}">Zerar</button></div><div class="eps">${c}</div></div>`;
   }).join('');
   const urlHero = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
-  const pilulas = [mv ? 'Filme' : 'Série', s.ano, s.nota ? '★ ' + s.nota : '', s.duracao ? s.duracao + (mv ? ' min' : ' min/ep') : ''].filter(Boolean).map(x => `<span class="pilula">${esc(x)}</span>`).join('');
+  const l = lancamento(s), pilulas = [mv ? 'Filme' : 'Série', s.ano, s.nota ? '★ ' + s.nota : '', s.duracao ? s.duracao + (mv ? ' min' : ' min/ep') : '', l ? `${l.texto}${l.t && l.e ? ` · T${l.t} E${l.e}` : ''}` : ''].filter(Boolean).map(x => `<span class="pilula">${esc(x)}</span>`).join('');
   return `<div data-id="${s.id}">
     <div class="hero" ${urlHero ? `data-cover="${esc(s.capa)}"` : `data-h="${hue(s.nome)}"`}></div>
     <div class="cab"><div class="mini-capa">${capa(s.nome, s.capa, true)}</div>
@@ -157,7 +174,7 @@ export function viewTops() {
         <span class="mv"><button data-act="tira" aria-label="Remover ${esc(it.t)}">✕</button></span></li>`;
     }).join('');
     return `<section class="top" data-top="${t.id}" data-i="${Math.min(n, 8)}">
-      <div class="top-cab"><h2>${esc(t.nome)}</h2><small>${t.itens.length}/10</small><button class="btn sec perigo mini" data-act="del-top">Excluir</button></div>
+      <div class="top-cab"><h2>${esc(t.nome)}</h2><small>${t.itens.length}/10</small>${t.itens.length ? `<button class="btn sec mini" data-act="compartilhar">${L.links[t.id] ? 'Compartilhado' : 'Compartilhar'}</button>` : ''}<button class="btn sec perigo mini" data-act="del-top">Excluir</button></div>
       ${li ? `<ol>${li}</ol>` : '<p class="mut-peq">Lista vazia. Adicione seu primeiro título.</p>'}
       ${t.itens.length < 10 ? `<div class="add"><input type="text" list="nomes" maxlength="80" placeholder="Série ou filme" aria-label="Adicionar título"><button class="btn mini" data-act="add-item">Adicionar</button></div>` : ''}
     </section>`;
@@ -251,4 +268,92 @@ export function viewFormConta(acao, email = '') {
   return `<h2>${titulo}</h2><form id="fc" data-acao="${acao}" novalidate>${campos}
     <p class="aviso" id="msgc" role="alert"></p>
     <div class="rodape-dlg"><button type="button" class="btn sec" data-act="conta">Voltar</button><button class="btn${acao === 'excluir' ? ' perigo' : ''}" type="submit">${acao === 'excluir' ? 'Excluir minha conta' : 'Salvar'}</button></div></form>`;
+}
+
+/* ---------- descobrir ---------- */
+// `d` = { alta, parecidos } (cada um: lista, 'carregando', 'erro' ou null quando não se aplica).
+function cardDescobrir(x, tipo, porque = '') {
+  const tem = naEstante(L.series, tipo, x.id);
+  return `<article class="card desc" data-tid="${x.id}">
+    <div class="poster"><button class="capa" data-act="desc-abrir" aria-label="Ver ${esc(x.nome)}">${capa(x.nome, x.poster)}${tem ? '<span class="sel ok">Na estante</span>' : ''}${x.nota ? `<span class="sel dir" title="Nota no TMDb">★ ${x.nota}</span>` : ''}</button>
+      ${tem ? '' : `<button class="mais mais-add" data-act="desc-add" aria-label="Adicionar ${esc(x.nome)} à estante" title="Adicionar à estante">${ICO_MAIS}</button>`}</div>
+    <h3>${esc(x.nome)}</h3><small>${esc(x.ano || '')}${porque ? (x.ano ? ' · ' : '') + esc(porque) : ''}</small></article>`;
+}
+function blocoDescobrir(titulo, id, d, tipo, porque) {
+  const corpo = d === 'carregando' ? `<div class="grade">${Array.from({ length: 6 }, () => '<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div></div>').join('')}</div>`
+    : d === 'erro' ? '<p class="aviso">Não foi possível buscar no TMDb agora. <button class="btn sec mini" data-act="desc-recarregar">Tentar de novo</button></p>'
+    : !d.length ? '<p class="aviso">Nada novo por aqui: tudo o que o TMDb indicou já está na sua estante.</p>'
+    : `<div class="grade">${d.map((x, i) => cardDescobrir(x, tipo, porque ? porque(x) : '')).join('')}</div>`;
+  return `<section class="desc-sec" aria-labelledby="${id}"><h2 class="sec-tit" id="${id}">${titulo}</h2>${corpo}</section>`;
+}
+export function htmlDescobrir(tipo, d) {
+  const nomeDe = id => (L.series.find(s => tp(s) === tipo && s.tmdb === id) || {}).nome;
+  const semente = sementes(L.series, tipo).length;
+  const par = d.parecidos === null ? '' : blocoDescobrir('Parecidos com o que você viu', 't-par',
+    Array.isArray(d.parecidos) ? d.parecidos.filter(x => !naEstante(L.series, tipo, x.id)) : d.parecidos, tipo,
+    x => { const n = (x.porque || []).map(nomeDe).find(Boolean); return n ? 'como ' + n : ''; });
+  const alta = blocoDescobrir('Em alta esta semana', 't-alta', d.alta, tipo, null);
+  const dica = !semente ? `<p class="aviso">Marque alguns episódios ou filmes ligados ao TMDb e aparece aqui uma lista “parecidos com o que você viu”.</p>` : '';
+  return par + (par ? '' : dica) + alta;
+}
+export function viewDescobrir(d) {
+  const tipo = UI.descTipo, fs = [['tv', 'Séries'], ['movie', 'Filmes']];
+  return `<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">O que está em alta e o que combina com o seu gosto. Toque no + para adicionar à estante.</p></div></div>
+    <div class="ferramentas"><div class="barra-acoes" role="group" aria-label="Tipo">${fs.map(([k, r]) => `<button class="chip" data-act="desc-tipo" data-k="${k}" aria-pressed="${tipo === k}">${r}</button>`).join('')}</div></div>
+    <div id="desc">${htmlDescobrir(tipo, d)}</div>`;
+}
+export function htmlDescDetalhe(x, tipo, onde) {
+  const tem = naEstante(L.series, tipo, x.id);
+  const pilulas = [tipo === 'movie' ? 'Filme' : 'Série', x.ano, x.nota ? '★ ' + x.nota : ''].filter(Boolean).map(p => `<span class="pilula">${esc(p)}</span>`).join('');
+  return `<div data-tid="${x.id}"><div class="cab"><div class="mini-capa">${capa(x.nome, x.poster, true)}</div>
+    <div class="cab-info"><h2>${esc(x.nome)}</h2><div class="pilulas">${pilulas}</div></div></div>
+    ${x.sinopse ? `<p class="sin">${esc(x.sinopse)}${x.sinopse.length >= 300 ? '…' : ''}</p>` : ''}
+    <section class="bloco"><h3>Onde assistir</h3><div id="onde">${htmlOnde(onde)}</div></section>
+    <div class="rodape-dlg"><button class="btn sec" data-act="fechar">Fechar</button>${tem ? '<span class="sel ok est">Na sua estante</span>' : '<button class="btn" data-act="desc-add">+ Adicionar à estante</button>'}</div></div>`;
+}
+
+/* ---------- compartilhar top ---------- */
+export function htmlCompartilhar(t, codigo, url = '') {
+  return `<div data-top="${t.id}"><h2>Compartilhar “${esc(t.nome)}”</h2>
+    <section class="bloco"><h3>Imagem</h3><p class="sub topo6">Pronta para postar em stories e no feed.</p>
+      <div class="share-prev" id="share-prev" aria-busy="true"><span class="aviso">Montando a imagem…</span></div>
+      <div class="rodape-dlg esq"><button class="btn" data-act="img-enviar" disabled>Compartilhar imagem</button></div></section>
+    <section class="bloco"><h3>Link público</h3>
+      ${codigo ? `<p class="sub topo6">Qualquer pessoa com o link vê o nome do top, os títulos e o seu primeiro nome. Você pode desligar quando quiser.</p>
+        <div class="linha-busca"><input type="text" id="share-url" readonly aria-label="Link público" value="${esc(url)}"><button class="btn mini" data-act="link-copiar">Copiar</button></div>
+        <div class="rodape-dlg esq"><button class="btn sec perigo" data-act="link-desligar">Parar de compartilhar</button></div>`
+      : `<p class="sub topo6">Crie um link para mostrar este top a quem não tem o app. Qualquer pessoa com o link vê o nome do top, os títulos e o seu primeiro nome.</p>
+        <div class="rodape-dlg esq"><button class="btn sec" data-act="link-criar">Criar link público</button></div>`}
+      <p class="aviso" id="share-msg" role="status"></p></section>
+    <div class="rodape-dlg"><button class="btn" data-act="fechar">Fechar</button></div></div>`;
+}
+
+/* ---------- importar ---------- */
+export function htmlImportar(fase = {}) {
+  if (fase.previa) {
+    const r = fase.previa, linha = (n, t) => n ? `<li><b>${n}</b> ${t}</li>` : '';
+    return `<h2>Importar</h2><p class="sub topo6">Encontrei em ${esc(fase.fontes.join(', '))}:</p>
+      <ul class="imp-lista">${linha(r.filmesVistos, r.filmesVistos === 1 ? 'filme assistido' : 'filmes assistidos')}${linha(r.filmesFila, r.filmesFila === 1 ? 'filme na lista para ver' : 'filmes na lista para ver')}${linha(r.series, r.series === 1 ? 'série' : 'séries')}${linha(r.episodios, r.episodios === 1 ? 'episódio visto' : 'episódios vistos')}</ul>
+      ${r.seriesSemProgresso ? `<p class="aviso">${r.seriesSemProgresso} ${r.seriesSemProgresso === 1 ? 'série vem' : 'séries vêm'} sem progresso: esse arquivo não informa os episódios vistos. Você marca o que já viu depois.</p>` : ''}
+      <p class="aviso">Títulos que já estão na sua estante não são duplicados. As capas, durações e temporadas vêm do TMDb, então pode levar um tempinho.</p>
+      <div class="rodape-dlg"><button class="btn sec" data-act="fechar">Cancelar</button><button class="btn" data-act="importar-iniciar">Importar tudo</button></div>`;
+  }
+  if (fase.andamento) return `<h2>Importando…</h2><div class="barra imp-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${fase.andamento.pct}"><i data-w="${fase.andamento.pct}"></i></div>
+      <p class="sub topo6" id="imp-txt" role="status">${esc(fase.andamento.texto)}</p><div class="rodape-dlg"><button class="btn sec" data-act="importar-parar">Parar</button></div>`;
+  if (fase.fim) {
+    const f = fase.fim;
+    return `<h2>${f.parou ? 'Importação interrompida' : 'Importação concluída'}</h2>
+      <ul class="imp-lista">${f.novos ? `<li><b>${f.novos}</b> ${f.novos === 1 ? 'título adicionado' : 'títulos adicionados'}</li>` : '<li>Nenhum título novo.</li>'}${f.repetidos ? `<li><b>${f.repetidos}</b> já estavam na estante</li>` : ''}${f.naoAchou.length ? `<li><b>${f.naoAchou.length}</b> não encontrados no TMDb</li>` : ''}</ul>
+      ${f.naoAchou.length ? `<details class="colar"><summary>Ver os não encontrados</summary><p class="mut-peq">${f.naoAchou.slice(0, 40).map(esc).join('<br>')}${f.naoAchou.length > 40 ? `<br>… e mais ${f.naoAchou.length - 40}` : ''}</p></details>` : ''}
+      <div class="rodape-dlg"><button class="btn" data-act="fechar">Fechar</button></div>`;
+  }
+  return `<h2>Importar de outro app</h2><p class="sub topo6">Traga sua lista de quem você já usa. Escolha o arquivo exportado (pode escolher vários de uma vez):</p>
+    <ul class="imp-passos">
+      <li><b>Letterboxd</b> (filmes): Settings › Data › Export your data. Envie o .zip inteiro, ou os CSV (watched, ratings, watchlist).</li>
+      <li><b>IMDb</b>: na sua lista de avaliações ou na watchlist, menu ⋯ › Export. Envie o .csv.</li>
+      <li><b>Trakt</b>: envie os arquivos .json do export (assistidos, avaliações, watchlist).</li>
+    </ul>
+    <p class="aviso" id="imp-msg" role="alert"></p>
+    <div class="rodape-dlg esq"><label class="btn arq">Escolher arquivos…<input type="file" id="imparq" accept=".zip,.csv,.json,application/zip,application/json,text/csv" multiple hidden></label></div>
+    <div class="rodape-dlg"><button class="btn sec" data-act="fechar">Cancelar</button></div>`;
 }

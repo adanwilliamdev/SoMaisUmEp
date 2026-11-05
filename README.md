@@ -5,15 +5,20 @@ Front-end estático (PWA instalável) + funções serverless da Vercel + Postgre
 
 ```
 public/        site (index.html, style.css, manifest.json, sw.js, js/ em módulos, icons/)
-api/           funções serverless (login, cadastro, logout, dados, sync, capa, tmdb)
+api/           funções serverless (login, cadastro, logout, dados, sync, capa, tmdb, importar, compartilhar, t)
 neon/          migracoes/ (SQL numerado) e schema.sql (todas juntas, gerado)
 scripts/       migrar.js (aplica as migrações no banco)
 test/          testes (node --test)
 ```
 
-## O que tem (v5.0)
+## O que tem (v5.1)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
+- **Datas de lançamento (v5.1)**: o TMDb informa o próximo episódio (ou a estreia de um filme) e o app mostra "Novo ep sexta" / "Nova temporada em 12 jan" nos cards, no painel e numa fileira "Próximos episódios". Uma vez por dia aparece o aviso "Sai hoje: …", e quando uma série concluída volta com episódios novos o aviso diz quando. Títulos com a data já vencida são reconferidos a cada 6 h (os demais, a cada 24 h). É um aviso dentro do app, ao abri-lo; não há notificação push.
+- **Descobrir (v5.1)**: aba com "Em alta esta semana" e "Parecidos com o que você viu" (baseada nos títulos que você já começou e não avaliou mal, melhores notas primeiro), para séries e filmes. Toque no + para adicionar à estante, ou na capa para ver sinopse e onde assistir.
+- **Importar (v5.1)**: botão "Importar" no rodapé (e na estante vazia). Letterboxd (o .zip inteiro ou os CSV watched/ratings/diary/reviews/watchlist), IMDb (CSV de avaliações ou watchlist) e Trakt (JSON no formato da API: assistidos, histórico, avaliações, watchlist). Os títulos são localizados no TMDb em lotes de 10 por `/api/importar`; duplicados são ignorados e dá para desfazer a importação inteira. Limites dos formatos: o Letterboxd só tem filmes; o IMDb não guarda episódios vistos, então séries entram só com a nota; no Trakt o progresso de cada temporada vira "até o maior episódio visto".
+- **Tops compartilháveis (v5.1)**: botão "Compartilhar" em cada top. Gera uma imagem 1080×1350 (abre a folha de compartilhamento do celular ou baixa o PNG) e, se você quiser, um **link público** `/t/<código>`, com prévia (Open Graph) em redes e mensageiros. O link mostra o nome do top, os títulos e o seu primeiro nome; "Parar de compartilhar" o desliga na hora (a página pode ficar até 30 s em cache).
+- **Desfazer (v5.1)**: o +1 (e marcar filme como visto) nos cards, remover item de um top, excluir um top, adicionar pelo Descobrir e importar mostram um aviso "Desfazer" por alguns segundos (também Ctrl/⌘+Z). Dentro do painel de detalhes o aviso não aparece, pois ficaria atrás dele.
 - **Estante**: busca por nome, ordenação (recentes, nome, nota, último visto), filtros e a fileira "Continuar assistindo".
 - **TMDb**: busca ao cadastrar, botão "Atualizar do TMDb" e verificação automática (1x por dia por série) de temporadas e episódios novos, sem perder progresso. Em cada título, "Onde assistir" (Brasil).
 - **Minha avaliação**: nota e resenha pessoais por título.
@@ -40,6 +45,8 @@ Linguagem de cartaz do cinema brasileiro, em duas cores: **grafite** (`--tx`/`--
 Para mudar o banco, crie `neon/migracoes/00N_descricao.sql` (um comando por `;`, sem `;` dentro de texto) e rode `npm run schema` para regenerar o `schema.sql`. Um teste confere se os dois estão em dia.
 
 > **Atualizando da versão de uma senha só?** Rode o novo `schema.sql`, faça o deploy e **crie a sua conta**: a primeira conta criada herda todos os dados que já existiam.
+
+> **Atualizando da v5.0?** Rode `npm run migrar` (ou o novo `neon/schema.sql`): a migração 003 acrescenta `titulos.proximo` e `tops.publico`/`publico_em`. Sem ela o app para de salvar.
 
 ## 2. TMDb
 
@@ -88,7 +95,7 @@ O link enviado vale por 1 hora, funciona uma vez só e encerra as sessões abert
 
 CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker busca o código **na rede primeiro** (todos os módulos do mesmo deploy, sem misturar versões) e só usa a cópia guardada quando está offline; ícones e imagens vêm do cache. Para renovar o cache offline em um deploy novo, troque `VERSAO` em `public/sw.js`.
 
-As respostas do TMDb (`/api/tmdb`) ficam em cache por 24 h na Vercel (`s-maxage`) e 1 h no navegador. O CSP não permite `style=""` no HTML: estilos que dependem de dados usam `data-h`/`data-i`/`data-w`/`data-cover`, aplicados por `aplicarEstilos()` em `public/js/util.js`.
+As respostas do TMDb (`/api/tmdb`) ficam em cache por 24 h na Vercel (`s-maxage`; 6 h para detalhes de séries, tendências e parecidos, por causa das datas) e 1 h no navegador. O CSP não permite `style=""` no HTML: estilos que dependem de dados usam `data-h`/`data-i`/`data-w`/`data-cover`, aplicados por `aplicarEstilos()` em `public/js/util.js`.
 
 ## Rodar localmente
 
@@ -109,6 +116,8 @@ vercel dev
 - `/api/dados` usa ETag: o navegador revalida a cada chamada e, se nada mudou, o servidor responde 304 depois de só duas consultas de contagem (sem ler a biblioteca). Isso vale para a abertura do app e para cada volta à aba.
 - **Decisão consciente:** o cadastro avisa quando o e-mail já existe (409). Isso revela quem tem conta, mas num app pessoal a clareza compensa. O login e o "Esqueci minha senha" não revelam nada (mesma resposta sempre).
 - Na conta, senha atual errada responde **403** (e não 401, que o app trataria como sessão expirada).
+- A imagem do top é desenhada no navegador com as capas do TMDb/Blob, que precisam de CORS. Se o navegador barrar, a imagem sai com letras coloridas no lugar das capas (e o app avisa). Capas enviadas por você em base64 não vão para a página pública.
+- A data do TMDb é a de exibição original; no streaming do Brasil o episódio pode sair um dia antes ou depois.
 - A Vercel limita o corpo de cada requisição a 4,5 MB. O site já envia os dados em lotes pequenos.
 - O gráfico por mês só conta o que for marcado a partir desta versão (o que já estava marcado não tem data).
 

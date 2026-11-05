@@ -412,3 +412,66 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
   *,*::before,*::after,dialog[open]::backdrop{transition:none!important;animation:none!important;scroll-behavior:auto!important}
   img.fade{opacity:1}
 }
+
+/* ===== v5.1: lançamentos, descobrir, desfazer, compartilhar, importar ===== */
+/* selo de lançamento ("Novo ep sexta") */
+.lanc{display:inline-block;margin-top:6px;padding:2px 9px;border-radius:var(--pilula);font-size:.74rem;font-weight:700;line-height:1.5;
+  border:1.5px solid var(--line2);color:var(--tx)}
+.lanc.perto{background:var(--acc);border-color:var(--acc);color:var(--on)}
+.cc .lanc{margin-top:4px}
+
+/* "Próximos episódios" */
+.prox{margin:0 0 34px}
+.prox-lista{list-style:none;padding:0;margin:0;display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px;scrollbar-width:thin}
+.prox-i{flex:none;scroll-snap-align:start;min-width:min(240px,78vw)}
+.prox-b{width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;border:1.5px solid var(--line);border-radius:var(--r-m);background:var(--card);text-align:left;transition:border-color .15s,transform .1s}
+.prox-b:hover{border-color:var(--line2)}
+.prox-b:active{transform:scale(.98)}
+.prox-i.hoje .prox-b{border-color:var(--acc)}
+.prox-data{flex:none;width:46px;padding:6px 0;border-radius:var(--r-s);background:var(--card2);text-align:center;font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--mut);display:grid;line-height:1.1}
+.prox-data b{font-family:var(--titulo);font-size:1.25rem;color:var(--tx);letter-spacing:-.04em}
+.prox-i.hoje .prox-data{background:var(--acc);color:var(--on)}
+.prox-i.hoje .prox-data b{color:var(--on)}
+.prox-txt{min-width:0;display:grid;gap:1px}
+.prox-txt b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prox-txt small{color:var(--mut);font-size:.84rem}
+
+/* descobrir */
+.desc-sec{margin:0 0 40px}
+.card.desc .capa .sel.ok{top:auto;bottom:10px}
+.mais-add{padding:0}
+.desc .mais-add svg{width:20px;height:20px}
+.rodape-dlg .sel{position:static;display:inline-block}
+
+/* aviso com ação (Desfazer) */
+.aviso-flutuante.com-acao{pointer-events:auto;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;padding:8px 8px 8px 18px}
+.aviso-acao{flex:none;border:0;border-radius:var(--pilula);padding:8px 16px;min-height:36px;font-weight:800;font-size:.9rem;background:var(--bg);color:var(--tx);cursor:pointer}
+.aviso-acao:hover{filter:brightness(.95)}
+
+/* compartilhar */
+.share-prev{display:grid;place-items:center;min-height:120px;margin:12px 0 4px}
+.share-prev canvas{display:block;width:100%;max-width:300px;height:auto;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.linha-busca input[readonly]{text-overflow:ellipsis}
+
+/* importar */
+.imp-passos{padding-left:1.1em;color:var(--mut);font-size:.92rem;display:grid;gap:8px;margin:12px 0}
+.imp-passos b{color:var(--tx)}
+.imp-lista{list-style:none;padding:0;margin:14px 0;display:grid;gap:6px}
+.imp-lista b{font-family:var(--titulo);font-size:1.15rem;margin-right:6px}
+.imp-barra{margin:18px 0 6px}
+.vazio .link{font-size:.9rem}
+
+/* página pública de um top (/t/<código>) */
+.pub{max-width:640px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top,0px)) 20px calc(48px + env(safe-area-inset-bottom,0px))}
+.pub .top-cab h1{flex:1;font-size:clamp(1.4rem,6vw,1.9rem)}
+.pub .sub{margin:8px 0 6px}
+.pub .top li{cursor:default}
+.pub .top li .p{width:52px}
+.pub-cta{margin-top:36px;padding-top:22px;border-top:1px solid var(--line);display:grid;justify-items:start;gap:12px;color:var(--mut)}
+.pub-cta .btn{text-decoration:none}
+
+/* cinco abas no celular */
+@media (max-width:480px){
+  .menu{padding-left:2px;padding-right:2px}
+  .menu a{min-width:0;padding:6px 0;font-size:.68rem;letter-spacing:-.01em}
+}

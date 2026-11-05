@@ -3,6 +3,7 @@
   "buildCommand": null,
   "outputDirectory": "public",
   "crons": [{ "path": "/api/cron", "schedule": "0 5 * * *" }],
+  "rewrites": [{ "source": "/t/:codigo", "destination": "/api/t?c=:codigo" }],
   "cleanUrls": true,
   "headers": [
     {

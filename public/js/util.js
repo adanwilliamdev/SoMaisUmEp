@@ -45,3 +45,22 @@ export function observarEstilos() {
   new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) aplicarEstilos(n); })
     .observe(document.body, { childList: true, subtree: true });
 }
+
+// Aviso com botão "Desfazer". Só um por vez: um novo substitui o anterior (desfazer vale para a ação mais recente).
+let desfazerAtual = null;
+export function avisoDesfazer(texto, fn, ms = 7000) {
+  const caixa = $('#avisos'); if (!caixa) return;
+  if (desfazerAtual) desfazerAtual.fecha();
+  const el = document.createElement('div'), t = document.createElement('span'), b = document.createElement('button');
+  el.className = 'aviso-flutuante com-acao'; t.textContent = texto;
+  b.type = 'button'; b.className = 'aviso-acao'; b.textContent = 'Desfazer';
+  el.append(t, b); caixa.append(el);
+  let feito = false, timer;
+  const h = {
+    fecha() { if (feito) return; feito = true; clearTimeout(timer); el.classList.add('sai'); setTimeout(() => el.remove(), 300); if (desfazerAtual === h) desfazerAtual = null; },
+    desfaz() { if (feito) return; h.fecha(); fn(); },
+  };
+  b.addEventListener('click', () => h.desfaz());
+  timer = setTimeout(h.fecha, ms); desfazerAtual = h;
+}
+export function desfazerUltimo() { if (!desfazerAtual) return false; desfazerAtual.desfaz(); return true; }

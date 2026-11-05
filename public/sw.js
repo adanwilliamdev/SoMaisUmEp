@@ -5,11 +5,11 @@
 // Ao publicar uma versão nova, troque o número abaixo para renovar o cache.
 // Código (js/css/html/manifest) usa REDE PRIMEIRO: assim todos os módulos vêm do mesmo deploy e nunca se misturam
 // versões; o cache só serve quando está offline. Ícones e imagens usam cache primeiro.
-const VERSAO = 'somaisumep-v5.0.1';
+const VERSAO = 'somaisumep-v5.1.0';
 const SHELL = VERSAO + '-shell', IMAGENS = VERSAO + '-img', EXTERNO = VERSAO + '-ext';
 const ARQUIVOS = [
   '/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png',
-  '/js/main.js', '/js/util.js', '/js/api.js', '/js/loja.js', '/js/regras.js', '/js/views.js', '/js/capas.js', '/js/tmdbsync.js',
+  '/js/main.js', '/js/util.js', '/js/api.js', '/js/loja.js', '/js/regras.js', '/js/views.js', '/js/capas.js', '/js/tmdbsync.js', '/js/importacao.js', '/js/compartilhar.js',
 ];
 
 self.addEventListener('install', e => {
@@ -53,13 +53,18 @@ self.addEventListener('fetch', e => {
   if (url.origin === location.origin) {
     if (url.pathname.startsWith('/api/')) return;                       // dados: sempre rede
     if (req.mode === 'navigate') {                                       // página: rede primeiro, cache se estiver offline
-      e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(SHELL).then(x => x.put('/', c)); return r; })
-        .catch(() => caches.match('/')));
+      // Só o app (/) vira cópia offline; a página pública de um top (/t/...) não pode sobrescrevê-la.
+      const app = url.pathname === '/';
+      e.respondWith(fetch(req).then(r => { if (app && r.ok) { const c = r.clone(); caches.open(SHELL).then(x => x.put('/', c)); } return r; })
+        .catch(() => (app ? caches.match('/') : Response.error())));
       return;
     }
     e.respondWith(CODIGO.test(url.pathname) ? redePrimeiro(req, SHELL) : antigoEnovo(req, SHELL));
     return;
   }
-  if (url.hostname === 'image.tmdb.org' || url.hostname.endsWith('.public.blob.vercel-storage.com')) { e.respondWith(antigoEnovo(req, IMAGENS, 250)); return; }
+  if (url.hostname === 'image.tmdb.org' || url.hostname.endsWith('.public.blob.vercel-storage.com')) {
+    if (req.mode === 'cors') return;   // imagem para o canvas (imagem do top): vai direto à rede, senão o cache devolveria a cópia "opaca" e o canvas ficaria bloqueado
+    e.respondWith(antigoEnovo(req, IMAGENS, 250)); return;
+  }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') e.respondWith(antigoEnovo(req, EXTERNO));
 });

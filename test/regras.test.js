@@ -143,3 +143,55 @@ test('importar: ignora títulos que já existem e repetidos dentro do arquivo', 
   assert.deepEqual(aceitos.map(s => s.id), ['y', '1']);   // mesmo id = atualização do item existente, continua valendo
   assert.deepEqual(repetidos.map(s => s.id), ['x', 'z']);
 });
+
+/* ---------- v5.1: lançamentos e descobrir ---------- */
+// 2026-11-04 (quarta) ao meio-dia, no fuso local
+const AGORA = new Date(2026, 10, 4, 12).getTime();
+
+test('lançamento: hoje, amanhã, dia da semana e data; passado some', async () => {
+  const { lancamento } = await R();
+  const com = (d, extra = {}) => serie({ proximo: { d, t: 3, e: 5, ...extra } });
+  assert.equal(lancamento(com('2026-11-04'), AGORA).texto, 'Novo ep hoje');
+  assert.equal(lancamento(com('2026-11-04'), AGORA).hoje, true);
+  assert.equal(lancamento(com('2026-11-05'), AGORA).texto, 'Novo ep amanhã');
+  assert.equal(lancamento(com('2026-11-06'), AGORA).texto, 'Novo ep sexta');       // 6 nov 2026 é sexta
+  assert.equal(lancamento(com('2026-11-12'), AGORA).texto, 'Novo ep em 12 nov');
+  assert.equal(lancamento(com('2026-11-03'), AGORA), null);
+  assert.equal(lancamento(serie(), AGORA), null);
+  assert.equal(lancamento(com('lixo'), AGORA), null);
+});
+
+test('lançamento: estreia de temporada e de filme', async () => {
+  const { lancamento } = await R();
+  assert.equal(lancamento(serie({ proximo: { d: '2026-11-06', t: 3, e: 1 } }), AGORA).texto, 'Nova temporada sexta');
+  assert.equal(lancamento(serie({ proximo: { d: '2026-11-06', t: 1, e: 1 } }), AGORA).texto, 'Novo ep sexta');           // estreia da série
+  assert.equal(lancamento({ id: 'f', tipo: 'movie', nome: 'F', eps: [1], vis: [0], proximo: { d: '2026-12-25' } }, AGORA).texto, 'Estreia em 25 dez');
+});
+
+test('próximos lançamentos: ordem, filtro por tipo e janela de dias', async () => {
+  const { proximosLancamentos, lancamentoVencido } = await R();
+  const lista = [
+    serie({ id: 'a', nome: 'B', proximo: { d: '2026-11-10' } }), serie({ id: 'b', nome: 'A', proximo: { d: '2026-11-04' } }),
+    serie({ id: 'c', nome: 'C', proximo: { d: '2027-03-01' } }), serie({ id: 'd', nome: 'D' }),
+    { id: 'f', tipo: 'movie', nome: 'F', eps: [1], vis: [0], proximo: { d: '2026-11-07' } },
+  ];
+  assert.deepEqual(proximosLancamentos(lista, { tipo: 'tv', agora: AGORA }).map(x => x.s.id), ['b', 'a']);
+  assert.deepEqual(proximosLancamentos(lista, { tipo: 'movie', agora: AGORA }).map(x => x.s.id), ['f']);
+  assert.deepEqual(proximosLancamentos(lista, { agora: AGORA, dias: 0 }).map(x => x.s.id), ['b']);
+  assert.equal(lancamentoVencido(lista[1], AGORA), true);
+  assert.equal(lancamentoVencido(lista[0], AGORA), false);
+  assert.equal(lancamentoVencido(lista[3], AGORA), false);
+});
+
+test('sementes: só começados, com TMDb e sem nota baixa; melhor nota primeiro', async () => {
+  const { sementes, naEstante } = await R();
+  const l = [
+    serie({ id: '1', tmdb: 1, vis: [1, 0], nota_pessoal: 9, visto_em: 5 }), serie({ id: '2', tmdb: 2, vis: [1, 0], visto_em: 50 }),
+    serie({ id: '3', tmdb: 3, vis: [1, 0], nota_pessoal: 3 }), serie({ id: '4', tmdb: 4 }), serie({ id: '5', vis: [2, 0] }),
+    { id: '6', tipo: 'movie', nome: 'F', eps: [1], vis: [1], tmdb: 6 },
+  ];
+  assert.deepEqual(sementes(l, 'tv').map(s => s.id), ['1', '2']);
+  assert.deepEqual(sementes(l, 'movie').map(s => s.id), ['6']);
+  assert.equal(naEstante(l, 'tv', 2), true);
+  assert.equal(naEstante(l, 'movie', 2), false);
+});

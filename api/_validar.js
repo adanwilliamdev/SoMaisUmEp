@@ -26,6 +26,16 @@ function historico(h) {
   return o;
 }
 
+const DATA = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+// Próximo lançamento: { d: 'AAAA-MM-DD', t?: temporada, e?: episódio }. Qualquer outra coisa vira null.
+function proximo(p) {
+  if (!p || typeof p !== 'object' || !DATA.test(String(p.d || ''))) return null;
+  const o = { d: p.d }, t = num(p.t, 1, 999), e = num(p.e, 1, 9999);
+  if (t) o.t = t;
+  if (e) o.e = e;
+  return o;
+}
+
 function titulo(x, userId) {
   if (!x || !ID.test(x.id || '')) throw erro('Título inválido');
   const tipo = x.tipo === 'movie' ? 'movie' : 'tv';
@@ -39,7 +49,7 @@ function titulo(x, userId) {
     eps, vis: eps.map((n, i) => Math.min(v[i] || 0, n)),
     criado: num(x.criado, 0, 8.64e15) ?? Date.now(),
     nota_pessoal: num(x.nota_pessoal, 0, 10, 1), resenha: txt(x.resenha, 4000),
-    visto_em: num(x.visto_em, 0, 8.64e15), hist: historico(x.hist),
+    visto_em: num(x.visto_em, 0, 8.64e15), hist: historico(x.hist), proximo: proximo(x.proximo),
     base: num(x.base, 0, 8.64e15), // versão que o navegador conhecia (controle de edição simultânea)
   };
 }
@@ -66,4 +76,4 @@ function senha(v) {
 }
 const nomeUsuario = v => txt(v, 60) || (() => { throw erro('Informe seu nome'); })();
 
-module.exports = { ID, txt, inteiros, num, capaOk, historico, titulo, top, ids, email, senha, nomeUsuario };
+module.exports = { ID, txt, inteiros, num, capaOk, historico, proximo, titulo, top, ids, email, senha, nomeUsuario };

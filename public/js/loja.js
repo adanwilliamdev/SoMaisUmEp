@@ -7,7 +7,7 @@ import { api } from './api.js';
 import { mesclarTitulo } from './regras.js';
 import { status, aviso, faixa, guardar, lerJSON, apagar } from './util.js';
 
-export const L = { series: [], tops: [], usuario: null, blob: false };
+export const L = { series: [], tops: [], usuario: null, blob: false, links: {} }; // links: id do top -> código do link público
 export const achar = id => L.series.find(s => s.id === id);
 
 const hooks = { render() {}, login() {} };
@@ -26,6 +26,11 @@ const chaves = () => {
 };
 const diferente = () => { const a = chaves(); return Object.keys(a).some(k => a[k] !== remoto[k]) || Object.keys(remoto).some(k => !(k in a)); };
 export const pendente = () => sujo;
+// Espera o envio das alterações pendentes (ex.: antes de pedir ao servidor um link público de um top recém-criado).
+export async function esperarSalvar(max = 10000) {
+  for (let t = 0; sujo && t < max; t += 200) await new Promise(r => setTimeout(r, 200));
+  return !sujo;
+}
 
 /* ---------- carregar dados do servidor ---------- */
 function tira(r) { const { atualizado, ...x } = r; ver[x.id] = atualizado; return x; }
@@ -33,6 +38,7 @@ function definir(d) {
   ver = {};
   L.series = (d.series || []).map(tira);
   L.tops = (d.tops || []).map(tira);
+  L.links = d.links || {};
   remoto = chaves();
 }
 
@@ -41,7 +47,7 @@ let tSnap = null;
 function agendaSnap() { clearTimeout(tSnap); tSnap = setTimeout(salvarSnap, 500); }
 function salvarSnap() {
   if (!L.usuario) return;
-  guardar(SNAP, { uid: L.usuario.id, series: L.series, tops: L.tops, remoto, ver, blob: L.blob, usuario: L.usuario });
+  guardar(SNAP, { uid: L.usuario.id, series: L.series, tops: L.tops, links: L.links, remoto, ver, blob: L.blob, usuario: L.usuario });
 }
 const lerSnap = () => lerJSON(SNAP);
 export const limparSnap = () => { clearTimeout(tSnap); apagar(SNAP); };
@@ -83,7 +89,7 @@ export async function carregar() {
   } catch (e) {
     if (e.auth) throw e;
     if ((e.rede || e.status >= 500) && snap && snap.series) {
-      L.series = snap.series; L.tops = snap.tops; L.usuario = snap.usuario; L.blob = !!snap.blob;
+      L.series = snap.series; L.tops = snap.tops; L.links = snap.links || {}; L.usuario = snap.usuario; L.blob = !!snap.blob;
       remoto = snap.remoto || {}; ver = snap.ver || {};
       faixa('Sem conexão. Mostrando a última versão salva neste aparelho.');
       if (diferente()) { sujo = true; agenda(5000); }
@@ -184,7 +190,7 @@ export async function recarregarSuave({ ocupado = () => false } = {}) {
     const antes = remoto;
     const novo = { series: d.series.map(tira), tops: d.tops.map(tira) };
     const L0 = { series: L.series, tops: L.tops };
-    L.series = novo.series; L.tops = novo.tops;
+    L.series = novo.series; L.tops = novo.tops; L.links = d.links || {};
     const depois = chaves();
     const igual = Object.keys(depois).length === Object.keys(antes).length && Object.keys(depois).every(k => depois[k] === antes[k]);
     if (igual) { L.series = L0.series; L.tops = L0.tops; remoto = antes; return; }
@@ -199,4 +205,4 @@ export function ligarRede() {
   if (!navigator.onLine) faixa('Sem conexão. As alterações ficam salvas neste aparelho.');
 }
 
-export function zerar() { L.series = []; L.tops = []; L.usuario = null; remoto = {}; ver = {}; sujo = false; clearTimeout(timer); }
+export function zerar() { L.series = []; L.tops = []; L.links = {}; L.usuario = null; remoto = {}; ver = {}; sujo = false; clearTimeout(timer); }
