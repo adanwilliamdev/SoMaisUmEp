@@ -496,7 +496,7 @@ async function iniciarImportacao() {
     for (let i = 0; i < total; i += 10) {
       if (imp.parar) { parou = true; break; }
       const lote = imp.entradas.slice(i, i + 10), novos = [];
-      const r = (await api('/api/importar', { method: 'POST', body: { itens: lote.map(e => ({ tipo: e.tipo, nome: e.nome, ano: e.ano, tmdb: e.tmdb, imdb: e.imdb })) } })).resultados;
+      const r = (await api('/api/tmdb', { method: 'POST', body: { itens: lote.map(e => ({ tipo: e.tipo, nome: e.nome, ano: e.ano, tmdb: e.tmdb, imdb: e.imdb })) } })).resultados;
       lote.forEach((e, k) => {
         const info = r[k], rot = e.nome + (e.ano ? ` (${e.ano})` : '');
         if (!info || !info.ok) { naoAchou.push(rot); return; }

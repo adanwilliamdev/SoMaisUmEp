@@ -119,7 +119,7 @@ test('/api/importar: resolve por id do TMDb, id do IMDb e nome+ano; falhas não 
     '/movie/496243': { id: 496243, title: 'Parasita', release_date: '2019-05-30' },
     '/search/tv': { results: [] },
   };
-  const r = await chamar('importar', { metodo: 'POST', body: { itens: [
+  const r = await chamar('tmdb', { metodo: 'POST', body: { itens: [
     { tipo: 'movie', tmdb: '380', nome: 'ignorado' }, { tipo: 'movie', imdb: 'tt0110912' }, { tipo: 'movie', nome: 'Parasita', ano: '2019' },
     { tipo: 'tv', nome: 'Série que não existe', ano: '2001' }, { tipo: 'movie', imdb: 'tt1', nome: '' },
   ] } });
@@ -132,9 +132,9 @@ test('/api/importar: resolve por id do TMDb, id do IMDb e nome+ano; falhas não 
 
 test('/api/importar: exige login, limita o lote a 10 e recusa lote vazio', async () => {
   banco.resposta = base(); tmdb.rotas = { '/movie/1': { id: 1, title: 'F' } };
-  assert.equal((await chamar('importar', { metodo: 'POST', body: { itens: [{ tipo: 'movie', tmdb: '1' }] }, logado: false })).code, 401);
-  assert.equal((await chamar('importar', { metodo: 'POST', body: { itens: [] } })).code, 400);
-  const r = await chamar('importar', { metodo: 'POST', body: { itens: Array.from({ length: 30 }, () => ({ tipo: 'movie', tmdb: '1' })) } });
+  assert.equal((await chamar('tmdb', { metodo: 'POST', body: { itens: [{ tipo: 'movie', tmdb: '1' }] }, logado: false })).code, 401);
+  assert.equal((await chamar('tmdb', { metodo: 'POST', body: { itens: [] } })).code, 400);
+  const r = await chamar('tmdb', { metodo: 'POST', body: { itens: Array.from({ length: 30 }, () => ({ tipo: 'movie', tmdb: '1' })) } });
   assert.equal(r.body.resultados.length, 10);
 });
 
@@ -145,21 +145,21 @@ test('/api/compartilhar: cria código aleatório, reaproveita o existente e desl
     if (/select publico, jsonb_array_length/.test(t)) return v[0] === 'top-1' ? [{ publico: null, n: 3 }] : v[0] === 'top-2' ? [{ publico: 'abc123DEF456', n: 2 }] : v[0] === 'top-vazio' ? [{ publico: null, n: 0 }] : [];
     if (/update tops set publico = \?, publico_em/.test(t)) gravado = v[0];
   });
-  const r = await chamar('compartilhar', { metodo: 'POST', body: { id: 'top-1', ativo: true } });
+  const r = await chamar('t', { metodo: 'POST', body: { id: 'top-1', ativo: true } });
   assert.match(r.body.codigo, /^[\w-]{12}$/);
   assert.equal(gravado, r.body.codigo);
-  assert.equal((await chamar('compartilhar', { metodo: 'POST', body: { id: 'top-2', ativo: true } })).body.codigo, 'abc123DEF456');
-  assert.equal((await chamar('compartilhar', { metodo: 'POST', body: { id: 'top-2', ativo: false } })).body.codigo, null);
+  assert.equal((await chamar('t', { metodo: 'POST', body: { id: 'top-2', ativo: true } })).body.codigo, 'abc123DEF456');
+  assert.equal((await chamar('t', { metodo: 'POST', body: { id: 'top-2', ativo: false } })).body.codigo, null);
   assert.ok(banco.consultas.some(c => /set publico = null, publico_em = null/.test(c.texto)));
-  assert.equal((await chamar('compartilhar', { metodo: 'POST', body: { id: 'nao-existe', ativo: true } })).code, 404);
-  assert.equal((await chamar('compartilhar', { metodo: 'POST', body: { id: 'top-vazio', ativo: true } })).code, 400);
-  assert.equal((await chamar('compartilhar', { metodo: 'POST', body: { id: 'ruim!', ativo: true } })).code, 400);
-  assert.equal((await chamar('compartilhar', { metodo: 'POST', body: { id: 'top-1', ativo: true }, logado: false })).code, 401);
+  assert.equal((await chamar('t', { metodo: 'POST', body: { id: 'nao-existe', ativo: true } })).code, 404);
+  assert.equal((await chamar('t', { metodo: 'POST', body: { id: 'top-vazio', ativo: true } })).code, 400);
+  assert.equal((await chamar('t', { metodo: 'POST', body: { id: 'ruim!', ativo: true } })).code, 400);
+  assert.equal((await chamar('t', { metodo: 'POST', body: { id: 'top-1', ativo: true }, logado: false })).code, 401);
 });
 
 test('/api/compartilhar: só mexe em tops do próprio usuário', async () => {
   banco.resposta = base(() => []); banco.consultas = [];
-  await chamar('compartilhar', { metodo: 'POST', body: { id: 'top-1', ativo: true } });
+  await chamar('t', { metodo: 'POST', body: { id: 'top-1', ativo: true } });
   const q = banco.consultas.find(c => /select publico, jsonb_array_length/.test(c.texto));
   assert.deepEqual(q.vals, ['top-1', 'u1']);
 });

@@ -42,6 +42,7 @@ module.exports = async (req, res) => {
   const naoAchou = () => enviar(pagina({ status: 404, titulo: 'Top não encontrado · SóMaisUmEp', descricao: 'Este link não existe ou deixou de ser compartilhado.',
     corpo: '<section class="top"><div class="top-cab"><h1>Top não encontrado</h1></div><p class="sub">Este link não existe ou deixou de ser compartilhado.</p></section><p class="pub-cta"><a class="btn" href="/">Ir para o SóMaisUmEp</a></p>' }), 'no-store');
   try {
+    if (req.method === 'POST') return require('./_compartilhar')(req, res);   // liga/desliga o link (logado); junto daqui para caber no limite de funções da Vercel
     if (req.method !== 'GET') return res.status(405).end();
     const codigo = String((req.query || {}).c || '');
     if (!CODIGO.test(codigo)) return naoAchou();

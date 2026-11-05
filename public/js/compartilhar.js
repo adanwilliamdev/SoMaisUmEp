@@ -91,7 +91,7 @@ export const urlPublica = codigo => `${location.origin}/t/${codigo}`;
 
 export async function definirLink(top, ativo) {
   if (!(await esperarSalvar())) throw new Error('Ainda salvando suas alterações. Tente de novo em instantes.');
-  const r = await api('/api/compartilhar', { method: 'POST', body: { id: top.id, ativo } });
+  const r = await api('/api/t', { method: 'POST', body: { id: top.id, ativo } });
   if (r.codigo) L.links[top.id] = r.codigo; else delete L.links[top.id];
   return r.codigo;
 }

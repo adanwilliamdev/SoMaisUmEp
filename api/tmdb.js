@@ -8,7 +8,7 @@ const cache = (res, json, seg = 86400) => { res.setHeader('Cache-Control', `publ
 
 const IDS = /^\d{1,9}$/;
 
-module.exports = rota('GET', async (req, res) => {
+const buscar = rota('GET', async (req, res) => {
   const { acao, tipo, q, id, ids } = req.query;
   if (!['tv', 'movie'].includes(tipo)) throw erro('Tipo inválido');
   if (acao === 'busca') {
@@ -53,3 +53,6 @@ module.exports = rota('GET', async (req, res) => {
   }
   throw erro('Ação inválida');
 });
+
+// GET = consultas ao TMDb; POST = importação em lote (api/_importar.js). Um só arquivo para caber no limite de funções da Vercel (plano Hobby: 12).
+module.exports = (req, res) => (req.method === 'POST' ? require('./_importar')(req, res) : buscar(req, res));
