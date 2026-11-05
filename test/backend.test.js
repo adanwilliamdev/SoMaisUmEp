@@ -230,3 +230,36 @@ test('cron: exige o CRON_SECRET e devolve o que limpou', async () => {
   delete process.env.CRON_SECRET;
   assert.equal((await chamar('cron', { metodo: 'GET', headers: { authorization: 'Bearer x' } })).code, 500);
 });
+
+/* ---------- v5.1.1: chave por usuário e adoção de dados antigos ---------- */
+test('sync: o upsert usa a chave (user_id, id), então o mesmo id em outra conta não vira conflito', async () => {
+  limpar();
+  banco.resposta = base((t) => (/insert into (titulos|tops)/.test(t) ? [{ id: 'x', atualizado: 1 }] : []));
+  const r = await chamar('sync', { logado: true, body: { titulos: [{ id: 'a1', nome: 'Teste', eps: [3], vis: [1] }], tops: [{ id: 'p1', nome: 'Top' }] } });
+  assert.equal(r.code, 200);
+  const ups = banco.consultas.filter(c => /insert into (titulos|tops)/.test(c.texto));
+  assert.equal(ups.length, 2);
+  for (const c of ups) { assert.match(c.texto, /on conflict \(user_id, id\)/); assert.doesNotMatch(c.texto, /on conflict \(id\)/); }
+});
+
+test('migração 004: troca a chave primária por índice único (user_id, id) e é segura de repetir', () => {
+  const sql = fs.readFileSync(path.join(__dirname, '..', 'neon', 'migracoes', '004_chave_por_usuario.sql'), 'utf8');
+  for (const t of ['titulos', 'tops']) {
+    assert.match(sql, new RegExp(`alter table ${t} drop constraint if exists ${t}_pkey`));
+    assert.match(sql, new RegExp(`create unique index if not exists ${t}_user_id_uidx on ${t} \\(user_id, id\\)`));
+  }
+});
+
+test('cadastro: primeira conta só adota dados sem dono com ADOTAR_DADOS_ANTIGOS=true', async () => {
+  const rodar = async adotar => {
+    limpar();
+    if (adotar) process.env.ADOTAR_DADOS_ANTIGOS = 'true'; else delete process.env.ADOTAR_DADOS_ANTIGOS;
+    banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 0 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
+    const r = await chamar('cadastro', { body: { nome: 'Ana', email: 'ana@exemplo.com', senha: 'senha-bem-longa' } });
+    assert.equal(r.code, 200);
+    return banco.consultas.filter(c => /set user_id = \?\s+where user_id is null/.test(c.texto)).length;
+  };
+  assert.equal(await rodar(false), 0, 'sem a variável, nada é adotado');
+  assert.equal(await rodar(true), 2, 'com a variável, títulos e tops são adotados');
+  delete process.env.ADOTAR_DADOS_ANTIGOS;
+});

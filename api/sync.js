@@ -22,7 +22,7 @@ module.exports = rota('POST', async (req, res, u) => {
     insert into titulos (id, user_id, tipo, nome, capa, sinopse, ano, nota, duracao, tmdb, eps, vis, criado, nota_pessoal, resenha, visto_em, hist, proximo, atualizado)
     values (${t.id}, ${u.id}, ${t.tipo}, ${t.nome}, ${t.capa}, ${t.sinopse}, ${t.ano}, ${t.nota}, ${t.duracao}, ${t.tmdb}, ${t.eps}, ${t.vis}, ${t.criado},
             ${t.nota_pessoal}, ${t.resenha}, ${t.visto_em}, ${JSON.stringify(t.hist)}::jsonb, ${t.proximo ? JSON.stringify(t.proximo) : null}::jsonb, ${agora})
-    on conflict (id) do update set tipo = excluded.tipo, nome = excluded.nome, capa = excluded.capa, sinopse = excluded.sinopse,
+    on conflict (user_id, id) do update set tipo = excluded.tipo, nome = excluded.nome, capa = excluded.capa, sinopse = excluded.sinopse,
       ano = excluded.ano, nota = excluded.nota, duracao = excluded.duracao, tmdb = excluded.tmdb, eps = excluded.eps, vis = excluded.vis,
       nota_pessoal = excluded.nota_pessoal, resenha = excluded.resenha, visto_em = excluded.visto_em, hist = excluded.hist, proximo = excluded.proximo, atualizado = excluded.atualizado
     where titulos.user_id = ${u.id} and (titulos.atualizado = ${t.base}::bigint or ${t.base}::bigint is null)
@@ -30,7 +30,7 @@ module.exports = rota('POST', async (req, res, u) => {
   for (const t of P) q.push(sql`
     insert into tops (id, user_id, nome, itens, criado, atualizado)
     values (${t.id}, ${u.id}, ${t.nome}, ${JSON.stringify(t.itens)}::jsonb, ${t.criado}, ${agora})
-    on conflict (id) do update set nome = excluded.nome, itens = excluded.itens, atualizado = excluded.atualizado
+    on conflict (user_id, id) do update set nome = excluded.nome, itens = excluded.itens, atualizado = excluded.atualizado
     where tops.user_id = ${u.id} and (tops.atualizado = ${t.base}::bigint or ${t.base}::bigint is null)
     returning id, atualizado`);
   if (delT.length) q.push(sql`delete from titulos where user_id = ${u.id} and id = any(${delT})`);

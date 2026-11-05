@@ -16,8 +16,10 @@ module.exports = rota('POST', async (req, res) => {
 
   const u = { id: crypto.randomUUID(), versao: 1 }, hash = await hashSenha(senha);
   const q = [sql`insert into usuarios (id, email, nome, senha_hash) values (${u.id}, ${email}, ${nome}, ${hash}) on conflict (email) do nothing returning id`];
-  // O primeiro usuário herda os dados da versão de uma só senha (linhas sem dono).
-  if (n === 0) {
+  // Dados da versão de uma só senha (linhas sem dono) só são adotados se o dono do site pedir de propósito
+  // (ADOTAR_DADOS_ANTIGOS=true) e apenas pela primeira conta. Sem isso, quem se cadastrar primeiro num banco
+  // com dados antigos não leva nada.
+  if (n === 0 && String(process.env.ADOTAR_DADOS_ANTIGOS || '').toLowerCase() === 'true') {
     q.push(sql`update titulos set user_id = ${u.id} where user_id is null`);
     q.push(sql`update tops set user_id = ${u.id} where user_id is null`);
   }

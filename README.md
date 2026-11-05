@@ -32,7 +32,7 @@ test/          testes (node --test)
 
 ## Identidade visual (v4.4)
 
-Linguagem de cartaz do cinema brasileiro, em duas cores: **grafite** (`--tx`/`--acc`) e **amarelo-sol** (`--sol`, usado só para progresso, episódios vistos e botão +1). Sombras duras de serigrafia nos botões e pôsteres. Tipografia: **Archivo** (uma só família, títulos em peso 700). Todas as cores e raios são tokens em `:root` no topo de `public/style.css` (claro, escuro automático e `data-theme`). O ícone do app é `public/icons/icon.svg` e os PNGs são gerados a partir dele.
+Linguagem de cartaz do cinema brasileiro, em duas cores: **grafite** (`--tx`/`--acc`) e **amarelo-sol** (`--sol`, usado só para progresso, episódios vistos e botão +1). Sombras duras de serigrafia nos botões e pôsteres. Tipografia: **Hanken Grotesk** no texto e **Unbounded** nos títulos e na marca (`--corpo` e `--titulo`). Todas as cores e raios são tokens em `:root` no topo de `public/style.css` (claro, escuro automático e `data-theme`). O ícone do app é `public/icons/icon.svg` e os PNGs são gerados a partir dele.
 
 ## 1. Neon
 
@@ -44,9 +44,9 @@ Linguagem de cartaz do cinema brasileiro, em duas cores: **grafite** (`--tx`/`--
 
 Para mudar o banco, crie `neon/migracoes/00N_descricao.sql` (um comando por `;`, sem `;` dentro de texto) e rode `npm run schema` para regenerar o `schema.sql`. Um teste confere se os dois estão em dia.
 
-> **Atualizando da versão de uma senha só?** Rode o novo `schema.sql`, faça o deploy e **crie a sua conta**: a primeira conta criada herda todos os dados que já existiam.
+> **Atualizando da versão de uma senha só?** Defina `ADOTAR_DADOS_ANTIGOS=true` (e, de preferência, `CADASTRO_ABERTO=false` até terminar), rode o novo `schema.sql`, faça o deploy e **crie a sua conta**: só a primeira conta criada herda os dados que já existiam, e só com essa variável ligada. Depois de criar a conta, remova a variável.
 
-> **Atualizando da v5.0?** Rode `npm run migrar` (ou o novo `neon/schema.sql`): a migração 003 acrescenta `titulos.proximo` e `tops.publico`/`publico_em`. Sem ela o app para de salvar.
+> **Atualizando de uma versão anterior?** Rode `npm run migrar` (ou o novo `neon/schema.sql`) **antes** do deploy: a 003 acrescenta `titulos.proximo` e `tops.publico`/`publico_em`, e a 004 troca a chave de títulos e tops para `(user_id, id)`. O código novo depende da 004 (`on conflict (user_id, id)`); sem ela o app para de salvar.
 
 ## 2. TMDb
 
@@ -65,6 +65,7 @@ Em themoviedb.org › Configurações › API, copie o **Token de Leitura da API
 | `BLOB_READ_WRITE_TOKEN` | *(opcional)* criado ao conectar um **Vercel Blob** (Storage › Create › Blob) |
 | `CRON_SECRET` | texto aleatório longo, usado pela faxina diária (`/api/cron`) |
 | `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM` | *(opcionais)* ligam o "Esqueci minha senha" (veja abaixo) |
+| `ADOTAR_DADOS_ANTIGOS` | *(opcional, só para atualizar da versão de uma senha)* `true` faz a primeira conta criada herdar as linhas sem dono; remova depois |
 | `CADASTRO_ABERTO` | *(opcional)* `false` fecha novos cadastros depois da primeira conta |
 
 `APP_PASSWORD` não é mais usada. Se mudar variáveis, faça um **Redeploy**.
