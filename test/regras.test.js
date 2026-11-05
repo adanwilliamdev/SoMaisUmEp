@@ -28,9 +28,18 @@ test('filmes: assistido ou na fila', async () => {
 test('busca ignora acento e maiúsculas, e combina com o filtro de estado', async () => {
   const { filtrar } = await R();
   const L = [serie({ id: '1', nome: 'Coração de Ferro' }), serie({ id: '2', nome: 'Breaking Bad', vis: [2, 0] })];
-  assert.deepEqual(filtrar(L, { busca: 'coracao' }).map(s => s.id), ['1']);
-  assert.deepEqual(filtrar(L, { busca: 'BREAK' }).map(s => s.id), ['2']);
-  assert.deepEqual(filtrar(L, { estado: 'assistindo' }).map(s => s.id), ['2']);
+  assert.deepEqual(
+    filtrar(L, { busca: 'coracao' }).map(s => s.id),
+    ['1'],
+  );
+  assert.deepEqual(
+    filtrar(L, { busca: 'BREAK' }).map(s => s.id),
+    ['2'],
+  );
+  assert.deepEqual(
+    filtrar(L, { estado: 'assistindo' }).map(s => s.id),
+    ['2'],
+  );
   assert.deepEqual(filtrar(L, { estado: 'assistindo', busca: 'ferro' }), []);
 });
 
@@ -41,10 +50,22 @@ test('ordenação por nome, nota e último visto', async () => {
     serie({ id: 'a', nome: 'álgebra', nota: 9, visto_em: null, criado: 2 }),
     serie({ id: 'c', nome: 'Céu', nota: 5, nota_pessoal: 10, visto_em: 300, criado: 3 }),
   ];
-  assert.deepEqual(ordenar(L, 'nome').map(s => s.id), ['a', 'b', 'c']);
-  assert.deepEqual(ordenar(L, 'nota').map(s => s.id), ['c', 'a', 'b']); // nota pessoal vence a do TMDb
-  assert.deepEqual(ordenar(L, 'visto').map(s => s.id), ['c', 'b', 'a']);
-  assert.deepEqual(ordenar(L, 'recente').map(s => s.id), ['c', 'a', 'b']);
+  assert.deepEqual(
+    ordenar(L, 'nome').map(s => s.id),
+    ['a', 'b', 'c'],
+  );
+  assert.deepEqual(
+    ordenar(L, 'nota').map(s => s.id),
+    ['c', 'a', 'b'],
+  ); // nota pessoal vence a do TMDb
+  assert.deepEqual(
+    ordenar(L, 'visto').map(s => s.id),
+    ['c', 'b', 'a'],
+  );
+  assert.deepEqual(
+    ordenar(L, 'recente').map(s => s.id),
+    ['c', 'a', 'b'],
+  );
 });
 
 test('"Continuar assistindo": só séries em andamento, mais recentes primeiro', async () => {
@@ -56,24 +77,30 @@ test('"Continuar assistindo": só séries em andamento, mais recentes primeiro',
     serie({ id: '4', vis: [10, 8] }),
     { id: '5', tipo: 'movie', nome: 'F', eps: [1], vis: [0] },
   ];
-  assert.deepEqual(continuar(L).map(s => s.id), ['2', '1']);
+  assert.deepEqual(
+    continuar(L).map(s => s.id),
+    ['2', '1'],
+  );
 });
 
 test('registrarProgresso soma no mês e atualiza "último visto"', async () => {
   const { registrarProgresso, vis } = await R();
   const agora = new Date(2026, 10, 5, 12).getTime();
   const s = serie({ vis: [2, 0] });
-  const antes = vis(s); s.vis[0] = 5;
+  const antes = vis(s);
+  s.vis[0] = 5;
   registrarProgresso(s, antes, agora);
   assert.deepEqual(s.hist, { '2026-11': 3 });
   assert.equal(s.visto_em, agora);
-  const a2 = vis(s); s.vis[0] = 4;               // desmarcar
+  const a2 = vis(s);
+  s.vis[0] = 4; // desmarcar
   registrarProgresso(s, a2, agora + 1);
   assert.deepEqual(s.hist, { '2026-11': 2 });
-  assert.equal(s.visto_em, agora);               // desmarcar não muda o último visto
-  const a3 = vis(s); s.vis[0] = 2;
+  assert.equal(s.visto_em, agora); // desmarcar não muda o último visto
+  const a3 = vis(s);
+  s.vis[0] = 2;
   registrarProgresso(s, a3, agora + 2);
-  assert.equal(s.hist['2026-11'], undefined);    // chega a zero: some do histórico
+  assert.equal(s.hist['2026-11'], undefined); // chega a zero: some do histórico
 });
 
 test('temporadas novas: cresce sem perder progresso nem diminuir', async () => {
@@ -82,10 +109,10 @@ test('temporadas novas: cresce sem perder progresso nem diminuir', async () => {
   assert.equal(aplicarEps(s, [10, 8, 6]), true);
   assert.deepEqual(s.eps, [10, 8, 6]);
   assert.deepEqual(s.vis, [10, 8, 0]);
-  assert.equal(aplicarEps(s, [10, 8, 6]), false);               // nada novo
-  assert.equal(aplicarEps(s, [10]), false);                      // TMDb com menos: ignora
+  assert.equal(aplicarEps(s, [10, 8, 6]), false); // nada novo
+  assert.equal(aplicarEps(s, [10]), false); // TMDb com menos: ignora
   assert.deepEqual(s.eps, [10, 8, 6]);
-  assert.deepEqual(fundirEps([10, 8], [12, 8]), [12, 8]);        // episódio novo na T1
+  assert.deepEqual(fundirEps([10, 8], [12, 8]), [12, 8]); // episódio novo na T1
 });
 
 test('mesclar: progresso não regride e o servidor vence nos metadados', async () => {
@@ -97,7 +124,7 @@ test('mesclar: progresso não regride e o servidor vence nos metadados', async (
   assert.equal(m.nome, 'Servidor');
   assert.equal(m.visto_em, 30);
   assert.deepEqual(m.hist, { '2026-11': 5, '2026-10': 4 });
-  const srv2 = serie({ eps: [10, 8, 4], vis: [1, 1, 1] });      // temporadas diferentes: servidor vence
+  const srv2 = serie({ eps: [10, 8, 4], vis: [1, 1, 1] }); // temporadas diferentes: servidor vence
   assert.deepEqual(mesclarTitulo(loc, srv2).vis, [1, 1, 1]);
   assert.equal(mesclarTitulo(loc, null), loc);
 });
@@ -106,7 +133,7 @@ test('estatísticas: tempo, contagens e meses', async () => {
   const { estatisticas, ultimosMeses, duracaoTexto } = await R();
   const L = [
     serie({ id: '1', vis: [10, 8], duracao: 50, nota_pessoal: 9, hist: { '2026-10': 18 } }),
-    serie({ id: '2', vis: [2, 0] }),                                   // sem duração
+    serie({ id: '2', vis: [2, 0] }), // sem duração
     { id: '3', tipo: 'movie', nome: 'F', eps: [1], vis: [1], duracao: 120, nota_pessoal: 8, hist: { '2026-11': 1 } },
   ];
   const r = estatisticas(L);
@@ -118,7 +145,14 @@ test('estatísticas: tempo, contagens e meses', async () => {
   assert.equal(r.notaMedia, 8.5);
   assert.deepEqual(r.porMes, { '2026-10': 18, '2026-11': 1 });
   const m = ultimosMeses(r.porMes, 3, new Date(2026, 10, 15).getTime());
-  assert.deepEqual(m.map(x => [x.mes, x.valor]), [['2026-09', 0], ['2026-10', 18], ['2026-11', 1]]);
+  assert.deepEqual(
+    m.map(x => [x.mes, x.valor]),
+    [
+      ['2026-09', 0],
+      ['2026-10', 18],
+      ['2026-11', 1],
+    ],
+  );
   assert.equal(duracaoTexto(90), '1 h 30 min');
   assert.equal(duracaoTexto(45), '45 min');
 });
@@ -126,22 +160,33 @@ test('estatísticas: tempo, contagens e meses', async () => {
 test('duplicados: mesmo TMDb ou mesmo nome (sem acento/caixa) no mesmo tipo', async () => {
   const { mesmoTitulo, acharDuplicado } = await R();
   const a = serie({ id: '1', nome: 'Coração de Ferro', tmdb: 10, ano: '2020' });
-  assert.ok(mesmoTitulo(a, serie({ id: '2', nome: 'qualquer outro nome', tmdb: 10 })));          // mesmo TMDb
-  assert.ok(mesmoTitulo(a, serie({ id: '2', nome: '  CORACAO  de   ferro ', tmdb: undefined })));  // mesmo nome
-  assert.ok(!mesmoTitulo(a, serie({ id: '2', nome: 'Coração de Ferro', tmdb: 11 })));            // TMDb diferente
-  assert.ok(!mesmoTitulo(a, serie({ id: '2', nome: 'Coração de Ferro', ano: '1990' })));         // remake: anos diferentes
+  assert.ok(mesmoTitulo(a, serie({ id: '2', nome: 'qualquer outro nome', tmdb: 10 }))); // mesmo TMDb
+  assert.ok(mesmoTitulo(a, serie({ id: '2', nome: '  CORACAO  de   ferro ', tmdb: undefined }))); // mesmo nome
+  assert.ok(!mesmoTitulo(a, serie({ id: '2', nome: 'Coração de Ferro', tmdb: 11 }))); // TMDb diferente
+  assert.ok(!mesmoTitulo(a, serie({ id: '2', nome: 'Coração de Ferro', ano: '1990' }))); // remake: anos diferentes
   assert.ok(!mesmoTitulo(a, { ...serie({ id: '2', nome: 'Coração de Ferro' }), tipo: 'movie' })); // filme x série
   assert.equal(acharDuplicado([a], serie({ id: '9', nome: 'coracao de ferro' })).id, '1');
-  assert.equal(acharDuplicado([a], serie({ id: '1', nome: 'Coração de Ferro' }), '1'), null);    // editando o próprio item
+  assert.equal(acharDuplicado([a], serie({ id: '1', nome: 'Coração de Ferro' }), '1'), null); // editando o próprio item
 });
 
 test('importar: ignora títulos que já existem e repetidos dentro do arquivo', async () => {
   const { semDuplicados } = await R();
   const atuais = [serie({ id: '1', nome: 'Dune', tmdb: 5 })];
-  const novos = [serie({ id: 'x', nome: 'Dune', tmdb: 5 }), serie({ id: 'y', nome: 'Alien' }), serie({ id: 'z', nome: 'alien' }), serie({ id: '1', nome: 'Dune', tmdb: 5 })];
+  const novos = [
+    serie({ id: 'x', nome: 'Dune', tmdb: 5 }),
+    serie({ id: 'y', nome: 'Alien' }),
+    serie({ id: 'z', nome: 'alien' }),
+    serie({ id: '1', nome: 'Dune', tmdb: 5 }),
+  ];
   const { aceitos, repetidos } = semDuplicados(novos, atuais);
-  assert.deepEqual(aceitos.map(s => s.id), ['y', '1']);   // mesmo id = atualização do item existente, continua valendo
-  assert.deepEqual(repetidos.map(s => s.id), ['x', 'z']);
+  assert.deepEqual(
+    aceitos.map(s => s.id),
+    ['y', '1'],
+  ); // mesmo id = atualização do item existente, continua valendo
+  assert.deepEqual(
+    repetidos.map(s => s.id),
+    ['x', 'z'],
+  );
 });
 
 /* ---------- v5.1: lançamentos e descobrir ---------- */
@@ -154,7 +199,7 @@ test('lançamento: hoje, amanhã, dia da semana e data; passado some', async () 
   assert.equal(lancamento(com('2026-11-04'), AGORA).texto, 'Novo ep hoje');
   assert.equal(lancamento(com('2026-11-04'), AGORA).hoje, true);
   assert.equal(lancamento(com('2026-11-05'), AGORA).texto, 'Novo ep amanhã');
-  assert.equal(lancamento(com('2026-11-06'), AGORA).texto, 'Novo ep sexta');       // 6 nov 2026 é sexta
+  assert.equal(lancamento(com('2026-11-06'), AGORA).texto, 'Novo ep sexta'); // 6 nov 2026 é sexta
   assert.equal(lancamento(com('2026-11-12'), AGORA).texto, 'Novo ep em 12 nov');
   assert.equal(lancamento(com('2026-11-03'), AGORA), null);
   assert.equal(lancamento(serie(), AGORA), null);
@@ -164,20 +209,31 @@ test('lançamento: hoje, amanhã, dia da semana e data; passado some', async () 
 test('lançamento: estreia de temporada e de filme', async () => {
   const { lancamento } = await R();
   assert.equal(lancamento(serie({ proximo: { d: '2026-11-06', t: 3, e: 1 } }), AGORA).texto, 'Nova temporada sexta');
-  assert.equal(lancamento(serie({ proximo: { d: '2026-11-06', t: 1, e: 1 } }), AGORA).texto, 'Novo ep sexta');           // estreia da série
+  assert.equal(lancamento(serie({ proximo: { d: '2026-11-06', t: 1, e: 1 } }), AGORA).texto, 'Novo ep sexta'); // estreia da série
   assert.equal(lancamento({ id: 'f', tipo: 'movie', nome: 'F', eps: [1], vis: [0], proximo: { d: '2026-12-25' } }, AGORA).texto, 'Estreia em 25 dez');
 });
 
 test('próximos lançamentos: ordem, filtro por tipo e janela de dias', async () => {
   const { proximosLancamentos, lancamentoVencido } = await R();
   const lista = [
-    serie({ id: 'a', nome: 'B', proximo: { d: '2026-11-10' } }), serie({ id: 'b', nome: 'A', proximo: { d: '2026-11-04' } }),
-    serie({ id: 'c', nome: 'C', proximo: { d: '2027-03-01' } }), serie({ id: 'd', nome: 'D' }),
+    serie({ id: 'a', nome: 'B', proximo: { d: '2026-11-10' } }),
+    serie({ id: 'b', nome: 'A', proximo: { d: '2026-11-04' } }),
+    serie({ id: 'c', nome: 'C', proximo: { d: '2027-03-01' } }),
+    serie({ id: 'd', nome: 'D' }),
     { id: 'f', tipo: 'movie', nome: 'F', eps: [1], vis: [0], proximo: { d: '2026-11-07' } },
   ];
-  assert.deepEqual(proximosLancamentos(lista, { tipo: 'tv', agora: AGORA }).map(x => x.s.id), ['b', 'a']);
-  assert.deepEqual(proximosLancamentos(lista, { tipo: 'movie', agora: AGORA }).map(x => x.s.id), ['f']);
-  assert.deepEqual(proximosLancamentos(lista, { agora: AGORA, dias: 0 }).map(x => x.s.id), ['b']);
+  assert.deepEqual(
+    proximosLancamentos(lista, { tipo: 'tv', agora: AGORA }).map(x => x.s.id),
+    ['b', 'a'],
+  );
+  assert.deepEqual(
+    proximosLancamentos(lista, { tipo: 'movie', agora: AGORA }).map(x => x.s.id),
+    ['f'],
+  );
+  assert.deepEqual(
+    proximosLancamentos(lista, { agora: AGORA, dias: 0 }).map(x => x.s.id),
+    ['b'],
+  );
   assert.equal(lancamentoVencido(lista[1], AGORA), true);
   assert.equal(lancamentoVencido(lista[0], AGORA), false);
   assert.equal(lancamentoVencido(lista[3], AGORA), false);
@@ -186,12 +242,21 @@ test('próximos lançamentos: ordem, filtro por tipo e janela de dias', async ()
 test('sementes: só começados, com TMDb e sem nota baixa; melhor nota primeiro', async () => {
   const { sementes, naEstante } = await R();
   const l = [
-    serie({ id: '1', tmdb: 1, vis: [1, 0], nota_pessoal: 9, visto_em: 5 }), serie({ id: '2', tmdb: 2, vis: [1, 0], visto_em: 50 }),
-    serie({ id: '3', tmdb: 3, vis: [1, 0], nota_pessoal: 3 }), serie({ id: '4', tmdb: 4 }), serie({ id: '5', vis: [2, 0] }),
+    serie({ id: '1', tmdb: 1, vis: [1, 0], nota_pessoal: 9, visto_em: 5 }),
+    serie({ id: '2', tmdb: 2, vis: [1, 0], visto_em: 50 }),
+    serie({ id: '3', tmdb: 3, vis: [1, 0], nota_pessoal: 3 }),
+    serie({ id: '4', tmdb: 4 }),
+    serie({ id: '5', vis: [2, 0] }),
     { id: '6', tipo: 'movie', nome: 'F', eps: [1], vis: [1], tmdb: 6 },
   ];
-  assert.deepEqual(sementes(l, 'tv').map(s => s.id), ['1', '2']);
-  assert.deepEqual(sementes(l, 'movie').map(s => s.id), ['6']);
+  assert.deepEqual(
+    sementes(l, 'tv').map(s => s.id),
+    ['1', '2'],
+  );
+  assert.deepEqual(
+    sementes(l, 'movie').map(s => s.id),
+    ['6'],
+  );
   assert.equal(naEstante(l, 'tv', 2), true);
   assert.equal(naEstante(l, 'movie', 2), false);
 });
@@ -203,14 +268,32 @@ test('backup: ids, números, capas e textos passam pelo saneamento (nada de aspa
   assert.equal(lt({ id: 'a'.repeat(65), nome: 'X', eps: [1], vis: [0] }), null);
   assert.equal(lt({ id: 'ok', nome: '  ', eps: [1], vis: [0] }), null, 'sem nome');
   assert.equal(lt({ id: 'ok', nome: 'X', eps: 'x', vis: [] }), null, 'eps precisa ser lista');
-  const t = lt({
-    id: 'ok-1', tipo: 'tv', nome: 'Série', eps: ['<b>', 5, 99999], vis: ['"x', 9, 3], nota: '9.87', nota_pessoal: '<i>', duracao: -4, tmdb: 'abc',
-    capa: 'javascript:alert(1)', ano: 2020, hist: { '2026-11': 3, 'x"y': 9, '2026-13': 4 }, proximo: { d: '2026-11-06', t: '2"', e: 3 },
-  }, 42);
+  const t = lt(
+    {
+      id: 'ok-1',
+      tipo: 'tv',
+      nome: 'Série',
+      eps: ['<b>', 5, 99999],
+      vis: ['"x', 9, 3],
+      nota: '9.87',
+      nota_pessoal: '<i>',
+      duracao: -4,
+      tmdb: 'abc',
+      capa: 'javascript:alert(1)',
+      ano: 2020,
+      hist: { '2026-11': 3, 'x"y': 9, '2026-13': 4 },
+      proximo: { d: '2026-11-06', t: '2"', e: 3 },
+    },
+    42,
+  );
   assert.deepEqual(t.eps, [1, 5, 999], 'texto vira 1, números ficam no teto');
   assert.deepEqual(t.vis, [0, 5, 3], 'vistos nunca passam do total');
-  assert.equal(t.nota, 9.9); assert.equal(t.nota_pessoal, null); assert.equal(t.duracao, 0); assert.equal(t.tmdb, null);
-  assert.equal(t.capa, null); assert.equal(t.ano, null, 'ano numérico não é texto: descartado como no servidor');
+  assert.equal(t.nota, 9.9);
+  assert.equal(t.nota_pessoal, null);
+  assert.equal(t.duracao, 0);
+  assert.equal(t.tmdb, null);
+  assert.equal(t.capa, null);
+  assert.equal(t.ano, null, 'ano numérico não é texto: descartado como no servidor');
   assert.deepEqual(t.hist, { '2026-11': 3 });
   assert.deepEqual(t.proximo, { d: '2026-11-06', e: 3 });
   assert.equal(t.criado, 42, 'sem "criado" no arquivo usa o padrão');
@@ -226,6 +309,8 @@ test('backup: ids, números, capas e textos passam pelo saneamento (nada de aspa
 
   const top = lp({ id: 't1', nome: 'Top', itens: [{ t: 'A', sid: 'ok' }, { t: 'B', sid: '"><x>' }, { t: '' }, null, ...Array(20).fill({ t: 'Z' })] });
   assert.equal(top.itens.length, 8, 'corta em 10 e depois tira os vazios (igual ao servidor), então nunca passa de 10');
-  assert.equal(top.itens[0].sid, 'ok'); assert.equal(top.itens[1].sid, undefined);
-  assert.equal(lp({ id: 'a b', itens: [] }), null); assert.equal(lp({ id: 'ok', itens: 'x' }), null);
+  assert.equal(top.itens[0].sid, 'ok');
+  assert.equal(top.itens[1].sid, undefined);
+  assert.equal(lp({ id: 'a b', itens: [] }), null);
+  assert.equal(lp({ id: 'ok', itens: 'x' }), null);
 });

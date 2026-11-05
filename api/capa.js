@@ -1,7 +1,8 @@
 const { db, rota, erro } = require('./_lib');
 
 // Cotas por usuário (o Blob é pago por armazenamento e os envios são feitos pelo navegador).
-const POR_HORA = 30, TOTAL = 1000;
+const POR_HORA = 30,
+  TOTAL = 1000;
 
 // Recebe a capa já reduzida (JPEG em base64) e guarda no Vercel Blob; devolve só o link.
 module.exports = rota('POST', async (req, res, u) => {
@@ -16,7 +17,10 @@ module.exports = rota('POST', async (req, res, u) => {
 
   const { put } = require('@vercel/blob');
   const arq = await put(`capas/${u.id}/capa.jpg`, Buffer.from(img.split(',')[1], 'base64'), {
-    access: 'public', contentType: 'image/jpeg', addRandomSuffix: true, cacheControlMaxAge: 31536000,
+    access: 'public',
+    contentType: 'image/jpeg',
+    addRandomSuffix: true,
+    cacheControlMaxAge: 31536000,
   });
   // Registro para a cota e para a limpeza de órfãs (api/cron.js apaga o que não estiver em nenhum título).
   await sql`insert into capas (url, user_id, criado) values (${arq.url}, ${u.id}, ${Date.now()}) on conflict (url) do nothing`;

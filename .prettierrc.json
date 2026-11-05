@@ -1,0 +1,7 @@
+{
+  "singleQuote": true,
+  "printWidth": 160,
+  "trailingComma": "all",
+  "arrowParens": "avoid",
+  "overrides": [{ "files": "*.json", "options": { "printWidth": 100 } }]
+}

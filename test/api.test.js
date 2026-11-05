@@ -35,7 +35,7 @@ test('capas: só TMDb, JPEG pequeno ou Blob do próprio usuário', () => {
 });
 
 test('histórico: só meses válidos e contagens inteiras', () => {
-  assert.deepEqual(V.historico({ '2026-11': 3, '2026-13': 2, 'x': 1, '2026-10': -4, '2026-09': '7' }), { '2026-11': 3, '2026-09': 7 });
+  assert.deepEqual(V.historico({ '2026-11': 3, '2026-13': 2, x: 1, '2026-10': -4, '2026-09': '7' }), { '2026-11': 3, '2026-09': 7 });
   assert.deepEqual(V.historico([1, 2]), {});
   assert.deepEqual(V.historico(null), {});
 });

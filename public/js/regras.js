@@ -3,25 +3,42 @@
 export const tp = s => s.tipo || 'tv';
 export const tot = s => s.eps.reduce((a, b) => a + b, 0);
 export const vis = s => s.vis.reduce((a, b) => a + b, 0);
-export const estado = s => { const v = vis(s); return v === 0 ? 'quero' : v >= tot(s) ? 'fim' : 'assistindo'; };
-export const prox = s => { for (let i = 0; i < s.eps.length; i++) if (s.vis[i] < s.eps[i]) return [i + 1, s.vis[i] + 1]; return null; };
-export const pct = s => Math.round(vis(s) / tot(s) * 100);
+export const estado = s => {
+  const v = vis(s);
+  return v === 0 ? 'quero' : v >= tot(s) ? 'fim' : 'assistindo';
+};
+export const prox = s => {
+  for (let i = 0; i < s.eps.length; i++) if (s.vis[i] < s.eps[i]) return [i + 1, s.vis[i] + 1];
+  return null;
+};
+export const pct = s => Math.round((vis(s) / tot(s)) * 100);
 
 export function rotulo(s) {
-  const p = prox(s), e = estado(s);
+  const p = prox(s),
+    e = estado(s);
   if (tp(s) === 'movie') return e === 'fim' ? 'Assistido ✓' : 'Na fila';
   return e === 'fim' ? 'Concluída ✓' : e === 'quero' ? 'Na fila' : `Próximo: T${p[0]} · E${p[1]}`;
 }
 
 /* ---------- busca, filtro e ordenação ---------- */
-export const normaliza = t => String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+export const normaliza = t =>
+  String(t == null ? '' : t)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 
 export function filtrar(lista, { estado: est = 'todas', busca = '' } = {}) {
   const q = normaliza(busca);
   return lista.filter(s => (est === 'todas' || estado(s) === est) && (!q || normaliza(s.nome).includes(q)));
 }
 
-export const ORDENS = [['recente', 'Adicionados recentemente'], ['nome', 'Nome (A–Z)'], ['nota', 'Nota'], ['visto', 'Último visto']];
+export const ORDENS = [
+  ['recente', 'Adicionados recentemente'],
+  ['nome', 'Nome (A–Z)'],
+  ['nota', 'Nota'],
+  ['visto', 'Último visto'],
+];
 
 // Nota usada para ordenar: a sua nota, se existir; senão a do TMDb.
 const notaDe = s => (s.nota_pessoal != null ? s.nota_pessoal : s.nota != null ? s.nota : -1);
@@ -38,7 +55,10 @@ export function ordenar(lista, modo = 'recente') {
 
 // "Continuar assistindo": séries em andamento, a mais recente primeiro.
 export function continuar(series, max = 12) {
-  return ordenar(series.filter(s => tp(s) === 'tv' && estado(s) === 'assistindo'), 'visto').slice(0, max);
+  return ordenar(
+    series.filter(s => tp(s) === 'tv' && estado(s) === 'assistindo'),
+    'visto',
+  ).slice(0, max);
 }
 
 /* ---------- itens duplicados ---------- */
@@ -61,7 +81,8 @@ export const acharDuplicado = (lista, cand, ignorarId = null) => lista.find(x =>
 
 // Para importar backup: separa o que entra do que já existe (ou está repetido dentro do próprio arquivo).
 export function semDuplicados(novos, atuais) {
-  const aceitos = [], repetidos = [];
+  const aceitos = [],
+    repetidos = [];
   for (const n of novos) {
     const ja = atuais.some(x => x.id !== n.id && mesmoTitulo(x, n)) || aceitos.some(x => x.id !== n.id && mesmoTitulo(x, n));
     (ja ? repetidos : aceitos).push(n);
@@ -70,13 +91,17 @@ export function semDuplicados(novos, atuais) {
 }
 
 /* ---------- progresso e histórico ---------- */
-export const mesDe = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+export const mesDe = t => {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
 
 // Chame depois de mudar `vis`; 'antes' é o total de episódios vistos antes da mudança.
 export function registrarProgresso(s, antes, agora = Date.now()) {
   const d = vis(s) - antes;
   if (!d) return s;
-  const m = mesDe(agora), hist = { ...(s.hist || {}) };
+  const m = mesDe(agora),
+    hist = { ...(s.hist || {}) };
   hist[m] = Math.max(0, (hist[m] || 0) + d);
   if (!hist[m]) delete hist[m];
   s.hist = hist;
@@ -121,45 +146,71 @@ export function estatisticas(series) {
   let soma = 0;
   for (const s of series) {
     const v = vis(s);
-    if (tp(s) === 'movie') { if (v > 0) { r.filmes++; if (s.duracao) r.minutos += s.duracao; else r.semDuracao++; } }
-    else { r.episodios += v; if (estado(s) === 'fim') r.concluidas++; if (v > 0) { if (s.duracao) r.minutos += v * s.duracao; else r.semDuracao++; } }
-    if (s.nota_pessoal != null) { soma += s.nota_pessoal; r.nNotas++; }
+    if (tp(s) === 'movie') {
+      if (v > 0) {
+        r.filmes++;
+        if (s.duracao) r.minutos += s.duracao;
+        else r.semDuracao++;
+      }
+    } else {
+      r.episodios += v;
+      if (estado(s) === 'fim') r.concluidas++;
+      if (v > 0) {
+        if (s.duracao) r.minutos += v * s.duracao;
+        else r.semDuracao++;
+      }
+    }
+    if (s.nota_pessoal != null) {
+      soma += s.nota_pessoal;
+      r.nNotas++;
+    }
     for (const [k, n] of Object.entries(s.hist || {})) r.porMes[k] = (r.porMes[k] || 0) + n;
   }
-  if (r.nNotas) r.notaMedia = Math.round(soma / r.nNotas * 10) / 10;
+  if (r.nNotas) r.notaMedia = Math.round((soma / r.nNotas) * 10) / 10;
   return r;
 }
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 // Últimos n meses (do mais antigo ao atual), com zero nos meses sem registro.
 export function ultimosMeses(porMes, n = 12, agora = Date.now()) {
-  const d = new Date(agora), out = [];
+  const d = new Date(agora),
+    out = [];
   for (let i = n - 1; i >= 0; i--) {
-    const x = new Date(d.getFullYear(), d.getMonth() - i, 1), k = mesDe(x);
+    const x = new Date(d.getFullYear(), d.getMonth() - i, 1),
+      k = mesDe(x);
     out.push({ mes: k, rotulo: MESES[x.getMonth()], ano: x.getFullYear(), valor: porMes[k] || 0 });
   }
   return out;
 }
 
 export function duracaoTexto(min) {
-  const h = Math.floor(min / 60), m = Math.round(min % 60);
-  if (h >= 48) return `${Math.round(h / 24 * 10) / 10} dias`;
+  const h = Math.floor(min / 60),
+    m = Math.round(min % 60);
+  if (h >= 48) return `${Math.round((h / 24) * 10) / 10} dias`;
   return h ? `${h} h${m ? ' ' + m + ' min' : ''}` : `${m} min`;
 }
 
 /* ---------- datas de lançamento ---------- */
 const DIAS_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 // 'AAAA-MM-DD' vira meia-noite no fuso do aparelho (new Date('AAAA-MM-DD') seria UTC e erraria o dia).
-export const dataLocal = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
-export const hojeISO = (agora = Date.now()) => { const d = new Date(agora); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+export const dataLocal = iso => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+};
+export const hojeISO = (agora = Date.now()) => {
+  const d = new Date(agora);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 export function diasAte(iso, agora = Date.now()) {
-  const d = dataLocal(iso), h = dataLocal(hojeISO(agora));
+  const d = dataLocal(iso),
+    h = dataLocal(hojeISO(agora));
   return d ? Math.round((d - h) / 864e5) : null;
 }
 
 // Próximo lançamento de um título, pronto para mostrar. null se não há data ou se ela já passou.
 export function lancamento(s, agora = Date.now()) {
-  const p = s.proximo, dias = p ? diasAte(p.d, agora) : null;
+  const p = s.proximo,
+    dias = p ? diasAte(p.d, agora) : null;
   if (dias == null || dias < 0) return null;
   const d = dataLocal(p.d);
   const quando = dias === 0 ? 'hoje' : dias === 1 ? 'amanhã' : dias < 7 ? DIAS_SEMANA[d.getDay()] : `em ${d.getDate()} ${MESES[d.getMonth()]}`;
@@ -169,8 +220,12 @@ export function lancamento(s, agora = Date.now()) {
 
 // Lançamentos dos próximos `dias` dias (hoje incluído), do mais próximo ao mais distante. `tipo` filtra série/filme.
 export function proximosLancamentos(series, { tipo = null, agora = Date.now(), dias = 30, max = 8 } = {}) {
-  return series.filter(s => !tipo || tp(s) === tipo).map(s => ({ s, l: lancamento(s, agora) })).filter(x => x.l && x.l.dias <= dias)
-    .sort((a, b) => a.l.dias - b.l.dias || a.s.nome.localeCompare(b.s.nome, 'pt-BR')).slice(0, max);
+  return series
+    .filter(s => !tipo || tp(s) === tipo)
+    .map(s => ({ s, l: lancamento(s, agora) }))
+    .filter(x => x.l && x.l.dias <= dias)
+    .sort((a, b) => a.l.dias - b.l.dias || a.s.nome.localeCompare(b.s.nome, 'pt-BR'))
+    .slice(0, max);
 }
 
 // Títulos com data de lançamento já vencida ou de hoje: vale checar o TMDb de novo mais cedo.
@@ -180,7 +235,8 @@ export const lancamentoVencido = (s, agora = Date.now()) => !!(s.proximo && dias
 // Títulos que servem de ponto de partida para "parecidos com o que você viu": já começados, ligados ao TMDb,
 // sem nota baixa. Quem você avaliou melhor vem antes; no empate, o visto mais recentemente.
 export function sementes(series, tipo, max = 5) {
-  return series.filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal == null || s.nota_pessoal >= 6))
+  return series
+    .filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal == null || s.nota_pessoal >= 6))
     .sort((a, b) => (b.nota_pessoal ?? 7) - (a.nota_pessoal ?? 7) || (b.visto_em || b.criado || 0) - (a.visto_em || a.criado || 0))
     .slice(0, max);
 }
@@ -192,7 +248,8 @@ export const naEstante = (series, tipo, tmdb) => series.some(s => tp(s) === tipo
 const ID_OK = /^[\w-]{1,64}$/;
 const MES_OK = /^\d{4}-(0[1-9]|1[0-2])$/;
 const DATA_OK = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-const num = (v, min, max, casas = 0) => (v == null || v === '' || !Number.isFinite(+v) ? null : Math.round(Math.min(max, Math.max(min, +v)) * 10 ** casas) / 10 ** casas);
+const num = (v, min, max, casas = 0) =>
+  v == null || v === '' || !Number.isFinite(+v) ? null : Math.round(Math.min(max, Math.max(min, +v)) * 10 ** casas) / 10 ** casas;
 const txt = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '') || null;
 const CAPAS_OK = [
   /^https:\/\/image\.tmdb\.org\/[\w./-]+$/,
@@ -210,25 +267,46 @@ export function limparTituloBackup(x, criadoPadrao = Date.now()) {
   const vis = eps.map((n, i) => Math.min(num(x.vis[i], 0, 999) || 0, n));
   const hist = {};
   if (x.hist && typeof x.hist === 'object' && !Array.isArray(x.hist)) {
-    for (const k of Object.keys(x.hist).slice(0, 240)) if (MES_OK.test(k)) { const n = Math.max(0, Math.min(99999, parseInt(x.hist[k], 10) || 0)); if (n) hist[k] = n; }
+    for (const k of Object.keys(x.hist).slice(0, 240))
+      if (MES_OK.test(k)) {
+        const n = Math.max(0, Math.min(99999, parseInt(x.hist[k], 10) || 0));
+        if (n) hist[k] = n;
+      }
   }
   let proximo = null;
   if (x.proximo && typeof x.proximo === 'object' && DATA_OK.test(String(x.proximo.d || ''))) {
     proximo = { d: x.proximo.d };
-    const t = num(x.proximo.t, 1, 999), e = num(x.proximo.e, 1, 9999);
+    const t = num(x.proximo.t, 1, 999),
+      e = num(x.proximo.e, 1, 9999);
     if (t) proximo.t = t;
     if (e) proximo.e = e;
   }
   return {
-    id: x.id, tipo, nome: txt(x.nome, 80), capa: capaSegura(x.capa), sinopse: txt(x.sinopse, 2000), ano: txt(x.ano, 10),
-    nota: num(x.nota, 0, 10, 1), duracao: num(x.duracao, 0, 1000), tmdb: num(x.tmdb, 0, 1e9), eps, vis,
-    criado: num(x.criado, 0, 8.64e15) ?? criadoPadrao, nota_pessoal: num(x.nota_pessoal, 0, 10, 1), resenha: txt(x.resenha, 4000),
-    visto_em: num(x.visto_em, 0, 8.64e15), hist, proximo,
+    id: x.id,
+    tipo,
+    nome: txt(x.nome, 80),
+    capa: capaSegura(x.capa),
+    sinopse: txt(x.sinopse, 2000),
+    ano: txt(x.ano, 10),
+    nota: num(x.nota, 0, 10, 1),
+    duracao: num(x.duracao, 0, 1000),
+    tmdb: num(x.tmdb, 0, 1e9),
+    eps,
+    vis,
+    criado: num(x.criado, 0, 8.64e15) ?? criadoPadrao,
+    nota_pessoal: num(x.nota_pessoal, 0, 10, 1),
+    resenha: txt(x.resenha, 4000),
+    visto_em: num(x.visto_em, 0, 8.64e15),
+    hist,
+    proximo,
   };
 }
 
 export function limparTopBackup(x, criadoPadrao = Date.now()) {
   if (!x || typeof x !== 'object' || typeof x.id !== 'string' || !ID_OK.test(x.id) || !Array.isArray(x.itens)) return null;
-  const itens = x.itens.slice(0, 10).map(i => ({ t: txt(i && i.t, 80), sid: i && typeof i.sid === 'string' && ID_OK.test(i.sid) ? i.sid : undefined })).filter(i => i.t);
+  const itens = x.itens
+    .slice(0, 10)
+    .map(i => ({ t: txt(i && i.t, 80), sid: i && typeof i.sid === 'string' && ID_OK.test(i.sid) ? i.sid : undefined }))
+    .filter(i => i.t);
   return { id: x.id, nome: txt(x.nome, 60) || 'Top 10', itens, criado: num(x.criado, 0, 8.64e15) ?? criadoPadrao };
 }

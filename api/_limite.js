@@ -7,14 +7,17 @@ const MIN = 6e4;
 const bloqueioMs = (falhas, limite = 5) => (falhas < limite ? 0 : Math.min(15 * MIN * 2 ** Math.floor((falhas - limite) / 3), 24 * 60 * MIN));
 
 const hash = v => crypto.createHash('sha256').update(String(v)).digest('hex').slice(0, 32);
-const ipDe = req => String((req.headers['x-forwarded-for'] || '').split(',')[0] || req.headers['x-real-ip'] || (req.socket && req.socket.remoteAddress) || 'desconhecido').trim();
+const ipDe = req =>
+  String((req.headers['x-forwarded-for'] || '').split(',')[0] || req.headers['x-real-ip'] || (req.socket && req.socket.remoteAddress) || 'desconhecido').trim();
 // O limite por e-mail (5) é a proteção principal contra adivinhar senha. O limite por IP é só uma rede de segurança contra
 // varredura de muitos e-mails e fica alto de propósito: operadoras móveis brasileiras põem muita gente atrás do mesmo IP (CGNAT).
 const LIMITE_IP = 100;
 const chaves = (req, email) => [{ k: 'ip:' + hash(ipDe(req)), limite: LIMITE_IP }, ...(email ? [{ k: 'em:' + hash(email), limite: 5 }] : [])];
 // Contadores separados por finalidade (ex.: 'rs' = recuperar senha), para não misturar com os do login.
-const chavesDe = (req, prefixo, { ip = LIMITE_IP, alvo = null, limiteAlvo = 5 } = {}) =>
-  [{ k: prefixo + '-ip:' + hash(ipDe(req)), limite: ip }, ...(alvo ? [{ k: prefixo + ':' + hash(alvo), limite: limiteAlvo }] : [])];
+const chavesDe = (req, prefixo, { ip = LIMITE_IP, alvo = null, limiteAlvo = 5 } = {}) => [
+  { k: prefixo + '-ip:' + hash(ipDe(req)), limite: ip },
+  ...(alvo ? [{ k: prefixo + ':' + hash(alvo), limite: limiteAlvo }] : []),
+];
 
 // Janela fixa: no máximo `limite` usos por `janelaMs` (ex.: 30 cadastros por dia por IP). Ao chegar no limite, bloqueia até o
 // fim da janela; na janela seguinte a chave é outra e o contador recomeça do zero. Não usa o bloqueio crescente do login.

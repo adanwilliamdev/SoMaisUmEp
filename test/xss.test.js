@@ -12,11 +12,17 @@ test('views: id malicioso é escapado em todo atributo (cards, detalhe, tops, co
   const V = await import('../public/js/views.js');
   const { L } = await import('../public/js/loja.js');
   const s = { id: MAU, tipo: 'tv', nome: 'S', eps: [3], vis: [1], criado: 1, hist: {} };
-  L.series = [s]; L.tops = [{ id: MAU, nome: 'T', itens: [{ t: 'S', sid: MAU }], criado: 1 }]; L.links = {};
+  L.series = [s];
+  L.tops = [{ id: MAU, nome: 'T', itens: [{ t: 'S', sid: MAU }], criado: 1 }];
+  L.links = {};
   const tmdb = { id: MAU, nome: 'D', ano: '2020', poster: null };
   const saidas = {
-    cardHtml: V.cardHtml(s, 0), cardContinuar: V.cardContinuar(s, 0), htmlDetalhe: V.htmlDetalhe(s, null), viewTops: V.viewTops(),
-    htmlCompartilhar: V.htmlCompartilhar(L.tops[0], null, ''), htmlDescobrir: V.htmlDescobrir('tv', { alta: [tmdb], parecidos: [] }),
+    cardHtml: V.cardHtml(s, 0),
+    cardContinuar: V.cardContinuar(s, 0),
+    htmlDetalhe: V.htmlDetalhe(s, null),
+    viewTops: V.viewTops(),
+    htmlCompartilhar: V.htmlCompartilhar(L.tops[0], null, ''),
+    htmlDescobrir: V.htmlDescobrir('tv', { alta: [tmdb], parecidos: [] }),
     htmlDescDetalhe: V.htmlDescDetalhe(tmdb, 'tv', null),
   };
   for (const [nome, html] of Object.entries(saidas)) {

@@ -4,6 +4,11 @@
   "private": true,
   "scripts": {
     "test": "node --test",
+    "lint": "npx --yes eslint@10.1.0 .",
+    "format": "npx --yes prettier@3.8.1 --write .",
+    "format:check": "npx --yes prettier@3.8.1 --check .",
+    "build": "node scripts/build.js",
+    "verificar": "npm run lint && npm run format:check && npm test",
     "migrar": "node scripts/migrar.js",
     "schema": "node scripts/migrar.js --gerar-schema"
   },
@@ -11,5 +16,7 @@
     "@neondatabase/serverless": "^1.0.0",
     "@vercel/blob": "^1.0.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

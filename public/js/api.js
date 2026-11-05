@@ -2,7 +2,12 @@
 export async function api(url, opt = {}) {
   let r;
   try {
-    r = await fetch(url, { credentials: 'same-origin', method: opt.method || 'GET', headers: { 'Content-Type': 'application/json' }, body: opt.body ? JSON.stringify(opt.body) : undefined });
+    r = await fetch(url, {
+      credentials: 'same-origin',
+      method: opt.method || 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      body: opt.body ? JSON.stringify(opt.body) : undefined,
+    });
   } catch (e) {
     throw Object.assign(new Error('Sem conexão com o servidor'), { rede: true });
   }

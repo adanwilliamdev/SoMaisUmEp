@@ -4,12 +4,32 @@ Seu diário de séries e filmes: progresso por episódio e temporada, filmes ass
 Front-end estático (PWA instalável) + funções serverless da Vercel + Postgres no Neon. Cada pessoa cria a própria conta e tem a própria biblioteca.
 
 ```
-public/        site (index.html, style.css, manifest.json, sw.js, js/ em módulos, icons/)
-api/           funções serverless (login, cadastro, logout, dados, sync, capa, tmdb [GET consulta / POST importação], t [GET página pública / POST liga-desliga o link]); só 12 arquivos públicos por causa do limite do plano Hobby
+public/        site (index.html, style.css, manifest.json, sw.js, icons/ e js/)
+  js/            main.js (liga tudo), loja.js (dados + sincronização), regras.js, views.js e os módulos abaixo
+  js/views/      HTML de cada tela (estante, detalhe, tops, stats, conta, descobrir, compartilhar, importar)
+  js/telas/      eventos de cada tela, um módulo por tela; cada um exporta `acoes` (data-act -> função)
+api/           funções serverless (login, cadastro, logout, dados, sync, capa, conta, cron, tmdb, t...); só 12 arquivos públicos
+               por causa do limite do plano Hobby. Os que servem mais de um método passam por _roteador.js (veja "API")
 neon/          migracoes/ (SQL numerado) e schema.sql (todas juntas, gerado)
-scripts/       migrar.js (aplica as migrações no banco)
+scripts/       migrar.js (aplica as migrações no banco) e build.js (gera dist/ para o deploy)
 test/          testes (node --test)
+.github/       workflows/ci.yml (lint, formatação, testes e build a cada push e pull request)
 ```
+
+## Desenvolvimento
+
+```
+npm test              testes (node --test), inclui a sincronização do loja.js com um servidor falso
+npm run lint          ESLint (eslint.config.js)
+npm run format        Prettier (.prettierrc.json); `npm run format:check` só confere
+npm run verificar     lint + formatação + testes, o mesmo que o CI roda
+npm run build         gera dist/ (cópia de public/ com a versão do service worker)
+```
+
+- **Telas**: `views/<tela>.js` monta o HTML; `telas/<tela>.js` cuida dos eventos dela. Para criar uma ação nova, exporte-a em `acoes` do módulo da tela e use `data-act="nome"` no HTML. `main.js` junta todas as `acoes` e avisa se um nome se repetir. O estado compartilhado fica em `telas/ctx.js`.
+- **Service worker**: o código-fonte tem `VERSAO = 'somaisumep-dev'`. No deploy, `scripts/build.js` (o `buildCommand` do `vercel.json`) grava em `dist/sw.js` o início do `VERCEL_GIT_COMMIT_SHA` e a lista de todos os módulos de `js/` para o cache offline. Não precisa mais trocar número nenhum. `public/` nunca é alterada pelo build.
+- **API**: `api/tmdb.js` e `api/t.js` são só roteadores (`api/_roteador.js`, por método HTTP). As consultas do TMDb (`?acao=busca|detalhe|streaming|tendencias|parecidos`) estão em `api/_consultas.js`, a importação em `api/_importar.js`, a página pública do top em `api/_pagina.js` e o liga-desliga do link em `api/_compartilhar.js`. Um teste confere que `api/` não passa de 12 arquivos públicos.
+- **ESLint e Prettier** rodam com `npx` (versões fixas nos scripts), então não entram no `package.json` nem no `package-lock.json`. Se preferir tê-los em `devDependencies`, rode `npm i -D eslint@10.1.0 prettier@3.8.1`.
 
 ## O que tem (v5.1.2)
 

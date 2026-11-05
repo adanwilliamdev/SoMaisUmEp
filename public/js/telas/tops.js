@@ -1,0 +1,139 @@
+// Tops 10: criar, adicionar/remover itens, reordenar (arrastar pela alça ou pelo teclado).
+import { $, uid, aviso, avisoDesfazer, confirma } from '../util.js';
+import { L, save } from '../loja.js';
+import { gancho } from './ctx.js';
+
+function addItem(tid) {
+  const t = L.tops.find(x => x.id === tid),
+    inp = document.querySelector(`[data-top="${CSS.escape(String(tid))}"] input`);
+  const v = inp.value.trim();
+  if (!v || t.itens.length >= 10) return;
+  const m = L.series.find(s => s.nome.toLowerCase() === v.toLowerCase());
+  t.itens.push(m ? { t: m.nome, sid: m.id } : { t: v });
+  save();
+  gancho.render();
+  const novo = document.querySelector(`[data-top="${CSS.escape(String(tid))}"] .add input`);
+  if (novo) novo.focus();
+}
+
+const moverItem = (t, de, para) => {
+  const [x] = t.itens.splice(de, 1);
+  t.itens.splice(para, 0, x);
+  save();
+};
+
+/* ---------- arrastar pela alça (mouse, toque e caneta) ---------- */
+let arr = null;
+export const arrastando = () => !!arr;
+
+document.addEventListener('pointerdown', e => {
+  const h = e.target.closest('[data-alca]');
+  if (!h || e.button > 0) return;
+  const li = h.closest('li'),
+    ol = li.parentElement;
+  arr = { li, ol, de: [...ol.children].indexOf(li), id: e.pointerId };
+  li.classList.add('arrastando');
+  h.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+document.addEventListener('pointermove', e => {
+  if (!arr || e.pointerId !== arr.id) return;
+  let ref = null;
+  for (const o of [...arr.ol.children].filter(x => x !== arr.li)) {
+    const r = o.getBoundingClientRect();
+    if (e.clientY < r.top + r.height / 2) {
+      ref = o;
+      break;
+    }
+  }
+  if (ref !== arr.li.nextElementSibling) arr.ol.insertBefore(arr.li, ref);
+});
+const soltar = e => {
+  if (!arr || e.pointerId !== arr.id) return;
+  const { li, ol, de } = arr;
+  arr = null;
+  li.classList.remove('arrastando');
+  const para = [...ol.children].indexOf(li),
+    t = L.tops.find(x => x.id === li.closest('[data-top]').dataset.top);
+  if (t && para !== de && para >= 0) moverItem(t, de, para);
+  gancho.render();
+};
+document.addEventListener('pointerup', soltar);
+document.addEventListener('pointercancel', soltar);
+
+/* ---------- teclado ---------- */
+document.addEventListener('keydown', e => {
+  const alca = e.target.closest && e.target.closest('[data-alca]');
+  if (alca && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    // reordenar pelo teclado
+    e.preventDefault();
+    const li = alca.closest('li'),
+      topo = alca.closest('[data-top]'),
+      t = L.tops.find(x => x.id === topo.dataset.top);
+    const de = +li.dataset.i,
+      para = de + (e.key === 'ArrowUp' ? -1 : 1);
+    if (!t || para < 0 || para >= t.itens.length) return;
+    moverItem(t, de, para);
+    gancho.render();
+    document.querySelector(`[data-top="${CSS.escape(String(t.id))}"] li[data-i="${para}"] [data-alca]`)?.focus();
+    return;
+  }
+  if (e.key !== 'Enter') return;
+  if (e.target.matches('.add input')) {
+    e.preventDefault();
+    addItem(e.target.closest('[data-top]').dataset.top);
+  } else if (e.target.id === 'nt') {
+    e.preventDefault();
+    document.querySelector('[data-act="novo-top"]').click();
+  }
+});
+
+/* ---------- eventos ---------- */
+export const acoes = {
+  'novo-top': () => {
+    const v = $('#nt').value.trim();
+    if (!v) return;
+    L.tops.unshift({ id: uid(), criado: Date.now(), nome: v, itens: [] });
+    save();
+    gancho.render();
+  },
+  'del-top': ({ b, t, tid }) => {
+    if (!t) return;
+    confirma(b, () => {
+      const pos = L.tops.indexOf(t),
+        codigo = L.links[tid];
+      L.tops = L.tops.filter(x => x.id !== tid);
+      delete L.links[tid];
+      save();
+      gancho.render();
+      avisoDesfazer(
+        `Top “${t.nome}” excluído${codigo ? ' (o link público foi desligado)' : ''}`,
+        () => {
+          L.tops.splice(Math.min(pos, L.tops.length), 0, t);
+          save();
+          gancho.render();
+        },
+        9000,
+      );
+    });
+  },
+  'add-item': ({ t, tid }) => {
+    if (t) addItem(tid);
+  },
+  tira: ({ t, i }) => {
+    if (!t) return;
+    const [item] = t.itens.splice(i, 1);
+    save();
+    gancho.render();
+    avisoDesfazer(`${item.t} removido do top`, () => {
+      if (!L.tops.includes(t)) return;
+      if (t.itens.length >= 10) {
+        aviso('O top já está cheio.');
+        return;
+      }
+      t.itens.splice(Math.min(i, t.itens.length), 0, item);
+      save();
+      gancho.render();
+    });
+  },
+};

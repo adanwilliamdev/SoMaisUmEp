@@ -4,7 +4,9 @@ const V = require('./_validar');
 
 // Liga/desliga o link público de um top: { id, ativo }. O código da URL (/t/<código>) é aleatório e some quando o link é desligado.
 module.exports = rota('POST', async (req, res, u) => {
-  const b = req.body || {}, id = String(b.id || ''), sql = db();
+  const b = req.body || {},
+    id = String(b.id || ''),
+    sql = db();
   if (!V.ID.test(id)) throw erro('Top inválido');
   const [t] = await sql`select publico, jsonb_array_length(itens)::int as n from tops where id = ${id} and user_id = ${u.id}`;
   if (!t) throw erro('Top não encontrado. Espere o salvamento terminar e tente de novo.', 404);

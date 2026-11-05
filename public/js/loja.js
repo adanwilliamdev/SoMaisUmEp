@@ -13,18 +13,26 @@ export const achar = id => L.series.find(s => s.id === id);
 const hooks = { render() {}, login() {} };
 export const ligar = h => Object.assign(hooks, h);
 
-let remoto = {};      // chave ("T<id>" / "P<id>") -> JSON como está no servidor
-let ver = {};         // id -> versão (`atualizado`) conhecida
-let sujo = false, emVoo = false, denovo = false, timer = null, tentativa = 0, ultimaRecarga = 0;
+let remoto = {}; // chave ("T<id>" / "P<id>") -> JSON como está no servidor
+let ver = {}; // id -> versão (`atualizado`) conhecida
+let sujo = false,
+  emVoo = false,
+  denovo = false,
+  timer = null,
+  tentativa = 0,
+  ultimaRecarga = 0;
 
 const SNAP = 'claq:snap';
 const chaves = () => {
   const o = {};
-  L.series.forEach(s => o['T' + s.id] = JSON.stringify(s));
-  L.tops.forEach(t => o['P' + t.id] = JSON.stringify(t));
+  L.series.forEach(s => (o['T' + s.id] = JSON.stringify(s)));
+  L.tops.forEach(t => (o['P' + t.id] = JSON.stringify(t)));
   return o;
 };
-const diferente = () => { const a = chaves(); return Object.keys(a).some(k => a[k] !== remoto[k]) || Object.keys(remoto).some(k => !(k in a)); };
+const diferente = () => {
+  const a = chaves();
+  return Object.keys(a).some(k => a[k] !== remoto[k]) || Object.keys(remoto).some(k => !(k in a));
+};
 export const pendente = () => sujo;
 // Espera o envio das alterações pendentes (ex.: antes de pedir ao servidor um link público de um top recém-criado).
 export async function esperarSalvar(max = 10000) {
@@ -33,7 +41,11 @@ export async function esperarSalvar(max = 10000) {
 }
 
 /* ---------- carregar dados do servidor ---------- */
-function tira(r) { const { atualizado, ...x } = r; ver[x.id] = atualizado; return x; }
+function tira(r) {
+  const { atualizado, ...x } = r;
+  ver[x.id] = atualizado;
+  return x;
+}
 function definir(d) {
   ver = {};
   L.series = (d.series || []).map(tira);
@@ -44,13 +56,19 @@ function definir(d) {
 
 /* ---------- cópia local (offline) ---------- */
 let tSnap = null;
-function agendaSnap() { clearTimeout(tSnap); tSnap = setTimeout(salvarSnap, 500); }
+function agendaSnap() {
+  clearTimeout(tSnap);
+  tSnap = setTimeout(salvarSnap, 500);
+}
 function salvarSnap() {
   if (!L.usuario) return;
   guardar(SNAP, { uid: L.usuario.id, series: L.series, tops: L.tops, links: L.links, remoto, ver, blob: L.blob, usuario: L.usuario });
 }
 const lerSnap = () => lerJSON(SNAP);
-export const limparSnap = () => { clearTimeout(tSnap); apagar(SNAP); };
+export const limparSnap = () => {
+  clearTimeout(tSnap);
+  apagar(SNAP);
+};
 
 // Reaplica sobre os dados do servidor o que ficou sem enviar no aparelho.
 function reaplicar(snap) {
@@ -58,17 +76,28 @@ function reaplicar(snap) {
   const apos = (lista, chave, snapLista, extra) => {
     for (const loc of snapLista) {
       const k = chave + loc.id;
-      if (JSON.stringify(loc) === snap.remoto[k]) continue;                    // sem alteração local
+      if (JSON.stringify(loc) === snap.remoto[k]) continue; // sem alteração local
       const i = lista.findIndex(x => x.id === loc.id);
-      if (i < 0) { if (!snap.remoto[k]) { lista.unshift(loc); mudou = true; } continue; } // novo local (ou apagado em outro aparelho)
-      const srv = lista[i], intocado = ver[loc.id] === snap.ver[loc.id];
+      if (i < 0) {
+        if (!snap.remoto[k]) {
+          lista.unshift(loc);
+          mudou = true;
+        }
+        continue;
+      } // novo local (ou apagado em outro aparelho)
+      const srv = lista[i],
+        intocado = ver[loc.id] === snap.ver[loc.id];
       lista[i] = intocado || chave === 'P' ? loc : extra(loc, srv);
       mudou = true;
     }
-    for (const k in snap.remoto) {                                              // apagados só neste aparelho
+    for (const k in snap.remoto) {
+      // apagados só neste aparelho
       if (k[0] !== chave || snapLista.some(x => x.id === k.slice(1))) continue;
       const i = lista.findIndex(x => x.id === k.slice(1));
-      if (i >= 0) { lista.splice(i, 1); mudou = true; }
+      if (i >= 0) {
+        lista.splice(i, 1);
+        mudou = true;
+      }
     }
   };
   apos(L.series, 'T', snap.series, mesclarTitulo);
@@ -80,19 +109,28 @@ export async function carregar() {
   const snap = lerSnap();
   try {
     const d = await api('/api/dados');
-    L.usuario = d.usuario; L.blob = !!d.blob;
+    L.usuario = d.usuario;
+    L.blob = !!d.blob;
     definir(d);
     if (snap && snap.uid === d.usuario.id && snap.series) reaplicar(snap);
-    else if (snap) limparSnap();                                   // cópia de outro usuário
+    else if (snap) limparSnap(); // cópia de outro usuário
     salvarSnap();
     return { offline: false };
   } catch (e) {
     if (e.auth) throw e;
     if ((e.rede || e.status >= 500) && snap && snap.series) {
-      L.series = snap.series; L.tops = snap.tops; L.links = snap.links || {}; L.usuario = snap.usuario; L.blob = !!snap.blob;
-      remoto = snap.remoto || {}; ver = snap.ver || {};
+      L.series = snap.series;
+      L.tops = snap.tops;
+      L.links = snap.links || {};
+      L.usuario = snap.usuario;
+      L.blob = !!snap.blob;
+      remoto = snap.remoto || {};
+      ver = snap.ver || {};
       faixa('Sem conexão. Mostrando a última versão salva neste aparelho.');
-      if (diferente()) { sujo = true; agenda(5000); }
+      if (diferente()) {
+        sujo = true;
+        agenda(5000);
+      }
       return { offline: true };
     }
     throw e;
@@ -101,33 +139,55 @@ export async function carregar() {
 
 /* ---------- salvar ---------- */
 export function save() {
-  sujo = true; status('Salvando…'); agendaSnap();
+  sujo = true;
+  status('Salvando…');
+  agendaSnap();
   agenda(300);
 }
-function agenda(ms) { clearTimeout(timer); timer = setTimeout(rodar, ms); }
+function agenda(ms) {
+  clearTimeout(timer);
+  timer = setTimeout(rodar, ms);
+}
 
 async function enviar() {
-  const atual = chaves(), T = [], P = [], del = { titulos: [], tops: [] };
+  const atual = chaves(),
+    T = [],
+    P = [],
+    del = { titulos: [], tops: [] };
   for (const k in atual) if (atual[k] !== remoto[k]) (k[0] === 'T' ? T : P).push(k);
   for (const k in remoto) if (!(k in atual)) del[k[0] === 'T' ? 'titulos' : 'tops'].push(k.slice(1));
   const comBase = k => ({ ...JSON.parse(atual[k]), base: ver[k.slice(1)] ?? null });
   const reqs = [];
-  for (let i = 0; i < T.length; i += 15) { const c = T.slice(i, i + 15); reqs.push({ body: { titulos: c.map(comBase) }, keys: c }); }
+  for (let i = 0; i < T.length; i += 15) {
+    const c = T.slice(i, i + 15);
+    reqs.push({ body: { titulos: c.map(comBase) }, keys: c });
+  }
   if (P.length) reqs.push({ body: { tops: P.map(comBase) }, keys: P });
   // Exclusão leva a versão que este aparelho conhecia: se outro aparelho alterou o item depois, o servidor não apaga (conflito).
   const comVer = ids => ids.map(id => ({ id, base: ver[id] ?? null }));
-  if (del.titulos.length || del.tops.length) reqs.push({ body: { del: { titulos: comVer(del.titulos), tops: comVer(del.tops) } }, dels: [...del.titulos.map(i => 'T' + i), ...del.tops.map(i => 'P' + i)] });
+  if (del.titulos.length || del.tops.length)
+    reqs.push({
+      body: { del: { titulos: comVer(del.titulos), tops: comVer(del.tops) } },
+      dels: [...del.titulos.map(i => 'T' + i), ...del.tops.map(i => 'P' + i)],
+    });
   const conflitos = [];
   for (const r of reqs) {
     const j = await api('/api/sync', { method: 'POST', body: r.body });
     for (const k of r.keys || []) {
       const id = k.slice(1);
       if ((j.conflitos || []).includes(id)) conflitos.push(k);
-      else { remoto[k] = atual[k]; if (j.versoes && j.versoes[id]) ver[id] = j.versoes[id]; }
+      else {
+        remoto[k] = atual[k];
+        if (j.versoes && j.versoes[id]) ver[id] = j.versoes[id];
+      }
     }
     for (const k of r.dels || []) {
-      if ((j.conflitos || []).includes(k.slice(1))) { conflitos.push(k); continue; }   // alterado em outro aparelho: não foi apagado
-      delete remoto[k]; delete ver[k.slice(1)];
+      if ((j.conflitos || []).includes(k.slice(1))) {
+        conflitos.push(k);
+        continue;
+      } // alterado em outro aparelho: não foi apagado
+      delete remoto[k];
+      delete ver[k.slice(1)];
     }
   }
   return conflitos;
@@ -136,56 +196,105 @@ async function enviar() {
 // Outro aparelho gravou antes: busca a versão do servidor e combina com a local.
 async function resolver(conflitos) {
   const d = await api('/api/dados');
-  const sT = new Map(d.series.map(s => [s.id, s])), sP = new Map(d.tops.map(t => [t.id, t]));
-  const sem = r => { const { atualizado, ...x } = r; return x; };
+  const sT = new Map(d.series.map(s => [s.id, s])),
+    sP = new Map(d.tops.map(t => [t.id, t]));
+  const sem = r => {
+    const { atualizado, ...x } = r;
+    return x;
+  };
   for (const k of conflitos) {
-    const id = k.slice(1), tipoT = k[0] === 'T', srv = (tipoT ? sT : sP).get(id), lista = tipoT ? L.series : L.tops;
+    const id = k.slice(1),
+      tipoT = k[0] === 'T',
+      srv = (tipoT ? sT : sP).get(id),
+      lista = tipoT ? L.series : L.tops;
     const i = lista.findIndex(x => x.id === id);
-    if (i < 0) {                                  // apagado neste aparelho, mas o servidor recusou a exclusão
-      if (srv) { const volta = tira(srv); lista.push(volta); remoto[k] = JSON.stringify(volta); }   // editado em outro aparelho: a edição vence e o item volta
-      else { delete remoto[k]; delete ver[id]; }   // já não existe lá: a exclusão está feita
+    if (i < 0) {
+      // apagado neste aparelho, mas o servidor recusou a exclusão
+      if (srv) {
+        const volta = tira(srv);
+        lista.push(volta);
+        remoto[k] = JSON.stringify(volta);
+      } // editado em outro aparelho: a edição vence e o item volta
+      else {
+        delete remoto[k];
+        delete ver[id];
+      } // já não existe lá: a exclusão está feita
       continue;
     }
     if (!srv) {
-      if (remoto[k]) { lista.splice(i, 1); delete remoto[k]; delete ver[id]; }   // apagado em outro aparelho
-      else ver[id] = null;                                                         // não existe lá: reenvia como novo
+      if (remoto[k]) {
+        lista.splice(i, 1);
+        delete remoto[k];
+        delete ver[id];
+      } // apagado em outro aparelho
+      else ver[id] = null; // não existe lá: reenvia como novo
       continue;
     }
-    ver[id] = srv.atualizado; remoto[k] = JSON.stringify(sem(srv));
-    lista[i] = tipoT ? mesclarTitulo(lista[i], sem(srv)) : lista[i];              // tops: vale a edição local
+    ver[id] = srv.atualizado;
+    remoto[k] = JSON.stringify(sem(srv));
+    lista[i] = tipoT ? mesclarTitulo(lista[i], sem(srv)) : lista[i]; // tops: vale a edição local
   }
   // itens criados em outros aparelhos
-  for (const s of d.series) if (!achar(s.id) && !('T' + s.id in remoto)) { L.series.push(tira(s)); remoto['T' + s.id] = JSON.stringify(L.series[L.series.length - 1]); }
-  for (const t of d.tops) if (!L.tops.some(x => x.id === t.id) && !('P' + t.id in remoto)) { L.tops.push(tira(t)); remoto['P' + t.id] = JSON.stringify(L.tops[L.tops.length - 1]); }
-  L.series.sort((a, b) => b.criado - a.criado); L.tops.sort((a, b) => b.criado - a.criado);
+  for (const s of d.series)
+    if (!achar(s.id) && !('T' + s.id in remoto)) {
+      L.series.push(tira(s));
+      remoto['T' + s.id] = JSON.stringify(L.series[L.series.length - 1]);
+    }
+  for (const t of d.tops)
+    if (!L.tops.some(x => x.id === t.id) && !('P' + t.id in remoto)) {
+      L.tops.push(tira(t));
+      remoto['P' + t.id] = JSON.stringify(L.tops[L.tops.length - 1]);
+    }
+  L.series.sort((a, b) => b.criado - a.criado);
+  L.tops.sort((a, b) => b.criado - a.criado);
 }
 
 async function rodar() {
-  if (emVoo) { denovo = true; return; }
-  emVoo = true; denovo = false;
+  if (emVoo) {
+    denovo = true;
+    return;
+  }
+  emVoo = true;
+  denovo = false;
   try {
-    for (let voltas = 0; ;) {
+    for (let voltas = 0; ; ) {
       const conf = await enviar();
       if (conf.length) {
         if (++voltas > 2) throw Object.assign(new Error('Não foi possível combinar com a versão de outro aparelho. Recarregue a página.'), { fatal: true });
-        await resolver(conf); hooks.render(); aviso('Alterações de outro aparelho foram combinadas com as suas.');
+        await resolver(conf);
+        hooks.render();
+        aviso('Alterações de outro aparelho foram combinadas com as suas.');
         continue;
       }
       if (!diferente()) break;
     }
-    tentativa = 0; sujo = false; faixa(navigator.onLine ? '' : 'Sem conexão.'); status('Salvo ✓'); salvarSnap();
+    tentativa = 0;
+    sujo = false;
+    faixa(navigator.onLine ? '' : 'Sem conexão.');
+    status('Salvo ✓');
+    salvarSnap();
   } catch (e) {
-    if (e.auth) { salvarSnap(); hooks.login(); }
-    else if (e.rede || e.status >= 500 || e.status === 429) {
+    if (e.auth) {
+      salvarSnap();
+      hooks.login();
+    } else if (e.rede || e.status >= 500 || e.status === 429) {
       tentativa++;
       const s = Math.min(60, 2 * 2 ** (tentativa - 1));
       faixa('Sem conexão com o servidor. Suas alterações estão salvas neste aparelho e serão enviadas automaticamente.');
       status(`Não foi possível salvar. Nova tentativa em ${s}s…`, true);
-      agenda(s * 1000); denovo = false; salvarSnap();
-    } else { status('Erro ao salvar: ' + e.message, true); salvarSnap(); }
+      agenda(s * 1000);
+      denovo = false;
+      salvarSnap();
+    } else {
+      status('Erro ao salvar: ' + e.message, true);
+      salvarSnap();
+    }
   } finally {
     emVoo = false;
-    if (denovo) { denovo = false; agenda(0); }
+    if (denovo) {
+      denovo = false;
+      agenda(0);
+    }
   }
 }
 
@@ -195,23 +304,52 @@ export async function recarregarSuave({ ocupado = () => false } = {}) {
   ultimaRecarga = Date.now();
   try {
     const d = await api('/api/dados');
-    if (sujo || emVoo || ocupado()) return;                         // algo mudou enquanto buscava
+    if (sujo || emVoo || ocupado()) return; // algo mudou enquanto buscava
     const antes = remoto;
     const novo = { series: d.series.map(tira), tops: d.tops.map(tira) };
     const L0 = { series: L.series, tops: L.tops };
-    L.series = novo.series; L.tops = novo.tops; L.links = d.links || {};
+    L.series = novo.series;
+    L.tops = novo.tops;
+    L.links = d.links || {};
     const depois = chaves();
     const igual = Object.keys(depois).length === Object.keys(antes).length && Object.keys(depois).every(k => depois[k] === antes[k]);
-    if (igual) { L.series = L0.series; L.tops = L0.tops; remoto = antes; return; }
-    remoto = depois; salvarSnap(); hooks.render(); aviso('Dados atualizados de outro aparelho.');
-  } catch (e) { if (e.auth) hooks.login(); }
+    if (igual) {
+      L.series = L0.series;
+      L.tops = L0.tops;
+      remoto = antes;
+      return;
+    }
+    remoto = depois;
+    salvarSnap();
+    hooks.render();
+    aviso('Dados atualizados de outro aparelho.');
+  } catch (e) {
+    if (e.auth) hooks.login();
+  }
 }
 
 export function ligarRede() {
-  addEventListener('online', () => { faixa(''); if (sujo) agenda(0); });
+  addEventListener('online', () => {
+    faixa('');
+    if (sujo) agenda(0);
+  });
   addEventListener('offline', () => faixa('Sem conexão. As alterações ficam salvas neste aparelho.'));
-  addEventListener('beforeunload', e => { if (sujo) { salvarSnap(); e.preventDefault(); } });
+  addEventListener('beforeunload', e => {
+    if (sujo) {
+      salvarSnap();
+      e.preventDefault();
+    }
+  });
   if (!navigator.onLine) faixa('Sem conexão. As alterações ficam salvas neste aparelho.');
 }
 
-export function zerar() { L.series = []; L.tops = []; L.links = {}; L.usuario = null; remoto = {}; ver = {}; sujo = false; clearTimeout(timer); }
+export function zerar() {
+  L.series = [];
+  L.tops = [];
+  L.links = {};
+  L.usuario = null;
+  remoto = {};
+  ver = {};
+  sujo = false;
+  clearTimeout(timer);
+}
