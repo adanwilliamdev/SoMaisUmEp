@@ -5,6 +5,15 @@ import { $ } from '../util.js';
 export const app = $('#app');
 export const dlg = $('#dlg');
 
+// O diálogo é reescrito a cada tela (innerHTML): o primeiro <h2> vira o nome dele para os leitores de tela.
+new MutationObserver(() => {
+  const h = dlg.querySelector('h2');
+  if (h) {
+    h.id = 'dlg-titulo';
+    dlg.setAttribute('aria-labelledby', 'dlg-titulo');
+  } else dlg.removeAttribute('aria-labelledby');
+}).observe(dlg, { childList: true });
+
 export const ctx = {
   logado: false,
   aberta: null, // id do título aberto no painel de detalhes

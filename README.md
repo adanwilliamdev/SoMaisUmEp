@@ -11,7 +11,8 @@ public/        site (index.html, style.css, manifest.json, sw.js, icons/ e js/)
 api/           funções serverless (login, cadastro, logout, dados, sync, capa, conta, cron, tmdb, t...); só 12 arquivos públicos
                por causa do limite do plano Hobby. Os que servem mais de um método passam por _roteador.js (veja "API")
 neon/          migracoes/ (SQL numerado) e schema.sql (todas juntas, gerado)
-scripts/       migrar.js (aplica as migrações no banco) e build.js (gera dist/ para o deploy)
+scripts/       migrar.js (aplica as migrações no banco), build.js (gera dist/ para o deploy) e vapid.js (chaves dos avisos por push)
+docs/          notificacoes.md (avisos por push) e acessibilidade.md (o que está coberto e como conferir)
 test/          testes (node --test)
 .github/       workflows/ci.yml (lint, formatação, testes e build a cada push e pull request)
 ```
@@ -24,6 +25,7 @@ npm run lint          ESLint (eslint.config.js)
 npm run format        Prettier (.prettierrc.json); `npm run format:check` só confere
 npm run verificar     lint + formatação + testes, o mesmo que o CI roda
 npm run build         gera dist/ (cópia de public/ com a versão do service worker)
+npm run vapid         gera o par de chaves dos avisos por push (veja docs/notificacoes.md)
 ```
 
 - **Telas**: `views/<tela>.js` monta o HTML; `telas/<tela>.js` cuida dos eventos dela. Para criar uma ação nova, exporte-a em `acoes` do módulo da tela e use `data-act="nome"` no HTML. `main.js` junta todas as `acoes` e avisa se um nome se repetir. O estado compartilhado fica em `telas/ctx.js`.
@@ -31,10 +33,10 @@ npm run build         gera dist/ (cópia de public/ com a versão do service wor
 - **API**: `api/tmdb.js` e `api/t.js` são só roteadores (`api/_roteador.js`, por método HTTP). As consultas do TMDb (`?acao=busca|detalhe|streaming|tendencias|parecidos`) estão em `api/_consultas.js`, a importação em `api/_importar.js`, a página pública do top em `api/_pagina.js` e o liga-desliga do link em `api/_compartilhar.js`. Um teste confere que `api/` não passa de 12 arquivos públicos.
 - **ESLint e Prettier** rodam com `npx` (versões fixas nos scripts), então não entram no `package.json` nem no `package-lock.json`. Se preferir tê-los em `devDependencies`, rode `npm i -D eslint@10.1.0 prettier@3.8.1`.
 
-## O que tem (v5.1.2)
+## O que tem (v5.2.0)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
-- **Datas de lançamento (v5.1)**: o TMDb informa o próximo episódio (ou a estreia de um filme) e o app mostra "Novo ep sexta" / "Nova temporada em 12 jan" nos cards, no painel e numa fileira "Próximos episódios". Uma vez por dia aparece o aviso "Sai hoje: …", e quando uma série concluída volta com episódios novos o aviso diz quando. Títulos com a data já vencida são reconferidos a cada 6 h (os demais, a cada 24 h). É um aviso dentro do app, ao abri-lo; não há notificação push.
+- **Datas de lançamento (v5.1)**: o TMDb informa o próximo episódio (ou a estreia de um filme) e o app mostra "Novo ep sexta" / "Nova temporada em 12 jan" nos cards, no painel e numa fileira "Próximos episódios". Uma vez por dia aparece o aviso "Sai hoje: …", e quando uma série concluída volta com episódios novos o aviso diz quando. Títulos com a data já vencida são reconferidos a cada 6 h (os demais, a cada 24 h). Dentro do app o aviso aparece ao abri-lo; com os avisos por push ativados (veja abaixo) ele também chega como notificação, com o app fechado.
 - **Descobrir (v5.1)**: aba com "Em alta esta semana" e "Parecidos com o que você viu" (baseada nos títulos que você já começou e não avaliou mal, melhores notas primeiro), para séries e filmes. Toque no + para adicionar à estante, ou na capa para ver sinopse e onde assistir.
 - **Importar (v5.1)**: botão "Importar" no rodapé (e na estante vazia). Letterboxd (o .zip inteiro ou os CSV watched/ratings/diary/reviews/watchlist), IMDb (CSV de avaliações ou watchlist) e Trakt (JSON no formato da API: assistidos, histórico, avaliações, watchlist). Os títulos são localizados no TMDb em lotes de 10 por `POST /api/tmdb`; duplicados são ignorados e dá para desfazer a importação inteira. Limites dos formatos: o Letterboxd só tem filmes; o IMDb não guarda episódios vistos, então séries entram só com a nota; no Trakt o progresso de cada temporada vira "até o maior episódio visto".
 - **Tops compartilháveis (v5.1)**: botão "Compartilhar" em cada top. Gera uma imagem 1080×1350 (abre a folha de compartilhamento do celular ou baixa o PNG) e, se você quiser, um **link público** `/t/<código>`, com prévia (Open Graph) em redes e mensageiros. O link mostra o nome do top, os títulos e o seu primeiro nome; "Parar de compartilhar" o desliga na hora (a página pode ficar até 30 s em cache).
@@ -43,11 +45,13 @@ npm run build         gera dist/ (cópia de public/ com a versão do service wor
 - **TMDb**: busca ao cadastrar, botão "Atualizar do TMDb" e verificação automática (1x por dia por série) de temporadas e episódios novos, sem perder progresso. Em cada título, "Onde assistir" (Brasil).
 - **Minha avaliação**: nota e resenha pessoais por título.
 - **Estatísticas**: tempo assistido, contagens, nota média e gráfico por mês.
-- **Tops 10**: arraste a alça ⋮⋮ (ou use as setas do teclado com a alça selecionada).
-- **Backup**: baixar/importar arquivo `.json`.
+- **Tops 10**: arraste a alça ⋮⋮, use os botões ▲▼ de cada item, ou as setas, Home e End do teclado com a alça selecionada (o foco acompanha o item e a posição nova é anunciada ao leitor de tela).
+- **Backup e exportação (v5.2)**: baixar/importar arquivo `.json`; exportar uma **planilha `.csv`** com todos os títulos (abre no Excel e no Google Planilhas; células que começam com `=`, `+`, `-` ou `@` recebem um apóstrofo para não virarem fórmula) e um **`.csv` no formato de importação do Letterboxd** (`tmdbID, Title, Year, WatchedDate, Rating, Review`) com os filmes assistidos, nota em estrelas (0,5 a 5) e resenha. Séries não existem no Letterboxd e ficam de fora desse arquivo. Código em `public/js/exportacao.js`.
 - **Layout novo (v5)**: barra lateral no computador e abas embaixo no celular; o título que você viu por último vira o destaque "Só mais um ep" (+1 episódio com um toque); detalhes abrem num painel lateral (folha no celular); o próximo episódio de cada temporada fica marcado.
 - **Tema claro/escuro** pelo botão no canto da barra (segue o do aparelho por padrão).
 - **Contas**: senha com scrypt, bloqueio temporário após tentativas erradas (por IP e por e-mail, guardado no banco), "Sair de todos os dispositivos", **"Esqueci minha senha"** por e-mail, trocar senha, trocar e-mail e **excluir conta** (apaga tudo, inclusive as capas).
+- **Avisos de episódios novos por push (v5.2)**: em Minha conta › Avisos de episódios novos. Uma notificação de manhã nos dias em que sai episódio (ou estreia) de algo da estante, com o app fechado. Opcional: precisa das chaves VAPID (`npm run vapid`) e da migração 005. Detalhes, limites e como configurar em [docs/notificacoes.md](docs/notificacoes.md).
+- **Acessibilidade (v5.2)**: contraste AA nos dois temas (conferido por teste), foco visível, "pular para o conteúdo", foco e título da página ao trocar de aba, rótulos em todos os botões só com ícone, diálogos com nome, gráfico com tabela equivalente e reordenação dos tops sem arrastar. Veja [docs/acessibilidade.md](docs/acessibilidade.md).
 - **Segurança de dados**: salvamento com nova tentativa automática, aviso de "sem conexão", cópia local, e detecção de edição em dois aparelhos (campo `atualizado`); ao voltar para a aba, os dados são recarregados.
 
 ## Identidade visual (v4.4)
@@ -83,7 +87,8 @@ Em themoviedb.org › Configurações › API, copie o **Token de Leitura da API
 | `DATABASE_URL` | connection string do Neon |
 | `TMDB_READ_TOKEN` | token v4 do TMDb (ou `TMDB_API_KEY`) |
 | `BLOB_READ_WRITE_TOKEN` | *(opcional)* criado ao conectar um **Vercel Blob** (Storage › Create › Blob) |
-| `CRON_SECRET` | texto aleatório longo, usado pela faxina diária (`/api/cron`) |
+| `CRON_SECRET` | texto aleatório longo, usado pela faxina e pelos avisos diários (`/api/cron`) |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | *(opcionais)* ligam os avisos por push; gere com `npm run vapid` (veja `docs/notificacoes.md`) |
 | `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM` | *(opcionais)* ligam o "Esqueci minha senha" (veja abaixo) |
 | `ADOTAR_DADOS_ANTIGOS` | *(opcional, só para atualizar da versão de uma senha)* `true` faz a primeira conta criada herdar as linhas sem dono; remova depois |
 | `CADASTRO_ABERTO` | *(opcional)* `false` fecha novos cadastros depois da primeira conta |
@@ -101,9 +106,9 @@ Com o Blob conectado, as capas que você envia vão para o Blob e só o link fic
 
 O link enviado vale por 1 hora, funciona uma vez só e encerra as sessões abertas em todos os aparelhos. O banco guarda só o hash do token. O pedido responde sempre igual, exista o e-mail ou não, e é limitado a 3 por e-mail e 10 por IP (a cada 15 min, com bloqueio crescente).
 
-### Faxina diária e cotas
+### Faxina diária, avisos e cotas
 
-`/api/cron` roda todo dia às 05:00 UTC (veja `crons` no `vercel.json`; precisa de `CRON_SECRET`) e apaga: tentativas de login antigas, links de redefinição vencidos e **capas órfãs** do Blob (que nenhum título usa, com mais de 24 h). Cada conta pode enviar até 30 capas por hora e guardar até 1000.
+`/api/cron` roda todo dia às 11:00 UTC, 08:00 em Brasília (veja `crons` no `vercel.json`; precisa de `CRON_SECRET`). Se as chaves VAPID estiverem configuradas, primeiro envia os avisos de lançamento do dia (`api/_notificar.js`); depois apaga: tentativas de login antigas, links de redefinição vencidos e **capas órfãs** do Blob (que nenhum título usa, com mais de 24 h). Cada conta pode enviar até 30 capas por hora e guardar até 1000.
 
 ## Se aparecer "Erro no servidor"
 
@@ -149,3 +154,7 @@ vercel dev
 ## Créditos
 
 Este produto usa a API do TMDB, mas não é endossado nem certificado por ele. Dados de streaming: JustWatch, via TMDb.
+
+## Licença
+
+[MIT](LICENSE) © 2026 Adan William Oliveira Santos. Os dados e imagens do TMDB seguem os termos do próprio TMDB.

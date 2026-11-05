@@ -27,10 +27,10 @@ export function htmlDetalhe(s, onde) {
         .map((n, i) => {
           let c = '';
           for (let e = 1; e <= n; e++)
-            c += `<button class="ep" data-act="ep" data-s="${i}" data-e="${e}" aria-pressed="${s.vis[i] >= e}" aria-label="Episódio ${e}">${e}</button>`;
+            c += `<button class="ep" data-act="ep" data-s="${i}" data-e="${e}" aria-pressed="${s.vis[i] >= e}" aria-label="Temporada ${i + 1}, episódio ${e}">${e}</button>`;
           return `<div class="temp"><div class="temp-cab"><b>Temporada ${i + 1} <span class="mut-leve">· ${s.vis[i]}/${n}</span></b>
-      <button class="btn sec mini" data-act="temp-tudo" data-s="${i}">Marcar toda</button>
-      <button class="btn sec mini" data-act="temp-zero" data-s="${i}">Zerar</button></div><div class="eps">${c}</div></div>`;
+      <button class="btn sec mini" data-act="temp-tudo" data-s="${i}" aria-label="Marcar toda a temporada ${i + 1}">Marcar toda</button>
+      <button class="btn sec mini" data-act="temp-zero" data-s="${i}" aria-label="Zerar temporada ${i + 1}">Zerar</button></div><div class="eps">${c}</div></div>`;
         })
         .join('');
   const urlHero = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);

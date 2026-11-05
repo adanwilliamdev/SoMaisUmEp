@@ -1,7 +1,8 @@
 {
   "name": "somaisumep",
-  "version": "5.1.2",
+  "version": "5.2.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "test": "node --test",
     "lint": "npx --yes eslint@10.1.0 .",
@@ -10,7 +11,8 @@
     "build": "node scripts/build.js",
     "verificar": "npm run lint && npm run format:check && npm test",
     "migrar": "node scripts/migrar.js",
-    "schema": "node scripts/migrar.js --gerar-schema"
+    "schema": "node scripts/migrar.js --gerar-schema",
+    "vapid": "node scripts/vapid.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",

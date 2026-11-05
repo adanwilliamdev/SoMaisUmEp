@@ -1,11 +1,12 @@
 const { db, rota, renovarSessao } = require('./_lib');
 const { etagDe, confere } = require('./_etag');
+const { roteador } = require('./_roteador');
 
 const n = v => (v == null ? null : Number(v));
 
 // O navegador revalida a cada chamada (If-None-Match); se nada mudou, a resposta é 304 e a biblioteca
 // nem chega a ser lida do banco: só duas consultas de contagem/última alteração.
-module.exports = rota('GET', async (req, res, u) => {
+const dados = rota('GET', async (req, res, u) => {
   const sql = db(),
     blob = !!process.env.BLOB_READ_WRITE_TOKEN;
   const [[a], [b]] = await Promise.all([
@@ -49,4 +50,11 @@ module.exports = rota('GET', async (req, res, u) => {
     tops: p.map(r => ({ id: r.id, nome: r.nome, itens: r.itens, criado: Number(r.criado), atualizado: Number(r.atualizado) })),
     links: Object.fromEntries(p.filter(r => r.publico).map(r => [r.id, r.publico])), // id do top -> código do link público
   });
+});
+
+// GET = a biblioteca (acima); GET ?r=push e POST = notificações push (_push.js). Um só arquivo para caber no limite
+// de funções da Vercel (plano Hobby: 12).
+module.exports = roteador({
+  GET: (req, res) => (req.query && req.query.r === 'push' ? require('./_push').estado(req, res) : dados(req, res)),
+  POST: (req, res) => require('./_push').comando(req, res),
 });

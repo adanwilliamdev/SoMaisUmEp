@@ -16,15 +16,19 @@ import * as descobrir from './telas/descobrir.js';
 import * as compartilhar from './telas/compartilhar.js';
 import * as importar from './telas/importar.js';
 import * as tema from './telas/tema.js';
+import * as notificacoes from './telas/notificacoes.js';
 
 observarEstilos(); // aplica os estilos vindos de data-* (o CSP não aceita style="" no HTML)
 
 /* ---------- renderização ---------- */
+const TITULOS = { '#series': 'Séries', '#filmes': 'Filmes', '#descobrir': 'Descobrir', '#tops': 'Tops', '#stats': 'Estatísticas' };
+
 function render() {
   if (!ctx.logado) return;
   const a = aba(),
     y = scrollY,
     manter = !ctx.animar;
+  document.title = `${TITULOS[a]} · SóMaisUmEp`; // o leitor de tela anuncia o título ao trocar de aba
   document.querySelectorAll('.menu a').forEach(l => {
     if (l.getAttribute('href') === a) l.setAttribute('aria-current', 'page');
     else l.removeAttribute('aria-current');
@@ -49,6 +53,12 @@ addEventListener('hashchange', () => {
   V.UI.busca = '';
   scrollTo({ top: 0, behavior: 'instant' });
   render();
+  // Ao trocar de aba o foco vai para o título da página nova (sem isso, quem usa teclado ou leitor de tela fica "perdido" no menu).
+  const h1 = app.querySelector('h1');
+  if (h1 && ctx.logado) {
+    h1.tabIndex = -1;
+    h1.focus({ preventScroll: true });
+  }
 });
 
 // Imagens entram com fade quando terminam de carregar (load/error não borbulham: captura).
@@ -81,6 +91,7 @@ async function iniciar() {
 // Tarefas em segundo plano depois de abrir: capas para o Blob e temporadas novas.
 async function depois() {
   avisosDeHoje();
+  notificacoes.sincronizarPush(); // sem await: não atrasa o resto
   try {
     await migrarCapas();
   } catch {
@@ -127,12 +138,13 @@ ligar({
 /* ---------- eventos ---------- */
 // Ações que não pertencem a uma tela só.
 const geral = {
+  pular: () => app.focus({ preventScroll: false }), // "Pular para o conteúdo"
   fechar: () => dlg.close(),
   recarregar: () => iniciar(),
 };
 // Cada tela exporta `acoes`: { data-act: função }. Juntas formam a tabela de despacho (um nome só pode existir em uma tela).
 const ACOES = {};
-for (const tela of [geral, estante, detalhe, formulario, tops, backup, conta, descobrir, compartilhar, importar, tema]) {
+for (const tela of [geral, estante, detalhe, formulario, tops, backup, conta, descobrir, compartilhar, importar, tema, notificacoes]) {
   for (const [nome, fn] of Object.entries(tela.acoes || tela)) {
     if (nome in ACOES) throw new Error(`Ação duplicada: ${nome}`);
     ACOES[nome] = fn;

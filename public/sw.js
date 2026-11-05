@@ -96,3 +96,53 @@ self.addEventListener('fetch', e => {
   }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') e.respondWith(antigoEnovo(req, EXTERNO));
 });
+
+/* ---------- notificações push (avisos de episódios novos; quem envia é api/_notificar.js, no cron diário) ---------- */
+// Toda mensagem push PRECISA virar uma notificação visível (é a regra do navegador e, no iOS, do sistema), então sempre mostra.
+// O texto vem do servidor como JSON { titulo, corpo, url, tag } e é usado só como texto (nunca como HTML).
+self.addEventListener('push', e => {
+  let d = {};
+  try {
+    d = e.data ? e.data.json() : {};
+  } catch {
+    d = { corpo: e.data ? e.data.text() : '' };
+  }
+  const url = typeof d.url === 'string' && /^\/(?!\/)/.test(d.url) ? d.url : '/'; // só caminhos deste site
+  e.waitUntil(
+    self.registration.showNotification(String(d.titulo || 'SóMaisUmEp').slice(0, 100), {
+      body: String(d.corpo || '').slice(0, 300),
+      icon: '/icons/icon-192.png',
+      tag: String(d.tag || 'lancamentos').slice(0, 40), // a mesma tag substitui a notificação anterior em vez de empilhar
+      data: { url },
+    }),
+  );
+});
+
+// Tocar na notificação abre o app (ou traz a aba que já está aberta para a frente).
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const alvo = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin).href;
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(janelas => {
+      const aberta = janelas.find(j => new URL(j.url).origin === self.location.origin && 'focus' in j);
+      return aberta ? aberta.focus() : self.clients.openWindow(alvo);
+    }),
+  );
+});
+
+// O navegador trocou a inscrição (ex.: o serviço de push renovou): assina de novo e avisa o servidor.
+self.addEventListener('pushsubscriptionchange', e => {
+  e.waitUntil(
+    (async () => {
+      const chave = e.oldSubscription && e.oldSubscription.options && e.oldSubscription.options.applicationServerKey;
+      const nova = e.newSubscription || (chave ? await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chave }) : null);
+      if (!nova) return;
+      await fetch('/api/dados?r=push', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'assinar', assinatura: nova.toJSON() }),
+      });
+    })().catch(() => {}),
+  );
+});

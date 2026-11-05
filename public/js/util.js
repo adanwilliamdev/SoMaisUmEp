@@ -26,6 +26,17 @@ export function aviso(texto, ms = 4200) {
   }, ms);
 }
 
+// Anúncio só para leitores de tela (região invisível com aria-live). Serve para dizer o que mudou quando
+// a mudança não aparece como texto (ex.: item de um top movido de posição).
+export function anunciar(texto) {
+  const el = $('#anuncio');
+  if (!el) return;
+  el.textContent = '';
+  setTimeout(() => {
+    el.textContent = texto;
+  }, 60); // limpar antes faz o leitor repetir um texto igual ao anterior
+}
+
 // Faixa fixa no topo (ex.: sem conexão)
 export function faixa(texto) {
   const el = $('#faixa');

@@ -29,6 +29,6 @@ export function htmlImportar(fase = {}) {
       <li><b>Trakt</b>: envie os arquivos .json do export (assistidos, avaliações, watchlist).</li>
     </ul>
     <p class="aviso" id="imp-msg" role="alert"></p>
-    <div class="rodape-dlg esq"><label class="btn arq">Escolher arquivos…<input type="file" id="imparq" accept=".zip,.csv,.json,application/zip,application/json,text/csv" multiple hidden></label></div>
+    <div class="rodape-dlg esq"><label class="btn arq">Escolher arquivos…<input type="file" id="imparq" accept=".zip,.csv,.json,application/zip,application/json,text/csv" multiple class="sr-input"></label></div>
     <div class="rodape-dlg"><button class="btn sec" data-act="fechar">Cancelar</button></div>`;
 }

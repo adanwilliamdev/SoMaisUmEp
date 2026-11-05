@@ -313,7 +313,7 @@ test('cron: exige o CRON_SECRET e devolve o que limpou', async () => {
   assert.equal((await chamar('cron', { metodo: 'GET', headers: { authorization: 'Bearer errado' } })).code, 401);
   const r = await chamar('cron', { metodo: 'GET', headers: { authorization: 'Bearer segredo-do-cron' } });
   assert.equal(r.code, 200);
-  assert.deepEqual(r.body, { ok: true, tentativas: 3, links: 3, capasBlob: 0, capasRegistro: 3 });
+  assert.deepEqual(r.body, { ok: true, tentativas: 3, links: 3, capasBlob: 0, capasRegistro: 3, push: { ativo: false } });
   delete process.env.CRON_SECRET;
   assert.equal((await chamar('cron', { metodo: 'GET', headers: { authorization: 'Bearer x' } })).code, 500);
 });

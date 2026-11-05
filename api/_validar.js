@@ -115,4 +115,15 @@ const nomeUsuario = v =>
     throw erro('Informe seu nome');
   })();
 
-module.exports = { ID, txt, inteiros, num, capaOk, historico, proximo, titulo, top, ids, exclusoes, email, senha, nomeUsuario };
+// Assinatura de notificação push enviada pelo navegador: { endpoint, keys: { p256dh, auth } }. O endpoint precisa ser de um
+// serviço de push conhecido (veja _webpush.js): o servidor vai chamá-lo, então não pode ser um endereço qualquer.
+function assinaturaPush(a) {
+  const W = require('./_webpush');
+  const endpoint = W.endpointOk(a && a.endpoint),
+    k = (a && a.keys) || {};
+  if (!endpoint) throw erro('Este navegador usa um serviço de notificações que o app não suporta.');
+  if (!W.chaveAparelhoOk(k.p256dh) || !W.authAparelhoOk(k.auth)) throw erro('Assinatura de notificação inválida');
+  return { endpoint, p256dh: k.p256dh, auth: k.auth };
+}
+
+module.exports = { ID, txt, inteiros, num, capaOk, historico, proximo, titulo, top, ids, exclusoes, email, senha, nomeUsuario, assinaturaPush };

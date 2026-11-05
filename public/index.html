@@ -21,6 +21,7 @@
 <link rel="modulepreload" href="/js/main.js">
 </head>
 <body class="deslogado">
+<button type="button" class="pular" data-act="pular">Pular para o conteúdo</button>
 <div id="faixa" class="faixa" role="status" hidden></div>
 <div class="casa">
   <header class="rail">
@@ -38,7 +39,7 @@
     </div>
   </header>
   <div class="palco">
-    <main id="app"></main>
+    <main id="app" tabindex="-1"></main>
     <footer class="rodape">
       <span id="status" role="status"></span>
       <button class="btn sec mini" data-act="importar-abrir">Importar</button>
@@ -49,6 +50,7 @@
   </div>
 </div>
 <div id="avisos" class="avisos" aria-live="polite"></div>
+<div id="anuncio" class="sr" role="status" aria-live="polite" aria-atomic="true"></div>
 <dialog id="dlg"></dialog>
 
 <script type="module" src="/js/main.js"></script>

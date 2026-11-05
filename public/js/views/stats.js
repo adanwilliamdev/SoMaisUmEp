@@ -20,7 +20,10 @@ export function graficoMeses(meses) {
       <text x="${x + w / 2}" y="${H - 10}" text-anchor="middle">${m.rotulo}</text></g>`;
     })
     .join('');
-  return `<svg class="graf" viewBox="0 0 ${W} ${H}" role="img" aria-label="Episódios e filmes marcados como vistos, por mês, nos últimos 12 meses"><line x1="${pad}" x2="${W - pad}" y1="${H - 30}" y2="${H - 30}"/>${barras}</svg>`;
+  return `<svg class="graf" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false"><line x1="${pad}" x2="${W - pad}" y1="${H - 30}" y2="${H - 30}"/>${barras}</svg>
+    <table class="sr"><caption>Episódios e filmes marcados como vistos, por mês, nos últimos 12 meses</caption>
+      <thead><tr><th scope="col">Mês</th><th scope="col">Marcados</th></tr></thead>
+      <tbody>${meses.map(m => `<tr><th scope="row">${m.rotulo}/${m.ano}</th><td>${m.valor}</td></tr>`).join('')}</tbody></table>`;
 }
 
 export function viewStats() {

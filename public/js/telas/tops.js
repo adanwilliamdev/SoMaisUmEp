@@ -1,5 +1,5 @@
 // Tops 10: criar, adicionar/remover itens, reordenar (arrastar pela alça ou pelo teclado).
-import { $, uid, aviso, avisoDesfazer, confirma } from '../util.js';
+import { $, uid, aviso, anunciar, avisoDesfazer, confirma } from '../util.js';
 import { L, save } from '../loja.js';
 import { gancho } from './ctx.js';
 
@@ -20,6 +20,15 @@ const moverItem = (t, de, para) => {
   const [x] = t.itens.splice(de, 1);
   t.itens.splice(para, 0, x);
   save();
+  anunciar(`${x.t} movido para a posição ${para + 1} de ${t.itens.length}`);
+};
+
+// Depois de mover (a tela é redesenhada), o foco volta ao mesmo item, no botão que o usuário estava usando.
+const focarItem = (t, pos, qual) => {
+  const li = document.querySelector(`[data-top="${CSS.escape(String(t.id))}"] li[data-i="${pos}"]`);
+  if (!li) return;
+  const alvo = li.querySelector(qual === 'alca' ? '[data-alca]' : `[data-act="${qual}"]:not(:disabled)`) || li.querySelector('[data-act="sobe"]:not(:disabled), [data-act="desce"]:not(:disabled), [data-alca]');
+  if (alvo) alvo.focus();
 };
 
 /* ---------- arrastar pela alça (mouse, toque e caneta) ---------- */
@@ -75,7 +84,20 @@ document.addEventListener('keydown', e => {
     if (!t || para < 0 || para >= t.itens.length) return;
     moverItem(t, de, para);
     gancho.render();
-    document.querySelector(`[data-top="${CSS.escape(String(t.id))}"] li[data-i="${para}"] [data-alca]`)?.focus();
+    focarItem(t, para, 'alca');
+    return;
+  }
+  if (alca && (e.key === 'Home' || e.key === 'End')) {
+    // primeiro / último lugar
+    e.preventDefault();
+    const li = alca.closest('li'),
+      t = L.tops.find(x => x.id === alca.closest('[data-top]').dataset.top);
+    const de = +li.dataset.i,
+      para = e.key === 'Home' ? 0 : t.itens.length - 1;
+    if (!t || para === de) return;
+    moverItem(t, de, para);
+    gancho.render();
+    focarItem(t, para, 'alca');
     return;
   }
   if (e.key !== 'Enter') return;
@@ -87,6 +109,14 @@ document.addEventListener('keydown', e => {
     document.querySelector('[data-act="novo-top"]').click();
   }
 });
+
+function deslocar(t, de, passo, b) {
+  const para = de + passo;
+  if (!t || de < 0 || para < 0 || para >= t.itens.length) return;
+  moverItem(t, de, para);
+  gancho.render();
+  focarItem(t, para, b.dataset.act);
+}
 
 /* ---------- eventos ---------- */
 export const acoes = {
@@ -117,6 +147,9 @@ export const acoes = {
       );
     });
   },
+  // Subir/descer por botão: alternativa a arrastar (toque, leitor de tela, quem não consegue segurar e mover).
+  sobe: ({ t, i, b }) => deslocar(t, i, -1, b),
+  desce: ({ t, i, b }) => deslocar(t, i, 1, b),
   'add-item': ({ t, tid }) => {
     if (t) addItem(tid);
   },

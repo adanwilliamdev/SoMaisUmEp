@@ -2,7 +2,8 @@ const { db, rota, erro, igual } = require('./_lib');
 
 const DIA = 864e5;
 
-// Faxina diária (Vercel Cron, veja "crons" no vercel.json). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
+// Faxina e avisos diários (Vercel Cron, veja "crons" no vercel.json). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
+//  - avisos de episódios que saem hoje, por notificação push (_notificar.js);
 //  - tentativas de login antigas e já desbloqueadas;
 //  - links de redefinição de senha vencidos;
 //  - capas do Blob que nenhum título usa mais (órfãs, com mais de 24 h para não pegar envio em andamento).
@@ -52,7 +53,15 @@ module.exports = rota(
       sql,
       sql`with d as (delete from capas c where c.criado < ${agora - DIA} and not exists (select 1 from titulos t where t.capa = c.url) returning 1) select count(*)::int as n from d`,
     );
-    res.json({ ok: true, tentativas, links, capasBlob, capasRegistro });
+    // Avisos de lançamento por push (só se as chaves VAPID estiverem configuradas). Falha aqui não impede o resto da faxina.
+    let push = { ativo: false };
+    try {
+      push = await require('./_notificar').enviarLancamentos(sql, { agora });
+    } catch (e) {
+      console.error('cron push:', e.message);
+      push = { ativo: true, erro: true };
+    }
+    res.json({ ok: true, tentativas, links, capasBlob, capasRegistro, push });
   },
   true,
 );
