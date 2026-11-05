@@ -45,3 +45,19 @@ export function revela() {
     if (i.complete && i.naturalWidth) i.classList.add('ok');
   });
 }
+
+// Teclado virtual: a gaveta acompanha a área realmente visível e o campo em foco rola para a vista,
+// assim "Salvar/Cancelar" não ficam escondidos atrás do teclado.
+{
+  const vv = window.visualViewport;
+  const ajusta = () => document.documentElement.style.setProperty('--vvh', (vv ? vv.height : window.innerHeight) + 'px');
+  if (vv) {
+    vv.addEventListener('resize', ajusta);
+    vv.addEventListener('scroll', ajusta);
+  }
+  ajusta();
+  dlg.addEventListener('focusin', e => {
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+  });
+}

@@ -3,11 +3,12 @@ import { L } from '../loja.js';
 import { vis, estatisticas, ultimosMeses, duracaoTexto } from '../regras.js';
 
 /* ---------- estatísticas ---------- */
-export function graficoMeses(meses) {
+export function graficoMeses(meses, compacto = typeof matchMedia === 'function' && matchMedia('(max-width:600px)').matches) {
+  // No celular o gráfico usa uma área menor (mesmo tamanho de letra na tela), para caber na largura sem rolagem lateral.
   const max = Math.max(1, ...meses.map(m => m.valor)),
-    W = 720,
-    H = 220,
-    pad = 28,
+    W = compacto ? 360 : 720,
+    H = compacto ? 200 : 220,
+    pad = compacto ? 8 : 28,
     bw = (W - pad * 2) / meses.length;
   const barras = meses
     .map((m, i) => {

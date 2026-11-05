@@ -142,8 +142,6 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 /* linha do tempo: o progresso como num player de vídeo */
 .linha{position:relative;height:4px;margin:13px 0 11px;border-radius:var(--pilula);background:color-mix(in srgb,var(--tx) 16%,transparent)}
 .linha i{position:relative;display:block;height:100%;border-radius:var(--pilula);background:var(--acc)}
-.linha i::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 3px var(--bg)}
-.linha i[data-w="0"]::after,.linha i[data-w="100"]::after{display:none}
 .card h3{font-family:var(--corpo);font-weight:700;letter-spacing:-.005em;font-size:.98rem;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .card .poster+h3{margin-top:12px}
 .card small{color:var(--mut);display:block;font-size:.84rem;margin-top:1px}
@@ -168,7 +166,6 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 .cc-info{flex:1;min-width:0;padding-right:54px}
 .card.cc h3{font-size:.98rem;-webkit-line-clamp:1;line-clamp:1}
 .card.cc .linha{margin:9px 0 0;height:3px}
-.card.cc .linha i::after{width:10px;height:10px;margin-top:-5px;right:-5px;box-shadow:0 0 0 2px var(--card)}
 .card.cc .mais{right:12px;bottom:auto;top:50%;margin-top:-21px;opacity:1;transform:none;box-shadow:none}
 .card.cc .mais:active{transform:scale(.9)}
 /* o destaque */
@@ -286,8 +283,8 @@ input[type=file]::file-selector-button{margin-right:12px;padding:8px 16px;border
 .stats.grande .stat:first-child b{font-size:clamp(3.2rem,11vw,7rem);letter-spacing:-.06em;line-height:.95}
 .stats.grande .stat:first-child span{font-size:1.05rem}
 .stats.grande+.aviso{margin:4px 0 34px}
-.graf-caixa{background:var(--card);border-radius:var(--r-g);padding:22px 18px 10px;overflow-x:auto;margin-bottom:12px}
-.graf{width:100%;min-width:520px;max-width:860px;height:auto;display:block;margin:0 auto}
+.graf-caixa{background:var(--card);border-radius:var(--r-g);padding:22px 18px 10px;overflow-x:hidden;margin-bottom:12px}
+.graf{width:100%;max-width:860px;height:auto;display:block;margin:0 auto}
 .graf line{stroke:var(--line2);stroke-width:1.5}
 .graf rect{fill:var(--acc)}
 .graf rect.vz{fill:var(--line)}
@@ -509,4 +506,63 @@ label.arq:focus-within{outline:3px solid var(--tx);outline-offset:3px}
   .btn,.chip,.icone,.ep,input,textarea,select{border:1.5px solid ButtonText}
   .ep[aria-pressed=true],.chip[aria-pressed=true]{outline:3px solid Highlight;outline-offset:-3px}
   .linha i,.barra i{background:Highlight;forced-color-adjust:none}
+}
+
+
+/* ===== v5.3: ajustes de ergonomia no celular ===== */
+@media (max-width:899px){
+  /* estatísticas da estante: faixa compacta de 3 cartões lado a lado */
+  .stats:not(.grande){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:20px}
+  .stats:not(.grande) .stat{flex-direction:column;align-items:flex-start;gap:4px;padding:10px 12px;border-radius:var(--r-m);background:var(--card)}
+  .stats:not(.grande) .stat b{font-size:1.25rem}
+  .stats:not(.grande) .stat span{font-size:.74rem;line-height:1.2}
+  .stats:has(.sk-stat){display:block}
+
+  /* carrosséis e filtros: rolagem nativa, margem até a borda da tela e o próximo item aparecendo cortado */
+  .prox-lista,.barra-acoes{margin-left:-14px;margin-right:-14px;padding-left:14px;padding-right:14px;scroll-padding-left:14px;
+    -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
+  .prox-lista{scroll-snap-type:x mandatory;gap:12px;padding-bottom:8px;scrollbar-width:none}
+  .prox-lista::-webkit-scrollbar{display:none}
+  .prox-i{min-width:min(220px,72vw)}
+  .barra-acoes{padding-top:3px;padding-bottom:3px;scroll-snap-type:x proximity}
+  .barra-acoes .chip{flex:none;scroll-snap-align:start}
+
+  /* alvos de toque de pelo menos 44px */
+  .chip,.btn,.btn.mini,.icone,.link{min-height:44px}
+  .icone{width:44px;min-width:44px;height:44px}
+  .chip{display:inline-flex;align-items:center;justify-content:center}
+  .abas .chip{min-height:44px}
+  .ordem select{min-height:46px}
+
+  /* selos legíveis e sem colidir com a nota */
+  .sel{font-size:.75rem;line-height:1.3;padding:4px 9px;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sel:not(.dir):has(~ .sel.dir){max-width:calc(100% - 78px)}
+
+  /* Descobrir: espaço entre as capas e abas centralizadas */
+  .desc-sec .grade{gap:24px 12px}
+  .ferramentas.centro{justify-content:center}
+  .ferramentas.centro .barra-acoes{flex:0 1 auto;justify-content:center;margin-left:0;margin-right:0;padding-left:3px;padding-right:3px}
+  .ferramentas.centro .chip{min-width:112px}
+
+  /* gaveta inferior: alça, rolagem interna e rodapé sempre visível acima do teclado */
+  dialog{max-height:calc(var(--vvh,100dvh) - 12px);overflow-y:auto;overscroll-behavior:contain;scroll-padding-bottom:96px}
+  dialog::before{content:"";display:block;width:40px;height:5px;border-radius:var(--pilula);background:var(--line2);margin:-10px auto 14px;position:relative;z-index:3}
+  dialog input[type=text],dialog input[type=number],dialog input[type=password],dialog input[type=search],dialog select{min-height:48px}
+  dialog label{margin-bottom:16px}
+
+  /* ações sensíveis da conta: uma por linha, bem separadas */
+  .rodape-dlg.esq{gap:14px}
+  .rodape-dlg.esq .btn{min-height:48px}
+  .rodape-dlg .btn.perigo{margin-top:6px}
+  .rodape-dlg{gap:12px}
+}
+@media (max-width:480px){
+  .palco,.rail{padding-left:14px;padding-right:14px}
+  .stats:not(.grande) .stat{padding:9px 10px}
+  .menu a{min-height:56px}
+  .mais{height:44px;min-width:44px}
+}
+@media (pointer:coarse){
+  .menu a{min-height:56px}
+  .aviso-acao{min-height:44px}
 }

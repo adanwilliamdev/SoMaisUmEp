@@ -54,7 +54,7 @@ export function viewDescobrir(d) {
       ['movie', 'Filmes'],
     ];
   return `<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">O que está em alta e o que combina com o seu gosto. Toque no + para adicionar à estante.</p></div></div>
-    <div class="ferramentas"><div class="barra-acoes" role="group" aria-label="Tipo">${fs.map(([k, r]) => `<button class="chip" data-act="desc-tipo" data-k="${k}" aria-pressed="${tipo === k}">${r}</button>`).join('')}</div></div>
+    <div class="ferramentas centro"><div class="barra-acoes" role="group" aria-label="Tipo">${fs.map(([k, r]) => `<button class="chip" data-act="desc-tipo" data-k="${k}" aria-pressed="${tipo === k}">${r}</button>`).join('')}</div></div>
     <div id="desc">${htmlDescobrir(tipo, d)}</div>`;
 }
 export function htmlDescDetalhe(x, tipo, onde) {
