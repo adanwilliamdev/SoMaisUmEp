@@ -27,7 +27,9 @@ const moverItem = (t, de, para) => {
 const focarItem = (t, pos, qual) => {
   const li = document.querySelector(`[data-top="${CSS.escape(String(t.id))}"] li[data-i="${pos}"]`);
   if (!li) return;
-  const alvo = li.querySelector(qual === 'alca' ? '[data-alca]' : `[data-act="${qual}"]:not(:disabled)`) || li.querySelector('[data-act="sobe"]:not(:disabled), [data-act="desce"]:not(:disabled), [data-alca]');
+  const alvo =
+    li.querySelector(qual === 'alca' ? '[data-alca]' : `[data-act="${qual}"]:not(:disabled)`) ||
+    li.querySelector('[data-act="sobe"]:not(:disabled), [data-act="desce"]:not(:disabled), [data-alca]');
   if (alvo) alvo.focus();
 };
 

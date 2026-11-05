@@ -19,11 +19,26 @@ export function mesmaChave(daAssinatura, bytes) {
 export function diagnostico({ suporta, ios, instalado, permissao, chave, inscrito, erroServidor }) {
   if (!suporta)
     return ios && !instalado
-      ? { estado: 'ios-instalar', texto: 'No iPhone e no iPad os avisos só funcionam com o app instalado (iOS 16.4 ou mais novo): toque em Compartilhar › Adicionar à Tela de Início, abra o ícone novo e ative aqui.' }
+      ? {
+          estado: 'ios-instalar',
+          texto:
+            'No iPhone e no iPad os avisos só funcionam com o app instalado (iOS 16.4 ou mais novo): toque em Compartilhar › Adicionar à Tela de Início, abra o ícone novo e ative aqui.',
+        }
       : { estado: 'sem-suporte', texto: 'Este navegador não oferece notificações push.' };
   if (erroServidor) return { estado: 'sem-servidor', texto: 'Não foi possível consultar o servidor agora. Tente de novo em instantes.' };
   if (!chave) return { estado: 'sem-servidor', texto: 'O envio de avisos ainda não foi configurado neste servidor (veja docs/notificacoes.md).' };
-  if (permissao === 'denied') return { estado: 'bloqueado', texto: 'As notificações deste site estão bloqueadas no navegador. Libere nas permissões do site (o cadeado ao lado do endereço) e volte aqui.' };
-  if (inscrito && permissao === 'granted') return { estado: 'ativo', texto: 'Ativados neste aparelho. De manhã, nos dias em que sai episódio novo (ou estreia) de algo da sua estante, você recebe uma notificação.' };
-  return { estado: 'inativo', texto: 'Receba uma notificação de manhã nos dias em que sai episódio novo (ou estreia) de algo da sua estante, mesmo com o app fechado.' };
+  if (permissao === 'denied')
+    return {
+      estado: 'bloqueado',
+      texto: 'As notificações deste site estão bloqueadas no navegador. Libere nas permissões do site (o cadeado ao lado do endereço) e volte aqui.',
+    };
+  if (inscrito && permissao === 'granted')
+    return {
+      estado: 'ativo',
+      texto: 'Ativados neste aparelho. De manhã, nos dias em que sai episódio novo (ou estreia) de algo da sua estante, você recebe uma notificação.',
+    };
+  return {
+    estado: 'inativo',
+    texto: 'Receba uma notificação de manhã nos dias em que sai episódio novo (ou estreia) de algo da sua estante, mesmo com o app fechado.',
+  };
 }

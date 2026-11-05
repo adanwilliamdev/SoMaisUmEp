@@ -53,7 +53,14 @@ async function enviarLancamentos(sql, { agora = Date.now(), vapid = W.chaves(), 
   for (let i = 0; i < fila.length; i += 10) {
     const lote = fila.slice(i, i + 10);
     const res = await Promise.allSettled(
-      lote.map(s => enviar({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, montarMensagem(porDono.get(s.user_id).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))), vapid, { agora })),
+      lote.map(s =>
+        enviar(
+          { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth },
+          montarMensagem(porDono.get(s.user_id).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))),
+          vapid,
+          { agora },
+        ),
+      ),
     );
     res.forEach((x, j) => {
       if (x.status === 'fulfilled' && x.value.ok) ok.push(lote[j].endpoint);

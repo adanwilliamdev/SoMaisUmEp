@@ -10,7 +10,10 @@ const MAX_APARELHOS = 10; // por conta; passando disso, os mais antigos saem
 // GET: a chave pública que o navegador precisa para assinar (null = servidor sem avisos configurados) e quantos aparelhos a conta tem.
 const estado = rota('GET', async (req, res, u) => {
   const [r] = await db()`select count(*)::int as n from push_assinaturas where user_id = ${u.id}`;
-  res.json({ chave: process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT ? process.env.VAPID_PUBLIC_KEY : null, aparelhos: r.n });
+  res.json({
+    chave: process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT ? process.env.VAPID_PUBLIC_KEY : null,
+    aparelhos: r.n,
+  });
 });
 
 // POST { acao: 'assinar', assinatura } | { acao: 'cancelar', endpoint } | { acao: 'teste', endpoint }
@@ -50,7 +53,11 @@ const comando = rota('POST', async (req, res, u) => {
   if (!s) throw erro('Este aparelho não está inscrito. Ative os avisos de novo.', 404);
   let r;
   try {
-    r = await W.enviar(s, { titulo: 'SóMaisUmEp', corpo: 'Está funcionando: os avisos de episódios novos chegam neste aparelho.', url: '/', tag: 'teste' }, vapid);
+    r = await W.enviar(
+      s,
+      { titulo: 'SóMaisUmEp', corpo: 'Está funcionando: os avisos de episódios novos chegam neste aparelho.', url: '/', tag: 'teste' },
+      vapid,
+    );
   } catch (e) {
     console.error('push teste:', e.message);
     throw erro('Não foi possível falar com o serviço de notificações agora.', 502);

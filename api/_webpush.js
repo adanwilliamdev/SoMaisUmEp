@@ -49,7 +49,10 @@ function chaves(env = process.env) {
     d = b64.de(priv);
   if (P.length !== 65 || P[0] !== 4) throw new Error('VAPID_PUBLIC_KEY inválida (65 bytes em base64url). Gere de novo com npm run vapid.');
   if (d.length !== 32) throw new Error('VAPID_PRIVATE_KEY inválida (32 bytes em base64url). Gere de novo com npm run vapid.');
-  const privada = crypto.createPrivateKey({ key: { kty: 'EC', crv: 'P-256', x: b64.para(P.subarray(1, 33)), y: b64.para(P.subarray(33)), d: b64.para(d) }, format: 'jwk' });
+  const privada = crypto.createPrivateKey({
+    key: { kty: 'EC', crv: 'P-256', x: b64.para(P.subarray(1, 33)), y: b64.para(P.subarray(33)), d: b64.para(d) },
+    format: 'jwk',
+  });
   // O Node aceita um JWK cujo x/y não pertence ao d, então a conferência é feita à parte: a pública derivada de d tem de ser a configurada.
   const ecdh = crypto.createECDH('prime256v1');
   ecdh.setPrivateKey(d);
@@ -104,7 +107,13 @@ async function enviar(assinatura, payload, vapid, { agora = Date.now(), fetchFn 
   const corpo = cifrar(JSON.stringify(payload), assinatura);
   const r = await fetchFn(url, {
     method: 'POST',
-    headers: { Authorization: autorizacao(url, vapid, agora), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: String(ttl), Urgency: 'normal' },
+    headers: {
+      Authorization: autorizacao(url, vapid, agora),
+      'Content-Encoding': 'aes128gcm',
+      'Content-Type': 'application/octet-stream',
+      TTL: String(ttl),
+      Urgency: 'normal',
+    },
     body: corpo,
     redirect: 'error',
     signal: AbortSignal.timeout(8000),

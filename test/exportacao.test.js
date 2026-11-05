@@ -2,8 +2,30 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const serie = (o = {}) => ({ id: 's', tipo: 'tv', nome: 'Série', ano: '2020', tmdb: 11, eps: [10, 8], vis: [10, 3], criado: Date.UTC(2026, 0, 5, 15), hist: {}, ...o });
-const filme = (o = {}) => ({ id: 'f', tipo: 'movie', nome: 'Filme', ano: '2019-05-01', tmdb: 22, eps: [1], vis: [1], criado: Date.UTC(2026, 0, 5, 15), hist: {}, ...o });
+const serie = (o = {}) => ({
+  id: 's',
+  tipo: 'tv',
+  nome: 'Série',
+  ano: '2020',
+  tmdb: 11,
+  eps: [10, 8],
+  vis: [10, 3],
+  criado: Date.UTC(2026, 0, 5, 15),
+  hist: {},
+  ...o,
+});
+const filme = (o = {}) => ({
+  id: 'f',
+  tipo: 'movie',
+  nome: 'Filme',
+  ano: '2019-05-01',
+  tmdb: 22,
+  eps: [1],
+  vis: [1],
+  criado: Date.UTC(2026, 0, 5, 15),
+  hist: {},
+  ...o,
+});
 
 test('celula: aspas, vírgulas, quebras de linha e proteção contra fórmula de planilha', async () => {
   const { celula } = await import('../public/js/exportacao.js');
@@ -13,7 +35,8 @@ test('celula: aspas, vírgulas, quebras de linha e proteção contra fórmula de
   assert.equal(celula('l1\nl2'), '"l1\nl2"');
   assert.equal(celula(null), '');
   assert.equal(celula(7.5), '7.5');
-  for (const f of ['=HYPERLINK("http://x")', '+1+1', '-2+3', '@SOMA(A1)', '\tx', '\rx']) assert.ok(celula(f).replace(/^"/, '').startsWith("'"), 'neutraliza ' + JSON.stringify(f));
+  for (const f of ['=HYPERLINK("http://x")', '+1+1', '-2+3', '@SOMA(A1)', '\tx', '\rx'])
+    assert.ok(celula(f).replace(/^"/, '').startsWith("'"), 'neutraliza ' + JSON.stringify(f));
   assert.equal(celula('-3'), '-3', 'número negativo legítimo fica como está');
   assert.equal(celula('=1', { planilha: false }), '=1', 'sem proteção quando o destino não é planilha');
 });

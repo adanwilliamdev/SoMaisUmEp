@@ -219,7 +219,12 @@ test('enviar: endereço fora da lista nunca é chamado', async () => {
 
 /* ---------- mensagem e "hoje" ---------- */
 test('montarMensagem: um título, vários, nova temporada, estreia e nomes longos', () => {
-  assert.deepEqual(N.montarMensagem([{ nome: 'Série', tipo: 'tv', t: 2, e: 5 }]), { titulo: 'Sai hoje: Série', corpo: 'Novo ep · T2 E5', url: '/#series', tag: 'lancamentos' });
+  assert.deepEqual(N.montarMensagem([{ nome: 'Série', tipo: 'tv', t: 2, e: 5 }]), {
+    titulo: 'Sai hoje: Série',
+    corpo: 'Novo ep · T2 E5',
+    url: '/#series',
+    tag: 'lancamentos',
+  });
   assert.equal(N.montarMensagem([{ nome: 'Série', tipo: 'tv', t: 3, e: 1 }]).corpo, 'Nova temporada · T3 E1');
   assert.equal(N.montarMensagem([{ nome: 'Série', tipo: 'tv', t: 1, e: 1 }]).corpo, 'Novo ep · T1 E1', 'primeira temporada não é "nova temporada"');
   assert.equal(N.montarMensagem([{ nome: 'Filme', tipo: 'movie', t: null, e: null }]).corpo, 'Estreia');
@@ -227,7 +232,13 @@ test('montarMensagem: um título, vários, nova temporada, estreia e nomes longo
   const v = N.montarMensagem(['A', 'B', 'C', 'D', 'E'].map(nome => ({ nome, tipo: 'tv' })));
   assert.equal(v.titulo, 'Sai hoje: 5 títulos');
   assert.equal(v.corpo, 'A, B, C e mais 2');
-  assert.equal(N.montarMensagem([{ nome: 'A', tipo: 'tv' }, { nome: 'B', tipo: 'tv' }]).corpo, 'A e B');
+  assert.equal(
+    N.montarMensagem([
+      { nome: 'A', tipo: 'tv' },
+      { nome: 'B', tipo: 'tv' },
+    ]).corpo,
+    'A e B',
+  );
   assert.ok(N.montarMensagem([{ nome: 'x'.repeat(200), tipo: 'tv' }]).titulo.length < 80);
 });
 
@@ -242,7 +253,13 @@ test('dataNoFuso: "hoje" é a data em Brasília, não em UTC', () => {
 test('enviarLancamentos: manda só a quem tem lançamento hoje, marca o dia, apaga inscrições mortas e conta falhas', async () => {
   const agora = Date.UTC(2026, 10, 6, 11, 0); // 08:00 em Brasília, 2026-11-06
   const sub = (endpoint, user_id) => ({ endpoint, p256dh: 'p', auth: 'a', user_id });
-  const subs = [sub('https://fcm.googleapis.com/a', 'ana'), sub('https://fcm.googleapis.com/b', 'ana'), sub('https://fcm.googleapis.com/c', 'beto'), sub('https://fcm.googleapis.com/d', 'caio'), sub('https://fcm.googleapis.com/e', 'ana')];
+  const subs = [
+    sub('https://fcm.googleapis.com/a', 'ana'),
+    sub('https://fcm.googleapis.com/b', 'ana'),
+    sub('https://fcm.googleapis.com/c', 'beto'),
+    sub('https://fcm.googleapis.com/d', 'caio'),
+    sub('https://fcm.googleapis.com/e', 'ana'),
+  ];
   const titulos = [
     { user_id: 'ana', nome: 'Zebra', tipo: 'tv', vis: [3], proximo: { d: '2026-11-06', t: 2, e: 1 } },
     { user_id: 'ana', nome: 'Alfa', tipo: 'tv', vis: [1], proximo: { d: '2026-11-06' } },
@@ -258,7 +275,12 @@ test('enviarLancamentos: manda só a quem tem lançamento hoje, marca o dia, apa
     return Promise.resolve([]);
   };
   const envios = [];
-  const resultado = { 'https://fcm.googleapis.com/a': { ok: true }, 'https://fcm.googleapis.com/b': { ok: false, gone: true }, 'https://fcm.googleapis.com/d': { ok: true }, 'https://fcm.googleapis.com/e': { ok: false, gone: false } };
+  const resultado = {
+    'https://fcm.googleapis.com/a': { ok: true },
+    'https://fcm.googleapis.com/b': { ok: false, gone: true },
+    'https://fcm.googleapis.com/d': { ok: true },
+    'https://fcm.googleapis.com/e': { ok: false, gone: false },
+  };
   const enviar = async (s, msg) => {
     envios.push({ endpoint: s.endpoint, msg });
     return resultado[s.endpoint];
@@ -266,7 +288,12 @@ test('enviarLancamentos: manda só a quem tem lançamento hoje, marca o dia, apa
   const r = await N.enviarLancamentos(sql, { agora, vapid: {}, enviar });
 
   assert.deepEqual(r, { ativo: true, hoje: '2026-11-06', aparelhos: 5, enviados: 2, removidos: 1, falhas: 1 });
-  assert.deepEqual(envios.map(e => e.endpoint).sort(), ['https://fcm.googleapis.com/a', 'https://fcm.googleapis.com/b', 'https://fcm.googleapis.com/d', 'https://fcm.googleapis.com/e']); // beto não recebe: o filme dele já foi visto
+  assert.deepEqual(envios.map(e => e.endpoint).sort(), [
+    'https://fcm.googleapis.com/a',
+    'https://fcm.googleapis.com/b',
+    'https://fcm.googleapis.com/d',
+    'https://fcm.googleapis.com/e',
+  ]); // beto não recebe: o filme dele já foi visto
   assert.equal(envios.find(e => e.endpoint.endsWith('/a')).msg.titulo, 'Sai hoje: 2 títulos');
   assert.equal(envios.find(e => e.endpoint.endsWith('/a')).msg.corpo, 'Alfa e Zebra', 'nomes em ordem alfabética');
   assert.equal(envios.find(e => e.endpoint.endsWith('/d')).msg.corpo, 'Estreia');
@@ -290,7 +317,17 @@ test('enviarLancamentos: sem chaves VAPID não faz nada; sem aparelhos pendentes
   assert.equal(r.aparelhos, 0);
   assert.equal(n, 1, 'só a consulta das inscrições');
 
-  const sql2 = t => Promise.resolve(/push_assinaturas where/.test(t.join('?')) ? [{ endpoint: 'https://fcm.googleapis.com/a', p256dh: 'p', auth: 'a', user_id: 'u' }, { endpoint: 'https://fcm.googleapis.com/b', p256dh: 'p', auth: 'a', user_id: 'u' }] : /titulos/.test(t.join('?')) ? [{ user_id: 'u', nome: 'S', tipo: 'tv', vis: [1], proximo: { d: N.dataNoFuso() } }] : []);
+  const sql2 = t =>
+    Promise.resolve(
+      /push_assinaturas where/.test(t.join('?'))
+        ? [
+            { endpoint: 'https://fcm.googleapis.com/a', p256dh: 'p', auth: 'a', user_id: 'u' },
+            { endpoint: 'https://fcm.googleapis.com/b', p256dh: 'p', auth: 'a', user_id: 'u' },
+          ]
+        : /titulos/.test(t.join('?'))
+          ? [{ user_id: 'u', nome: 'S', tipo: 'tv', vis: [1], proximo: { d: N.dataNoFuso() } }]
+          : [],
+    );
   const r2 = await N.enviarLancamentos(sql2, {
     vapid: {},
     enviar: async s => {
@@ -438,8 +475,11 @@ test('/api/dados (POST teste): exige servidor configurado, aparelho inscrito, re
     };
     assert.equal((await chamar('dados', { body: { acao: 'teste', endpoint: FCM } })).code, 502);
 
-    limparBanco((t, v) => (/select ate from tentativas/.test(t) ? [{ ate: Date.now() + 6e5 }] : /select endpoint, p256dh, auth from push_assinaturas/.test(t) ? [linha] : []));
-    banco.resposta = (t, v) => (/select ate from tentativas/.test(t) ? [{ ate: Date.now() + 6e5 }] : /select id, nome, email, versao from usuarios/.test(t) ? [USER] : []);
+    limparBanco((t, v) =>
+      /select ate from tentativas/.test(t) ? [{ ate: Date.now() + 6e5 }] : /select endpoint, p256dh, auth from push_assinaturas/.test(t) ? [linha] : [],
+    );
+    banco.resposta = (t, v) =>
+      /select ate from tentativas/.test(t) ? [{ ate: Date.now() + 6e5 }] : /select id, nome, email, versao from usuarios/.test(t) ? [USER] : [];
     assert.equal((await chamar('dados', { body: { acao: 'teste', endpoint: FCM } })).code, 429, 'passou do limite de testes');
   } finally {
     globalThis.fetch = fetchOriginal;
@@ -487,7 +527,14 @@ function carregarSw() {
     clients: { matchAll: async () => janelas, openWindow: async u => aberturas.push(u), claim: async () => {} },
     skipWaiting: async () => {},
   };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'public', 'sw.js'), 'utf8'), { self: self_, caches: {}, fetch: async () => ({}), URL, Response: class {}, location: self_.location });
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'public', 'sw.js'), 'utf8'), {
+    self: self_,
+    caches: {},
+    fetch: async () => ({}),
+    URL,
+    Response: class {},
+    location: self_.location,
+  });
   return { ouvintes, mostradas, aberturas, janelas };
 }
 const evento = extra => {

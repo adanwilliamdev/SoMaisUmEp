@@ -23,11 +23,24 @@ const tokens = bloco => Object.fromEntries([...bloco.matchAll(/--([\w-]+):(#[0-9
 const claro = tokens(/:root\{[^}]*\}/.exec(css)[0]);
 const escuro = tokens(/:root\[data-theme="dark"\]\{[^}]*\}/.exec(css)[0]);
 
-for (const [nome, t] of [['claro', claro], ['escuro', escuro]]) {
+for (const [nome, t] of [
+  ['claro', claro],
+  ['escuro', escuro],
+]) {
   test(`contraste (${nome}): texto >= 4,5:1 e bordas de controles >= 3:1`, () => {
     const texto = [
-      ['tx', 'bg'], ['tx', 'card'], ['mut', 'bg'], ['mut', 'rail'], ['mut', 'card'], ['mut', 'card2'],
-      ['on', 'acc'], ['on-ok', 'ok'], ['acc', 'bg'], ['acc', 'card'], ['perigo', 'bg'], ['perigo', 'card'],
+      ['tx', 'bg'],
+      ['tx', 'card'],
+      ['mut', 'bg'],
+      ['mut', 'rail'],
+      ['mut', 'card'],
+      ['mut', 'card2'],
+      ['on', 'acc'],
+      ['on-ok', 'ok'],
+      ['acc', 'bg'],
+      ['acc', 'card'],
+      ['perigo', 'bg'],
+      ['perigo', 'card'],
     ];
     for (const [f, b] of texto) assert.ok(razao(t[f], t[b]) >= 4.5, `${f} sobre ${b} = ${razao(t[f], t[b]).toFixed(2)}`);
     for (const b of ['bg', 'rail', 'card', 'card2']) assert.ok(razao(t.ctl, t[b]) >= 3, `--ctl sobre ${b} = ${razao(t.ctl, t[b]).toFixed(2)}`);
@@ -58,7 +71,17 @@ test('views: botões só com ícone têm nome, episódios dizem a temporada, top
   const { L } = await import('../public/js/loja.js');
   const s = { id: 's1', tipo: 'tv', nome: 'Série', eps: [3, 2], vis: [1, 0], criado: 1, hist: {} };
   L.series = [s, { ...s, id: 's2', nome: 'Outra' }];
-  L.tops = [{ id: 't1', nome: 'Top', itens: [{ t: 'Série', sid: 's1' }, { t: 'Outra', sid: 's2' }], criado: 1 }];
+  L.tops = [
+    {
+      id: 't1',
+      nome: 'Top',
+      itens: [
+        { t: 'Série', sid: 's1' },
+        { t: 'Outra', sid: 's2' },
+      ],
+      criado: 1,
+    },
+  ];
   L.links = {};
   const det = V.htmlDetalhe(s, null);
   assert.match(det, /aria-label="Temporada 2, episódio 1"/);
@@ -74,7 +97,10 @@ test('views: botões só com ícone têm nome, episódios dizem a temporada, top
   // todo <button> renderizado tem texto visível ou aria-label
   for (const html of [det, tops]) {
     for (const m of html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
-      const texto = m[2].replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, '').trim();
+      const texto = m[2]
+        .replace(/<svg[\s\S]*?<\/svg>/g, '')
+        .replace(/<[^>]+>/g, '')
+        .trim();
       assert.ok(/aria-label=/.test(m[1]) || texto, 'botão sem nome: ' + m[0].slice(0, 90));
     }
   }

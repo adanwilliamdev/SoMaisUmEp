@@ -41,11 +41,20 @@ export async function pintaPush() {
     inscrito = !!(await assinaturaAtual().catch(() => null));
   }
   chaveServidor = chave;
-  const d = diagnostico({ suporta: suportaPush(), ios: ios(), instalado: instalado(), permissao: suportaPush() ? Notification.permission : 'default', chave, inscrito, erroServidor });
+  const d = diagnostico({
+    suporta: suportaPush(),
+    ios: ios(),
+    instalado: instalado(),
+    permissao: suportaPush() ? Notification.permission : 'default',
+    chave,
+    inscrito,
+    erroServidor,
+  });
   const el = $('#push-corpo');
   if (!el) return; // o diálogo mudou de tela enquanto consultava
   const botoes = {
-    ativo: '<div class="rodape-dlg esq"><button class="btn sec" data-act="push-teste">Enviar um aviso de teste</button><button class="btn sec" data-act="push-desativar">Desativar neste aparelho</button></div>',
+    ativo:
+      '<div class="rodape-dlg esq"><button class="btn sec" data-act="push-teste">Enviar um aviso de teste</button><button class="btn sec" data-act="push-desativar">Desativar neste aparelho</button></div>',
     inativo: '<div class="rodape-dlg esq"><button class="btn" data-act="push-ativar">Ativar neste aparelho</button></div>',
   }[d.estado];
   el.innerHTML = `<p class="aviso">${d.texto}</p>${botoes || ''}`;
@@ -113,7 +122,10 @@ export async function sairPush() {
   try {
     const sub = await assinaturaAtual();
     if (!sub) return;
-    await Promise.race([api(ROTA, { method: 'POST', body: { acao: 'cancelar', endpoint: sub.endpoint } }).catch(() => {}), new Promise(ok => setTimeout(ok, 3000))]);
+    await Promise.race([
+      api(ROTA, { method: 'POST', body: { acao: 'cancelar', endpoint: sub.endpoint } }).catch(() => {}),
+      new Promise(ok => setTimeout(ok, 3000)),
+    ]);
     await sub.unsubscribe();
   } catch {
     /* melhor esforço */
