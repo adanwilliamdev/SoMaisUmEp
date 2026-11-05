@@ -11,7 +11,7 @@ scripts/       migrar.js (aplica as migrações no banco)
 test/          testes (node --test)
 ```
 
-## O que tem (v5.1)
+## O que tem (v5.1.2)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
 - **Datas de lançamento (v5.1)**: o TMDb informa o próximo episódio (ou a estreia de um filme) e o app mostra "Novo ep sexta" / "Nova temporada em 12 jan" nos cards, no painel e numa fileira "Próximos episódios". Uma vez por dia aparece o aviso "Sai hoje: …", e quando uma série concluída volta com episódios novos o aviso diz quando. Títulos com a data já vencida são reconferidos a cada 6 h (os demais, a cada 24 h). É um aviso dentro do app, ao abri-lo; não há notificação push.
@@ -115,6 +115,10 @@ vercel dev
 - O limite de tentativas de login usa a tabela `tentativas` no Neon: 5 erros por e-mail (ou 20 por IP) bloqueiam por 15 min, dobrando a cada 3 erros extras (máx. 24 h).
 - "Sair de todos os dispositivos" aumenta a versão da conta; trocar `SESSION_SECRET` derruba **todas as contas**.
 - `/api/dados` usa ETag: o navegador revalida a cada chamada e, se nada mudou, o servidor responde 304 depois de só duas consultas de contagem (sem ler a biblioteca). Isso vale para a abertura do app e para cada volta à aba.
+- **Limites de tentativa (v5.1.2):** o limite por e-mail (5 erros) é a proteção principal contra adivinhar senha; o limite por IP é só uma rede de segurança (100 logins, 30 pedidos de recuperação, 60 redefinições) e fica alto de propósito, porque operadoras móveis põem muita gente atrás do mesmo IP (CGNAT). Cadastro: até 30 por dia (UTC) por IP, em janela fixa com contador próprio, e bloqueio só até a virada do dia. Importação: até 400 lotes de 10 por hora por conta (4000 títulos); no app, cada rodada importa no máximo 3000 (o restante fica para importar de novo; o que já está na estante é pulado antes).
+- **Exclusão com checagem de versão (v5.1.2):** apagar um título ou top envia a versão conhecida (`base`). Se outro aparelho o alterou depois, o servidor não apaga, o app recarrega e a edição do outro aparelho vence (o item volta). O arquivo da capa no Blob só é apagado se o título foi mesmo apagado.
+- **Sessão renovável (v5.1.2):** o cookie vale 30 dias e é renovado por `/api/dados` quando faltam menos de 7 (abrir o app ou voltar à aba já basta). Só essa rota renova, porque é privada (`no-cache`); rotas com cache público (TMDb) nunca enviam `Set-Cookie`. Quem fica mais de 30 dias sem abrir precisa entrar de novo; "Sair de todos os dispositivos" continua derrubando tudo.
+- **Backup importado é saneado (v5.1.2):** ids, números, capas, histórico e textos do arquivo passam pelas mesmas regras do servidor antes de entrar no app (`limparTituloBackup`/`limparTopBackup` em `regras.js`), porque o app desenha os dados antes de salvá-los. Ids e números também são escapados (`esc()`) nos atributos HTML.
 - **Decisão consciente:** o cadastro avisa quando o e-mail já existe (409). Isso revela quem tem conta, mas num app pessoal a clareza compensa. O login e o "Esqueci minha senha" não revelam nada (mesma resposta sempre).
 - Na conta, senha atual errada responde **403** (e não 401, que o app trataria como sessão expirada).
 - A imagem do top é desenhada no navegador com as capas do TMDb/Blob, que precisam de CORS. Se o navegador barrar, a imagem sai com letras coloridas no lugar das capas (e o app avisa). Capas enviadas por você em base64 não vão para a página pública.

@@ -114,7 +114,9 @@ async function enviar() {
   const reqs = [];
   for (let i = 0; i < T.length; i += 15) { const c = T.slice(i, i + 15); reqs.push({ body: { titulos: c.map(comBase) }, keys: c }); }
   if (P.length) reqs.push({ body: { tops: P.map(comBase) }, keys: P });
-  if (del.titulos.length || del.tops.length) reqs.push({ body: { del }, dels: [...del.titulos.map(i => 'T' + i), ...del.tops.map(i => 'P' + i)] });
+  // Exclusão leva a versão que este aparelho conhecia: se outro aparelho alterou o item depois, o servidor não apaga (conflito).
+  const comVer = ids => ids.map(id => ({ id, base: ver[id] ?? null }));
+  if (del.titulos.length || del.tops.length) reqs.push({ body: { del: { titulos: comVer(del.titulos), tops: comVer(del.tops) } }, dels: [...del.titulos.map(i => 'T' + i), ...del.tops.map(i => 'P' + i)] });
   const conflitos = [];
   for (const r of reqs) {
     const j = await api('/api/sync', { method: 'POST', body: r.body });
@@ -123,7 +125,10 @@ async function enviar() {
       if ((j.conflitos || []).includes(id)) conflitos.push(k);
       else { remoto[k] = atual[k]; if (j.versoes && j.versoes[id]) ver[id] = j.versoes[id]; }
     }
-    for (const k of r.dels || []) { delete remoto[k]; delete ver[k.slice(1)]; }
+    for (const k of r.dels || []) {
+      if ((j.conflitos || []).includes(k.slice(1))) { conflitos.push(k); continue; }   // alterado em outro aparelho: não foi apagado
+      delete remoto[k]; delete ver[k.slice(1)];
+    }
   }
   return conflitos;
 }
@@ -136,7 +141,11 @@ async function resolver(conflitos) {
   for (const k of conflitos) {
     const id = k.slice(1), tipoT = k[0] === 'T', srv = (tipoT ? sT : sP).get(id), lista = tipoT ? L.series : L.tops;
     const i = lista.findIndex(x => x.id === id);
-    if (i < 0) continue;
+    if (i < 0) {                                  // apagado neste aparelho, mas o servidor recusou a exclusão
+      if (srv) { const volta = tira(srv); lista.push(volta); remoto[k] = JSON.stringify(volta); }   // editado em outro aparelho: a edição vence e o item volta
+      else { delete remoto[k]; delete ver[id]; }   // já não existe lá: a exclusão está feita
+      continue;
+    }
     if (!srv) {
       if (remoto[k]) { lista.splice(i, 1); delete remoto[k]; delete ver[id]; }   // apagado em outro aparelho
       else ver[id] = null;                                                         // não existe lá: reenvia como novo

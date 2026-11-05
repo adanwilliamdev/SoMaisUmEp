@@ -8,7 +8,7 @@ module.exports = rota('POST', async (req, res, u) => {
   const sql = db(), b = req.body || {};
   if (!['senha', 'email', 'excluir'].includes(b.acao)) throw erro('Ação inválida');
 
-  const lim = L.chavesDe(req, 'cs', { ip: 30, alvo: u.id, limiteAlvo: 5 });
+  const lim = L.chavesDe(req, 'cs', { ip: 60, alvo: u.id, limiteAlvo: 5 });
   await L.verificar(sql, lim);
   const [atual] = await sql`select senha_hash from usuarios where id = ${u.id}`;
   if (!atual || !(await confereSenha(String(b.senha || '').slice(0, 200), atual.senha_hash))) {

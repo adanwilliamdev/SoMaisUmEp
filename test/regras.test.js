@@ -195,3 +195,37 @@ test('sementes: só começados, com TMDb e sem nota baixa; melhor nota primeiro'
   assert.equal(naEstante(l, 'tv', 2), true);
   assert.equal(naEstante(l, 'movie', 2), false);
 });
+
+/* ---------- backup importado: saneamento ---------- */
+test('backup: ids, números, capas e textos passam pelo saneamento (nada de aspas em atributos)', async () => {
+  const { limparTituloBackup: lt, limparTopBackup: lp, capaSegura } = await R();
+  assert.equal(lt({ id: '"><img src=x>', nome: 'X', eps: [1], vis: [0] }), null, 'id com aspas/HTML é descartado');
+  assert.equal(lt({ id: 'a'.repeat(65), nome: 'X', eps: [1], vis: [0] }), null);
+  assert.equal(lt({ id: 'ok', nome: '  ', eps: [1], vis: [0] }), null, 'sem nome');
+  assert.equal(lt({ id: 'ok', nome: 'X', eps: 'x', vis: [] }), null, 'eps precisa ser lista');
+  const t = lt({
+    id: 'ok-1', tipo: 'tv', nome: 'Série', eps: ['<b>', 5, 99999], vis: ['"x', 9, 3], nota: '9.87', nota_pessoal: '<i>', duracao: -4, tmdb: 'abc',
+    capa: 'javascript:alert(1)', ano: 2020, hist: { '2026-11': 3, 'x"y': 9, '2026-13': 4 }, proximo: { d: '2026-11-06', t: '2"', e: 3 },
+  }, 42);
+  assert.deepEqual(t.eps, [1, 5, 999], 'texto vira 1, números ficam no teto');
+  assert.deepEqual(t.vis, [0, 5, 3], 'vistos nunca passam do total');
+  assert.equal(t.nota, 9.9); assert.equal(t.nota_pessoal, null); assert.equal(t.duracao, 0); assert.equal(t.tmdb, null);
+  assert.equal(t.capa, null); assert.equal(t.ano, null, 'ano numérico não é texto: descartado como no servidor');
+  assert.deepEqual(t.hist, { '2026-11': 3 });
+  assert.deepEqual(t.proximo, { d: '2026-11-06', e: 3 });
+  assert.equal(t.criado, 42, 'sem "criado" no arquivo usa o padrão');
+  assert.deepEqual(lt({ id: 'f', tipo: 'movie', nome: 'Filme', eps: [7, 7], vis: [5] }).eps, [1], 'filme tem sempre 1');
+
+  assert.equal(capaSegura('https://image.tmdb.org/t/p/w342/abc.jpg'), 'https://image.tmdb.org/t/p/w342/abc.jpg');
+  assert.equal(capaSegura('https://image.tmdb.org/x"onerror="y'), null);
+  assert.equal(capaSegura('https://evil.example/a.jpg'), null);
+  assert.equal(capaSegura('https://abc.public.blob.vercel-storage.com/capas/u1/c-1.jpg') !== null, true);
+  assert.equal(capaSegura('https://abc.public.blob.vercel-storage.com/outra/u1/c.jpg'), null);
+  assert.equal(capaSegura('data:image/jpeg;base64,/9j/AAA=') !== null, true);
+  assert.equal(capaSegura('data:image/svg+xml;base64,AAAA'), null);
+
+  const top = lp({ id: 't1', nome: 'Top', itens: [{ t: 'A', sid: 'ok' }, { t: 'B', sid: '"><x>' }, { t: '' }, null, ...Array(20).fill({ t: 'Z' })] });
+  assert.equal(top.itens.length, 8, 'corta em 10 e depois tira os vazios (igual ao servidor), então nunca passa de 10');
+  assert.equal(top.itens[0].sid, 'ok'); assert.equal(top.itens[1].sid, undefined);
+  assert.equal(lp({ id: 'a b', itens: [] }), null); assert.equal(lp({ id: 'ok', itens: 'x' }), null);
+});

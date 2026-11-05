@@ -1,4 +1,4 @@
-const { db, rota } = require('./_lib');
+const { db, rota, renovarSessao } = require('./_lib');
 const { etagDe, confere } = require('./_etag');
 
 const n = v => (v == null ? null : Number(v));
@@ -12,6 +12,7 @@ module.exports = rota('GET', async (req, res, u) => {
     sql`select count(*)::int as n, coalesce(max(atualizado), 0) as m, count(publico)::int as p, coalesce(max(publico_em), 0) as pm from tops where user_id = ${u.id}`,
   ]);
   const tag = etagDe('v1', u.id, u.nome, u.email, blob, a.n, a.m, b.n, b.m, b.p, b.pm);
+  renovarSessao(res, u);                       // resposta privada (no-cache + Vary: Cookie): pode renovar o cookie
   res.setHeader('Cache-Control', 'private, no-cache');
   res.setHeader('Vary', 'Cookie');
   res.setHeader('ETag', tag);

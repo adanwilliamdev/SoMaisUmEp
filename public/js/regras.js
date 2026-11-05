@@ -185,3 +185,50 @@ export function sementes(series, tipo, max = 5) {
     .slice(0, max);
 }
 export const naEstante = (series, tipo, tmdb) => series.some(s => tp(s) === tipo && s.tmdb === tmdb);
+
+/* ---------- backup importado: nada do arquivo entra no app sem passar por aqui ---------- */
+// Mesmas regras de api/_validar.js. O servidor sanea de novo ao salvar, mas o app desenha os dados ANTES disso;
+// sem este filtro, um backup malicioso poderia pôr texto/aspas em ids e números que vão para atributos HTML.
+const ID_OK = /^[\w-]{1,64}$/;
+const MES_OK = /^\d{4}-(0[1-9]|1[0-2])$/;
+const DATA_OK = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const num = (v, min, max, casas = 0) => (v == null || v === '' || !Number.isFinite(+v) ? null : Math.round(Math.min(max, Math.max(min, +v)) * 10 ** casas) / 10 ** casas);
+const txt = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '') || null;
+const CAPAS_OK = [
+  /^https:\/\/image\.tmdb\.org\/[\w./-]+$/,
+  /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/,
+  /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/capas\/[\w-]{1,64}\/[\w./-]+$/,
+];
+export const capaSegura = c => (typeof c === 'string' && c.length <= 120000 && CAPAS_OK.some(r => r.test(c)) ? c : null);
+
+export function limparTituloBackup(x, criadoPadrao = Date.now()) {
+  if (!x || typeof x !== 'object' || typeof x.id !== 'string' || !ID_OK.test(x.id)) return null;
+  if (!txt(x.nome, 80) || !Array.isArray(x.eps) || !Array.isArray(x.vis)) return null;
+  const tipo = x.tipo === 'movie' ? 'movie' : 'tv';
+  const eps = tipo === 'movie' ? [1] : x.eps.slice(0, 60).map(n => Math.max(1, num(n, 0, 999) || 0));
+  if (!eps.length) return null;
+  const vis = eps.map((n, i) => Math.min(num(x.vis[i], 0, 999) || 0, n));
+  const hist = {};
+  if (x.hist && typeof x.hist === 'object' && !Array.isArray(x.hist)) {
+    for (const k of Object.keys(x.hist).slice(0, 240)) if (MES_OK.test(k)) { const n = Math.max(0, Math.min(99999, parseInt(x.hist[k], 10) || 0)); if (n) hist[k] = n; }
+  }
+  let proximo = null;
+  if (x.proximo && typeof x.proximo === 'object' && DATA_OK.test(String(x.proximo.d || ''))) {
+    proximo = { d: x.proximo.d };
+    const t = num(x.proximo.t, 1, 999), e = num(x.proximo.e, 1, 9999);
+    if (t) proximo.t = t;
+    if (e) proximo.e = e;
+  }
+  return {
+    id: x.id, tipo, nome: txt(x.nome, 80), capa: capaSegura(x.capa), sinopse: txt(x.sinopse, 2000), ano: txt(x.ano, 10),
+    nota: num(x.nota, 0, 10, 1), duracao: num(x.duracao, 0, 1000), tmdb: num(x.tmdb, 0, 1e9), eps, vis,
+    criado: num(x.criado, 0, 8.64e15) ?? criadoPadrao, nota_pessoal: num(x.nota_pessoal, 0, 10, 1), resenha: txt(x.resenha, 4000),
+    visto_em: num(x.visto_em, 0, 8.64e15), hist, proximo,
+  };
+}
+
+export function limparTopBackup(x, criadoPadrao = Date.now()) {
+  if (!x || typeof x !== 'object' || typeof x.id !== 'string' || !ID_OK.test(x.id) || !Array.isArray(x.itens)) return null;
+  const itens = x.itens.slice(0, 10).map(i => ({ t: txt(i && i.t, 80), sid: i && typeof i.sid === 'string' && ID_OK.test(i.sid) ? i.sid : undefined })).filter(i => i.t);
+  return { id: x.id, nome: txt(x.nome, 60) || 'Top 10', itens, criado: num(x.criado, 0, 8.64e15) ?? criadoPadrao };
+}

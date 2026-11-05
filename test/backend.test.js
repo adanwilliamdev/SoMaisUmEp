@@ -263,3 +263,109 @@ test('cadastro: primeira conta só adota dados sem dono com ADOTAR_DADOS_ANTIGOS
   assert.equal(await rodar(true), 2, 'com a variável, títulos e tops são adotados');
   delete process.env.ADOTAR_DADOS_ANTIGOS;
 });
+
+/* ---------- v5.1.2: limites, exclusão com versão, sessão renovável ---------- */
+const Lim = require('../api/_limite');
+const reqIp = ip => ({ headers: { 'x-forwarded-for': ip } });
+
+test('limites: por IP é folgado (CGNAT) e o limite por e-mail continua sendo o principal', () => {
+  const [ip, em] = Lim.chaves(reqIp('10.0.0.1'), 'ana@exemplo.com');
+  assert.equal(ip.limite, 100);
+  assert.equal(em.limite, 5);
+  assert.equal(Lim.chavesDe(reqIp('10.0.0.1'), 'rs').find(c => c.k.startsWith('rs-ip:')).limite, Lim.LIMITE_IP);
+});
+
+test('janela fixa: chave muda a cada janela e o bloqueio vai até o fim dela', async () => {
+  const dia = 864e5, agora = 5 * dia + 3 * 36e5;
+  const a = Lim.janela('cad-ip', '10.0.0.1', 30, dia, agora), b = Lim.janela('cad-ip', '10.0.0.1', 30, dia, agora + 2 * 36e5);
+  const c = Lim.janela('cad-ip', '10.0.0.1', 30, dia, agora + dia);
+  assert.equal(a.k, b.k, 'mesmo dia, mesma chave');
+  assert.notEqual(a.k, c.k, 'dia seguinte, contador novo');
+  assert.equal(a.fixoAte, 6 * dia);
+
+  const gravados = [];
+  const sqlFalso = n => { const s = (st, ...v) => { const t = st.join('?'); if (/insert into tentativas/.test(t)) return Promise.resolve([{ falhas: n }]); gravados.push({ t, v }); return Promise.resolve([]); }; return s; };
+  const antes = Date.now;
+  Date.now = () => agora;
+  try {
+    await Lim.registrarFalha(sqlFalso(29), [a]);
+    assert.equal(gravados.length, 0, 'abaixo do limite não bloqueia');
+    await Lim.registrarFalha(sqlFalso(30), [a]);
+    assert.equal(gravados.length, 1, 'no limite bloqueia');
+    assert.equal(gravados[0].v[0], a.fixoAte, 'até o fim da janela (sem bloqueio crescente)');
+  } finally { Date.now = antes; }
+});
+
+test('cadastro: contador diário próprio por IP, separado das falhas de login', async () => {
+  limpar();
+  banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 1 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
+  const r = await chamar('cadastro', { body: { nome: 'Ana', email: 'nova@exemplo.com', senha: 'senha-bem-longa' }, headers: { 'x-forwarded-for': '10.9.9.9' } });
+  assert.equal(r.code, 200);
+  const chaves = banco.consultas.filter(c => /insert into tentativas/.test(c.texto)).map(c => String(c.vals[0]));
+  assert.equal(chaves.length, 1);
+  assert.match(chaves[0], /^cad-ip:[a-f0-9]{32}:\d+$/);
+  assert.ok(!chaves.some(k => k.startsWith('ip:')), 'não pode gastar o limite de login do IP');
+});
+
+test('sync: exclusão leva a versão (base) e só apaga se ninguém alterou depois', async () => {
+  limpar();
+  banco.resposta = base(t => (/delete from titulos/.test(t) ? [{ id: 'a1' }] : []));
+  const r = await chamar('sync', { logado: true, body: { del: { titulos: [{ id: 'a1', base: 123 }, 'b2'], tops: [] } } });
+  assert.equal(r.code, 200);
+  const d = banco.consultas.find(c => /delete from titulos t using unnest/.test(c.texto));
+  assert.ok(d, 'usa unnest com as versões');
+  assert.match(d.texto, /\(x\.b is null or t\.atualizado = x\.b\)/);
+  assert.deepEqual(d.vals.slice(0, 2), [['a1', 'b2'], [123, null]], 'ids e bases em paralelo; id solto (formato antigo) fica sem base');
+  assert.equal(d.vals[2], 'u1', 'sempre restrito ao dono');
+});
+
+test('sync: exclusão recusada porque outro aparelho editou vira conflito e preserva o arquivo do Blob', async () => {
+  limpar();
+  process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_teste';
+  const capa = 'https://abc.public.blob.vercel-storage.com/capas/u1/capa-x.jpg';
+  banco.resposta = base(t => {
+    if (/select id, capa from titulos/.test(t)) return [{ id: 'a1', capa }];
+    if (/delete from titulos t using unnest/.test(t)) return [];                    // nada apagado: versão mudou
+    if (/select id from titulos where user_id/.test(t)) return [{ id: 'a1' }];      // e a linha ainda existe
+    return [];
+  });
+  try {
+    const r = await chamar('sync', { logado: true, body: { del: { titulos: [{ id: 'a1', base: 1 }] } } });
+    assert.equal(r.code, 200);
+    assert.deepEqual(r.body.conflitos, ['a1']);
+    assert.deepEqual(blob.apagados, [], 'a capa não pode ser apagada se o título não foi');
+  } finally { delete process.env.BLOB_READ_WRITE_TOKEN; }
+});
+
+test('sync: excluir algo que já não existe não é conflito (resultado é o mesmo)', async () => {
+  limpar();
+  banco.resposta = base(() => []);
+  const r = await chamar('sync', { logado: true, body: { del: { titulos: [{ id: 'sumiu', base: 5 }], tops: [{ id: 'top-sumiu', base: 7 }] } } });
+  assert.equal(r.code, 200);
+  assert.deepEqual(r.body.conflitos, []);
+});
+
+test('sessão: renova o cookie perto do fim (só em /api/dados) e não renova quando falta bastante', async () => {
+  const comValidade = ms => { const v = `${USER.id}.${USER.versao}.${Date.now() + ms}`; return `sessao=${v}.${assinar(v)}`; };
+  const dados = async ms => { limpar(); banco.resposta = base(t => (/count\(\*\)::int as n/.test(t) ? [{ n: 0, m: '0' }] : [])); return chamar('dados', { metodo: 'GET', headers: { cookie: comValidade(ms) } }); };
+  const perto = await dados(3 * 864e5);
+  assert.match(perto.h['set-cookie'] || '', /^sessao=u1\.1\.\d+\.[a-f0-9]{64}; HttpOnly; Secure; SameSite=Strict/);
+  assert.equal(perto.h['cache-control'], 'private, no-cache', 'resposta privada: o cookie nunca vai para cache público');
+  const novaValidade = Number((perto.h['set-cookie'].match(/sessao=u1\.1\.(\d+)\./) || [])[1]);
+  assert.ok(novaValidade > Date.now() + 29 * 864e5, 'volta a valer ~30 dias');
+  const longe = await dados(20 * 864e5);
+  assert.equal(longe.h['set-cookie'], undefined);
+});
+
+test('sessão: rotas com cache público (TMDb) nunca emitem Set-Cookie', async () => {
+  const v = `${USER.id}.${USER.versao}.${Date.now() + 864e5}`;
+  limpar(); banco.resposta = base();
+  const antes = global.fetch;
+  global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ results: [] }) });
+  process.env.TMDB_READ_TOKEN = 'eyJ' + 'a'.repeat(80);
+  try {
+    const res = novoRes();
+    await require('../api/tmdb')({ method: 'GET', body: undefined, query: { acao: 'busca', tipo: 'tv', q: 'x' }, headers: { cookie: `sessao=${v}.${assinar(v)}` } }, res);
+    assert.equal(res.h['set-cookie'], undefined);
+  } finally { global.fetch = antes; delete process.env.TMDB_READ_TOKEN; }
+});

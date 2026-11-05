@@ -1,11 +1,11 @@
 import { $, esc, uid, status, aviso, avisoDesfazer, desfazerUltimo, guardar, ler, lerJSON, observarEstilos } from './util.js';
 import { api, tmdb } from './api.js';
 import { L, achar, save, carregar, ligar, ligarRede, recarregarSuave, limparSnap, zerar, pendente } from './loja.js';
-import { tp, vis, estado, prox, registrarProgresso, acharDuplicado, semDuplicados, naEstante, sementes, lancamento, proximosLancamentos, hojeISO } from './regras.js';
+import { tp, vis, estado, prox, registrarProgresso, acharDuplicado, semDuplicados, naEstante, sementes, lancamento, proximosLancamentos, hojeISO, limparTituloBackup, limparTopBackup } from './regras.js';
 import * as V from './views.js';
 import { enviarCapa, migrarCapas } from './capas.js';
 import { atualizarDoTmdb, atualizarAutomatico, completarDuracoes, ondeAssistir, emAlta, parecidos, detalheTmdb } from './tmdbsync.js';
-import { lerZip, lerArquivo, consolidar, resumoImportacao, montarTitulo } from './importacao.js';
+import { lerZip, lerArquivo, consolidar, resumoImportacao, montarTitulo, limitarImportacao, MAX_IMPORTACAO } from './importacao.js';
 import { gerarImagem, enviarImagem, definirLink, urlPublica, copiar } from './compartilhar.js';
 
 const app = $('#app'), dlg = $('#dlg');
@@ -45,7 +45,7 @@ function patchCard(id, mudouEstado) {
   if (mudouEstado) return renderLista();
   const s = achar(id); if (!s) return;
   $('#stats').innerHTML = V.htmlStats(tipoAtual());
-  document.querySelectorAll(`.card[data-id="${id}"]`).forEach(el => {
+  document.querySelectorAll(`.card[data-id="${CSS.escape(String(id))}"]`).forEach(el => {
     const t = document.createElement('template'); t.innerHTML = (el.classList.contains('cc') ? V.cardContinuar : V.cardHtml)(s, +el.style.getPropertyValue('--i') || 0);
     el.replaceWith(t.content.firstElementChild);
   });
@@ -198,7 +198,7 @@ function formSerie(id, tipoNovo) {
   let meta = s ? { sinopse: s.sinopse, ano: s.ano, duracao: s.duracao, nota: s.nota, tmdb: s.tmdb, proximo: s.proximo || null } : {};
   aberta = null;
   dlg.innerHTML = `<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2><br>
-    <form id="f" data-id="${s ? s.id : ''}">
+    <form id="f" data-id="${s ? esc(s.id) : ''}">
       <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? esc(s.nome) : ''}"></label>
       <label>Buscar no TMDb (opcional)<span class="linha-busca"><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
       <div id="res" class="res"></div>
@@ -233,7 +233,7 @@ function formSerie(id, tipoNovo) {
     res.innerHTML = '<p class="aviso">Buscando…</p>';
     try {
       const R = (await tmdb({ acao: 'busca', tipo, q })).resultados;
-      res.innerHTML = R.length ? R.map(x => `<button type="button" class="r" data-tid="${x.id}"><div class="p">${x.poster ? `<img src="${esc(x.poster)}" alt="">` : ''}</div><span><b>${esc(x.nome)}</b><small>${esc(x.ano)}</small></span></button>`).join('') : '<p class="aviso">Nada encontrado.</p>';
+      res.innerHTML = R.length ? R.map(x => `<button type="button" class="r" data-tid="${esc(x.id)}"><div class="p">${x.poster ? `<img src="${esc(x.poster)}" alt="">` : ''}</div><span><b>${esc(x.nome)}</b><small>${esc(x.ano)}</small></span></button>`).join('') : '<p class="aviso">Nada encontrado.</p>';
     } catch (e) { res.innerHTML = `<p class="aviso">${esc(e.auth ? 'Sessão expirada. Recarregue a página.' : e.message)}</p>`; }
   };
   $('#tb').addEventListener('click', busca);
@@ -289,12 +289,12 @@ function formSerie(id, tipoNovo) {
 
 /* ---------- tops ---------- */
 function addItem(tid) {
-  const t = L.tops.find(x => x.id === tid), inp = document.querySelector(`[data-top="${tid}"] input`);
+  const t = L.tops.find(x => x.id === tid), inp = document.querySelector(`[data-top="${CSS.escape(String(tid))}"] input`);
   const v = inp.value.trim(); if (!v || t.itens.length >= 10) return;
   const m = L.series.find(s => s.nome.toLowerCase() === v.toLowerCase());
   t.itens.push(m ? { t: m.nome, sid: m.id } : { t: v });
   save(); render();
-  const novo = document.querySelector(`[data-top="${tid}"] .add input`); if (novo) novo.focus();
+  const novo = document.querySelector(`[data-top="${CSS.escape(String(tid))}"] .add input`); if (novo) novo.focus();
 }
 const moverItem = (t, de, para) => { const [x] = t.itens.splice(de, 1); t.itens.splice(para, 0, x); save(); };
 
@@ -344,14 +344,21 @@ function exportar() {
 function importar(texto) {
   let j;
   try { j = JSON.parse(texto); if (!j || !Array.isArray(j.series)) throw 0; } catch (e) { aviso('Backup inválido.'); return; }
-  const t0 = Date.now(), limpo = ({ atualizado, base, ...x }) => x;
-  const marca = (l, ok) => (l || []).filter(x => x && typeof x.id === 'string' && ok(x)).map((x, i) => ({ criado: t0 - i, ...limpo(x) }));
+  // Cada item passa pelo saneamento (ids, números, capas, textos) antes de entrar no app; o que não passar é descartado.
+  const t0 = Date.now(), MAX_SERIES = 5000, MAX_TOPS = 200;
+  const recebidos = j.series.length + (Array.isArray(j.tops) ? j.tops.length : 0);
+  const series = j.series.slice(0, MAX_SERIES).map((x, i) => limparTituloBackup(x, t0 - i)).filter(Boolean);
+  const tops = (Array.isArray(j.tops) ? j.tops : []).slice(0, MAX_TOPS).map((x, i) => limparTopBackup(x, t0 - i)).filter(Boolean);
+  const invalidos = recebidos - series.length - tops.length;
   const mescla = (novos, atuais) => { const ids = new Set(novos.map(x => x.id)); return [...novos, ...atuais.filter(x => !ids.has(x.id))]; };
-  const { aceitos, repetidos } = semDuplicados(marca(j.series, x => x.nome && Array.isArray(x.eps) && Array.isArray(x.vis)), L.series);
+  const { aceitos, repetidos } = semDuplicados(series, L.series);
   L.series = mescla(aceitos, L.series);
-  L.tops = mescla(marca(j.tops, x => Array.isArray(x.itens)), L.tops);
+  L.tops = mescla(tops, L.tops);
   save(); dlg.close(); render();
-  aviso(repetidos.length ? `Backup importado. ${repetidos.length} ${repetidos.length === 1 ? 'título repetido foi ignorado' : 'títulos repetidos foram ignorados'}.` : 'Backup importado.');
+  const notas = [];
+  if (repetidos.length) notas.push(`${repetidos.length} ${repetidos.length === 1 ? 'título repetido foi ignorado' : 'títulos repetidos foram ignorados'}`);
+  if (invalidos > 0) notas.push(`${invalidos} ${invalidos === 1 ? 'item inválido foi descartado' : 'itens inválidos foram descartados'}`);
+  aviso(notas.length ? `Backup importado. ${notas.join('; ')}.` : 'Backup importado.');
 }
 dlg.addEventListener('change', e => {
   if (e.target.id !== 'bkarq' || !e.target.files[0]) return;
@@ -481,7 +488,9 @@ async function lerArquivosImportacao(arquivos) {
       for (const it of itens) { const r = lerArquivo(it.nome, it.texto); if (r) { todas.push(...r.entradas); fontes.add(r.fonte); } }
     }
   } catch (e) { msg.textContent = e.message; return; }
-  const entradas = consolidar(todas);
+  const jaTem = e => !!acharDuplicado(L.series, { tipo: e.tipo, nome: e.nome, ano: e.ano ? String(e.ano) : null, tmdb: e.tmdb ? Number(e.tmdb) : null });
+  const { entradas, cortadas } = limitarImportacao(consolidar(todas), jaTem);
+  if (cortadas) aviso(`Importando os primeiros ${MAX_IMPORTACAO} títulos. Sobraram ${cortadas}: depois de terminar, importe os mesmos arquivos de novo para trazer o resto.`, 12000);
   if (!entradas.length) { msg.textContent = 'Não encontrei títulos nesses arquivos. Confira se são exports do Letterboxd, IMDb ou Trakt (veja as dicas acima).'; return; }
   imp = { entradas, fontes: [...fontes], parar: false, ids: [], rodando: false };
   dlg.innerHTML = V.htmlImportar({ previa: resumoImportacao(entradas), fontes: imp.fontes });
@@ -642,7 +651,7 @@ document.addEventListener('keydown', e => {
     const de = +li.dataset.i, para = de + (e.key === 'ArrowUp' ? -1 : 1);
     if (!t || para < 0 || para >= t.itens.length) return;
     moverItem(t, de, para); render();
-    document.querySelector(`[data-top="${t.id}"] li[data-i="${para}"] [data-alca]`)?.focus();
+    document.querySelector(`[data-top="${CSS.escape(String(t.id))}"] li[data-i="${para}"] [data-alca]`)?.focus();
     return;
   }
   if (e.key !== 'Enter') return;

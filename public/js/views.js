@@ -27,7 +27,7 @@ const chipLanc = s => { const l = lancamento(s); return l ? `<span class="lanc${
 export function cardHtml(s, n = 0) {
   const mv = tp(s) === 'movie', p = pct(s), prx = prox(s), est = estado(s);
   const chip = est === 'fim' ? '<span class="sel ok">Concluído</span>' : '';
-  return `<article class="card" data-id="${s.id}" data-est="${est}" data-i="${Math.min(n, 14)}">
+  return `<article class="card" data-id="${esc(s.id)}" data-est="${est}" data-i="${Math.min(n, 14)}">
       <div class="poster">
         <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
         ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
@@ -42,7 +42,7 @@ export function cardContinuar(s, n = 0) {
   const p = pct(s), prx = prox(s);
   const botao = (cls, miolo) => prx ? `<button class="mais ${cls}" data-act="mais" aria-label="+1 episódio de ${esc(s.nome)}" title="+1 episódio">${miolo}</button>` : '';
   if (n > 0) {
-    return `<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
+    return `<article class="card cc" data-id="${esc(s.id)}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}</button>
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
         <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>${chipLanc(s)}
@@ -51,7 +51,7 @@ export function cardContinuar(s, n = 0) {
     </article>`;
   }
   const urlFundo = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
-  return `<article class="card cc cc-hero" data-id="${s.id}" data-est="${estado(s)}" data-i="0">
+  return `<article class="card cc cc-hero" data-id="${esc(s.id)}" data-est="${estado(s)}" data-i="0">
       <div class="cc-fundo" aria-hidden="true" ${urlFundo ? `data-cover="${esc(s.capa)}"` : `data-h="${hue(s.nome)}"`}></div>
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa, true)}</button>
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
@@ -78,7 +78,7 @@ export function htmlProximos(tipo) {
   if (!lista.length) return '';
   const mv = tipo === 'movie';
   return `<section class="prox" aria-labelledby="t-prox"><h2 class="sec-tit" id="t-prox">${mv ? 'Próximas estreias' : 'Próximos episódios'}</h2>
-    <ul class="prox-lista">${lista.map(({ s, l }) => `<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${s.id}">
+    <ul class="prox-lista">${lista.map(({ s, l }) => `<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${esc(s.id)}">
       <button class="prox-b" data-act="abrir" aria-label="Abrir ${esc(s.nome)}"><span class="prox-data" aria-hidden="true"><b>${l.dia}</b>${esc(l.mes)}</span>
       <span class="prox-txt"><b>${esc(s.nome)}</b><small>${l.t && l.e ? `T${l.t} · E${l.e} · ` : ''}${esc(l.quando)}</small></span></button></li>`).join('')}</ul></section>`;
 }
@@ -144,7 +144,7 @@ export function htmlDetalhe(s, onde) {
   }).join('');
   const urlHero = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
   const l = lancamento(s), pilulas = [mv ? 'Filme' : 'Série', s.ano, s.nota ? '★ ' + s.nota : '', s.duracao ? s.duracao + (mv ? ' min' : ' min/ep') : '', l ? `${l.texto}${l.t && l.e ? ` · T${l.t} E${l.e}` : ''}` : ''].filter(Boolean).map(x => `<span class="pilula">${esc(x)}</span>`).join('');
-  return `<div data-id="${s.id}">
+  return `<div data-id="${esc(s.id)}">
     <div class="hero" ${urlHero ? `data-cover="${esc(s.capa)}"` : `data-h="${hue(s.nome)}"`}></div>
     <div class="cab"><div class="mini-capa">${capa(s.nome, s.capa, true)}</div>
       <div class="cab-info"><h2>${esc(s.nome)}</h2><div class="pilulas">${pilulas}</div><div class="barra"><i data-w="${p}"></i></div>
@@ -173,7 +173,7 @@ export function viewTops() {
         <span class="n">${i + 1}</span><div class="p">${capa(it.t, s && s.capa)}</div><span class="t">${esc(it.t)}</span>
         <span class="mv"><button data-act="tira" aria-label="Remover ${esc(it.t)}">✕</button></span></li>`;
     }).join('');
-    return `<section class="top" data-top="${t.id}" data-i="${Math.min(n, 8)}">
+    return `<section class="top" data-top="${esc(t.id)}" data-i="${Math.min(n, 8)}">
       <div class="top-cab"><h2>${esc(t.nome)}</h2><small>${t.itens.length}/10</small>${t.itens.length ? `<button class="btn sec mini" data-act="compartilhar">${L.links[t.id] ? 'Compartilhado' : 'Compartilhar'}</button>` : ''}<button class="btn sec perigo mini" data-act="del-top">Excluir</button></div>
       ${li ? `<ol>${li}</ol>` : '<p class="mut-peq">Lista vazia. Adicione seu primeiro título.</p>'}
       ${t.itens.length < 10 ? `<div class="add"><input type="text" list="nomes" maxlength="80" placeholder="Série ou filme" aria-label="Adicionar título"><button class="btn mini" data-act="add-item">Adicionar</button></div>` : ''}
@@ -274,7 +274,7 @@ export function viewFormConta(acao, email = '') {
 // `d` = { alta, parecidos } (cada um: lista, 'carregando', 'erro' ou null quando não se aplica).
 function cardDescobrir(x, tipo, porque = '') {
   const tem = naEstante(L.series, tipo, x.id);
-  return `<article class="card desc" data-tid="${x.id}">
+  return `<article class="card desc" data-tid="${esc(x.id)}">
     <div class="poster"><button class="capa" data-act="desc-abrir" aria-label="Ver ${esc(x.nome)}">${capa(x.nome, x.poster)}${tem ? '<span class="sel ok">Na estante</span>' : ''}${x.nota ? `<span class="sel dir" title="Nota no TMDb">★ ${x.nota}</span>` : ''}</button>
       ${tem ? '' : `<button class="mais mais-add" data-act="desc-add" aria-label="Adicionar ${esc(x.nome)} à estante" title="Adicionar à estante">${ICO_MAIS}</button>`}</div>
     <h3>${esc(x.nome)}</h3><small>${esc(x.ano || '')}${porque ? (x.ano ? ' · ' : '') + esc(porque) : ''}</small></article>`;
@@ -305,7 +305,7 @@ export function viewDescobrir(d) {
 export function htmlDescDetalhe(x, tipo, onde) {
   const tem = naEstante(L.series, tipo, x.id);
   const pilulas = [tipo === 'movie' ? 'Filme' : 'Série', x.ano, x.nota ? '★ ' + x.nota : ''].filter(Boolean).map(p => `<span class="pilula">${esc(p)}</span>`).join('');
-  return `<div data-tid="${x.id}"><div class="cab"><div class="mini-capa">${capa(x.nome, x.poster, true)}</div>
+  return `<div data-tid="${esc(x.id)}"><div class="cab"><div class="mini-capa">${capa(x.nome, x.poster, true)}</div>
     <div class="cab-info"><h2>${esc(x.nome)}</h2><div class="pilulas">${pilulas}</div></div></div>
     ${x.sinopse ? `<p class="sin">${esc(x.sinopse)}${x.sinopse.length >= 300 ? '…' : ''}</p>` : ''}
     <section class="bloco"><h3>Onde assistir</h3><div id="onde">${htmlOnde(onde)}</div></section>
@@ -314,7 +314,7 @@ export function htmlDescDetalhe(x, tipo, onde) {
 
 /* ---------- compartilhar top ---------- */
 export function htmlCompartilhar(t, codigo, url = '') {
-  return `<div data-top="${t.id}"><h2>Compartilhar “${esc(t.nome)}”</h2>
+  return `<div data-top="${esc(t.id)}"><h2>Compartilhar “${esc(t.nome)}”</h2>
     <section class="bloco"><h3>Imagem</h3><p class="sub topo6">Pronta para postar em stories e no feed.</p>
       <div class="share-prev" id="share-prev" aria-busy="true"><span class="aviso">Montando a imagem…</span></div>
       <div class="rodape-dlg esq"><button class="btn" data-act="img-enviar" disabled>Compartilhar imagem</button></div></section>

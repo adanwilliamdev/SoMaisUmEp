@@ -7,7 +7,9 @@ module.exports = rota('POST', async (req, res) => {
   const b = req.body || {}, sql = db();
   const nome = V.nomeUsuario(b.nome), email = V.email(b.email), senha = V.senha(b.senha);
 
-  const lim = L.chaves(req).map(c => ({ ...c, limite: 10 })); // até 10 cadastros por dia por IP
+  // Até 30 cadastros por dia (UTC) por IP, em janela fixa e com contador próprio (não mistura com as falhas de login do mesmo IP).
+  // Passou disso, fica bloqueado até a virada do dia. O limite é folgado por causa de IPs compartilhados (CGNAT).
+  const lim = [L.janela('cad-ip', L.ipDe(req), 30, 864e5)];
   await L.verificar(sql, lim);
   await L.registrarFalha(sql, lim);
 

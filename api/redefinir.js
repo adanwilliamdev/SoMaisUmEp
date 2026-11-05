@@ -7,7 +7,7 @@ const T = require('./_token');
 // (um único comando SQL: ou tudo, ou nada) e todas as sessões abertas são encerradas (versao + 1).
 module.exports = rota('POST', async (req, res) => {
   const sql = db(), b = req.body || {}, senha = V.senha(b.senha);
-  const lim = L.chavesDe(req, 'rd', { ip: 20 });
+  const lim = L.chavesDe(req, 'rd', { ip: 60 });
   await L.verificar(sql, lim);
   if (!T.valido(b.token)) { await L.registrarFalha(sql, lim); throw erro('Link inválido ou expirado. Peça um novo.'); }
 

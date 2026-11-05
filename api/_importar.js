@@ -1,9 +1,11 @@
-const { rota, erro } = require('./_lib');
+const { db, rota, erro } = require('./_lib');
+const L = require('./_limite');
 const { chamar, detalhe } = require('./_tmdb');
 const V = require('./_validar');
 const { normaliza } = require('./_texto');
 
-const MAX = 10;
+const MAX = 10;                       // itens por requisição
+const LOTES_POR_HORA = 400;           // por conta: 400 lotes = até 4000 itens por hora (cada item pode custar 1 a 3 chamadas ao TMDb)
 
 // Descobre o id do TMDb de um item vindo de outro serviço: id do TMDb > id do IMDb > nome (e ano).
 async function resolverId(tipo, it) {
@@ -26,9 +28,12 @@ async function resolverId(tipo, it) {
 }
 
 // Recebe até 10 itens de uma importação (Trakt, Letterboxd, IMDb) e devolve os dados completos do TMDb de cada um, na mesma ordem.
-module.exports = rota('POST', async (req, res) => {
+module.exports = rota('POST', async (req, res, u) => {
   const itens = Array.isArray((req.body || {}).itens) ? req.body.itens.slice(0, MAX) : [];
   if (!itens.length) throw erro('Nada para importar');
+  const sql = db(), lim = [L.janela('im', u.id, LOTES_POR_HORA, 36e5)];   // janela fixa de 1 h por conta
+  await L.verificar(sql, lim);
+  await L.registrarFalha(sql, lim);                                       // todo lote conta
   const resultados = await Promise.all(itens.map(async raw => {
     try {
       const tipo = raw && raw.tipo === 'movie' ? 'movie' : 'tv';

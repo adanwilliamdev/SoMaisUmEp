@@ -37,7 +37,14 @@ async function logado(req) {
   const m = /(?:^|;\s*)sessao=([\w-]{1,64})\.(\d{1,9})\.(\d{10,16})\.([a-f0-9]{64})/.exec(req.headers.cookie || '');
   if (!m || Date.now() >= Number(m[3]) || !igual(m[4], assinar(`${m[1]}.${m[2]}.${m[3]}`))) return null;
   const [u] = await db()`select id, nome, email, versao from usuarios where id = ${m[1]}`;
-  return u && u.versao === Number(m[2]) ? { id: u.id, nome: u.nome, email: u.email, versao: u.versao } : null;
+  return u && u.versao === Number(m[2]) ? { id: u.id, nome: u.nome, email: u.email, versao: u.versao, expira: Number(m[3]) } : null;
+}
+// Renovação deslizante: quando faltam menos de 7 dos 30 dias, emite um cookie novo (mesma versão). Quem usa o app
+// de vez em quando não é deslogado; quem some por mais de 30 dias é. Só vale em respostas privadas (veja dados.js):
+// nunca em respostas com cache público, para o Set-Cookie não ser servido a outra pessoa.
+const RENOVAR_ABAIXO = 7 * 864e5;
+function renovarSessao(res, u) {
+  if (u && u.expira && u.expira - Date.now() < RENOVAR_ABAIXO) criarSessao(res, u);
 }
 
 // Traduz falhas comuns do banco em mensagens que dizem o que corrigir.
@@ -69,4 +76,4 @@ const rota = (metodo, fn, publica = false) => async (req, res) => {
   }
 };
 
-module.exports = { db, rota, erro, assinar, igual, hashSenha, confereSenha, criarSessao, encerrarSessao, logado };
+module.exports = { db, rota, erro, assinar, igual, hashSenha, confereSenha, criarSessao, encerrarSessao, renovarSessao, logado };

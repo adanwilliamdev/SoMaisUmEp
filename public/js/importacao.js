@@ -192,3 +192,15 @@ export function montarTitulo(e, info, { id, criado = Date.now() }) {
   }
   return { ...base, eps, vis, visto_em: ultimo || (vis.some(Boolean) ? e.data || null : null), hist };
 }
+
+/* ---------- limite por importação ---------- */
+// Cada título custa de 1 a 3 chamadas ao TMDb (o servidor aceita 400 lotes de 10 por hora por conta). Acima do limite,
+// importa os primeiros e avisa quantos ficaram para uma segunda rodada. Para essa segunda rodada andar, o corte descarta
+// antes o que a estante já tem (`jaTem`) e põe os assistidos na frente (a ordem original é mantida dentro de cada grupo).
+export const MAX_IMPORTACAO = 3000;
+export function limitarImportacao(entradas, jaTem = () => false, max = MAX_IMPORTACAO) {
+  if (entradas.length <= max) return { entradas, cortadas: 0 };
+  const novas = entradas.map((e, i) => [e, i]).filter(([e]) => !jaTem(e))
+    .sort((a, b) => (b[0].assistido ? 1 : 0) - (a[0].assistido ? 1 : 0) || a[1] - b[1]).map(([e]) => e);
+  return { entradas: novas.slice(0, max), cortadas: Math.max(0, novas.length - max) };
+}

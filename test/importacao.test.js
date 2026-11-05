@@ -142,3 +142,14 @@ test('lerZip: lê arquivos guardados e deflate, e respeita o filtro', async () =
   assert.deepEqual((await lerZip(zip, n => n === 'ratings.csv')).map(x => x.nome), ['ratings.csv']);
   await assert.rejects(() => lerZip(new Uint8Array(40).buffer), /ZIP inválido/);
 });
+
+test('limitarImportacao: até o limite não mexe; acima, descarta o que já está na estante e põe assistidos na frente', async () => {
+  const { limitarImportacao, MAX_IMPORTACAO } = await import('../public/js/importacao.js');
+  assert.equal(MAX_IMPORTACAO, 3000);
+  const e = Array.from({ length: 5 }, (_, i) => ({ nome: 'T' + i, assistido: i % 2 === 1 }));
+  assert.deepEqual(limitarImportacao(e, () => false, 5), { entradas: e, cortadas: 0 });
+  const r = limitarImportacao(e, x => x.nome === 'T1', 3);
+  assert.deepEqual(r.entradas.map(x => x.nome), ['T3', 'T0', 'T2'], 'sem T1 (já tem); assistido T3 primeiro; resto na ordem original');
+  assert.equal(r.cortadas, 1, 'sobrou T4 para a segunda rodada');
+  assert.equal(limitarImportacao(e, x => x.nome !== 'T4', 3).cortadas, 0, 'se o que já existe sai do cálculo e cabe, nada é cortado');
+});

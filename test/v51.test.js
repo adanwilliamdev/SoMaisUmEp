@@ -33,7 +33,12 @@ async function chamar(arquivo, { metodo = 'GET', body, query = {}, logado = true
   await require('../api/' + arquivo)({ method: metodo, body, query, headers: logado ? { cookie: cookie() } : {} }, res);
   return res;
 }
-const base = extra => (t, v) => (/select id, nome, email, versao from usuarios/.test(t) ? [USER] : extra ? extra(t, v) || [] : []);
+const base = extra => (t, v) => {
+  if (/select id, nome, email, versao from usuarios/.test(t)) return [USER];
+  if (/select ate from tentativas/.test(t)) return [];          // nunca bloqueado
+  if (/insert into tentativas/.test(t)) return [{ falhas: 1 }];
+  return extra ? extra(t, v) || [] : [];
+};
 
 // TMDb falso: rotas -> resposta; registra as chamadas.
 const tmdb = { chamadas: [], rotas: {} };
@@ -136,6 +141,24 @@ test('/api/importar: exige login, limita o lote a 10 e recusa lote vazio', async
   assert.equal((await chamar('tmdb', { metodo: 'POST', body: { itens: [] } })).code, 400);
   const r = await chamar('tmdb', { metodo: 'POST', body: { itens: Array.from({ length: 30 }, () => ({ tipo: 'movie', tmdb: '1' })) } });
   assert.equal(r.body.resultados.length, 10);
+});
+
+test('/api/importar: limite por hora por conta (400 lotes) devolve 429 sem chamar o TMDb', async () => {
+  tmdb.chamadas = []; tmdb.rotas = { '/movie/1': { id: 1, title: 'F' } };
+  banco.consultas = [];
+  banco.resposta = base();
+  const ok = await chamar('tmdb', { metodo: 'POST', body: { itens: [{ tipo: 'movie', tmdb: '1' }] } });
+  assert.equal(ok.code, 200);
+  const k = banco.consultas.find(c => /insert into tentativas/.test(c.texto));
+  assert.match(String(k.vals[0]), /^im:[a-f0-9]{32}:\d+$/, 'contador por conta e por hora');
+  assert.equal(k.vals.length >= 1, true);
+  // a conta já está bloqueada nesta janela
+  tmdb.chamadas = [];
+  banco.resposta = (t, v) => (/select ate from tentativas/.test(t) ? [{ ate: Date.now() + 20 * 6e4 }] : base()(t, v));
+  const r = await chamar('tmdb', { metodo: 'POST', body: { itens: [{ tipo: 'movie', tmdb: '1' }] } });
+  assert.equal(r.code, 429);
+  assert.match(r.body.erro, /Muitas tentativas/);
+  assert.equal(tmdb.chamadas.length, 0);
 });
 
 /* ---------- link público ---------- */

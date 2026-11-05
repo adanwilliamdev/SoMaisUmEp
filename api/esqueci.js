@@ -10,7 +10,7 @@ module.exports = rota('POST', async (req, res) => {
   const sql = db(), email = V.email((req.body || {}).email);
   if (!E.configurado()) throw erro('A recuperação de senha não está configurada neste site.', 501);
 
-  const lim = L.chavesDe(req, 'rs', { ip: 10, alvo: email, limiteAlvo: 3 });   // 3 pedidos por e-mail, 10 por IP
+  const lim = L.chavesDe(req, 'rs', { ip: 30, alvo: email, limiteAlvo: 3 });   // 3 pedidos por e-mail (principal), 30 por IP (CGNAT)
   await L.verificar(sql, lim);
   await L.registrarFalha(sql, lim);                                             // todo pedido conta
 

@@ -61,6 +61,12 @@ function top(x) {
   return { id: x.id, nome: txt(x.nome, 60) || 'Top 10', itens, criado: num(x.criado, 0, 8.64e15) ?? Date.now(), base: num(x.base, 0, 8.64e15) };
 }
 
+// Exclusões: aceita ids soltos (formato antigo) ou { id, base }, onde base é a versão que o navegador conhecia.
+// Com base, o servidor só apaga se ninguém alterou o item depois; sem base, apaga sempre (comportamento antigo).
+const exclusoes = a => (Array.isArray(a) ? a : []).slice(0, 200)
+  .map(x => (typeof x === 'string' ? { id: x, base: null } : x && typeof x === 'object' ? { id: x.id, base: num(x.base, 0, 8.64e15) } : null))
+  .filter(x => x && typeof x.id === 'string' && ID.test(x.id));
+
 const ids = a => (Array.isArray(a) ? a : []).filter(i => typeof i === 'string' && ID.test(i)).slice(0, 200);
 
 function email(v) {
@@ -76,4 +82,4 @@ function senha(v) {
 }
 const nomeUsuario = v => txt(v, 60) || (() => { throw erro('Informe seu nome'); })();
 
-module.exports = { ID, txt, inteiros, num, capaOk, historico, proximo, titulo, top, ids, email, senha, nomeUsuario };
+module.exports = { ID, txt, inteiros, num, capaOk, historico, proximo, titulo, top, ids, exclusoes, email, senha, nomeUsuario };
