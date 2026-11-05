@@ -491,8 +491,8 @@ function carregarSw() {
   return { ouvintes, mostradas, aberturas, janelas };
 }
 const evento = extra => {
-  const e = { esperas: [], waitUntil(p) { this.esperas.push(p); }, ...extra };
-  return e;
+  const esperas = [];
+  return { esperas, waitUntil: p => esperas.push(p), ...extra };
 };
 
 test('service worker: push vira notificação (texto puro, tag, só caminhos do próprio site) e sempre mostra algo', async () => {
@@ -517,7 +517,10 @@ test('service worker: push vira notificação (texto puro, tag, só caminhos do 
   sw.ouvintes.push(vazio);
   await Promise.all(vazio.esperas);
   assert.equal(sw.mostradas.at(-1).t, 'SóMaisUmEp', 'push sem corpo ainda mostra uma notificação (exigência dos navegadores)');
-  const quebrado = evento({ data: { json: () => { throw new Error('não é JSON'); }, text: () => 'olá' } });
+  const naoJson = () => {
+    throw new Error('não é JSON');
+  };
+  const quebrado = evento({ data: { json: naoJson, text: () => 'olá' } });
   sw.ouvintes.push(quebrado);
   await Promise.all(quebrado.esperas);
   assert.equal(sw.mostradas.at(-1).o.body, 'olá');

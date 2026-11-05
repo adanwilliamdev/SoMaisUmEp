@@ -34,6 +34,8 @@ const navegador = [
   'CSS',
   'MutationObserver',
   'matchMedia',
+  'Notification',
+  'atob',
   'getComputedStyle',
   'scrollTo',
   'scrollY',
