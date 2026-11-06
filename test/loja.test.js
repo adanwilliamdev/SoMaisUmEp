@@ -92,7 +92,7 @@ const ambiente = (nome, fn) =>
     await fn(srv);
   });
 
-// Primeira sessão: carrega, aplica `editar`, perde a rede e fecha. A cópia local (claq:snap) guarda as alterações.
+// Primeira sessão: carrega, aplica `editar`, perde a rede e fecha. A cópia local (smue:snap) guarda as alterações.
 async function sessaoQueFicouOffline(srv, editar) {
   const A = await sessao();
   await A.carregar();
@@ -158,7 +158,7 @@ ambiente('save: sem rede, tenta de novo com espera crescente (2 s, 4 s, ...) e g
   await avancar(300);
   assert.equal(srv.chamadas, 1, '1ª tentativa falha');
   assert.ok(M.pendente());
-  const snap = JSON.parse(localStorage.getItem('claq:snap'));
+  const snap = JSON.parse(localStorage.getItem('smue:snap'));
   assert.deepEqual(snap.series[0].vis, [2], 'a alteração está salva no aparelho');
   await avancar(1999);
   assert.equal(srv.chamadas, 1, 'ainda esperando os 2 s');
@@ -196,7 +196,7 @@ ambiente('save: erro 5xx tenta de novo; erro 4xx não; 401 pede login e não per
   M.save();
   await avancar(300);
   assert.equal(M.eventos.login, 1, '401 volta para a tela de entrada');
-  assert.deepEqual(JSON.parse(localStorage.getItem('claq:snap')).series[0].vis, [1]);
+  assert.deepEqual(JSON.parse(localStorage.getItem('smue:snap')).series[0].vis, [1]);
 });
 
 /* ---------- vários aparelhos: conflito ---------- */
@@ -370,7 +370,7 @@ ambiente('reaplicar: cópia de outro usuário é descartada', async srv => {
   await B.carregar();
   assert.deepEqual(B.achar('a').vis, [0]);
   assert.equal(B.pendente(), false);
-  assert.equal(JSON.parse(localStorage.getItem('claq:snap')).uid, 'u2');
+  assert.equal(JSON.parse(localStorage.getItem('smue:snap')).uid, 'u2');
 });
 
 ambiente('carregar sem rede: abre a cópia local com a alteração pendente e envia quando a rede volta', async srv => {
@@ -414,4 +414,22 @@ ambiente('recarregarSuave: traz o que mudou em outro aparelho e não mexe enquan
   await M.recarregarSuave();
   assert.equal(srv.chamadas, antes);
   assert.deepEqual(M.achar('a').vis, [3]);
+});
+
+test('tema.js: migra as chaves antigas claq: para smue: sem sobrescrever as novas', () => {
+  const vm = require('node:vm'),
+    fs = require('node:fs'),
+    path = require('node:path');
+  const mem = { 'claq:snap': '{"a":1}', 'claq:tema': 'dark', 'smue:tema': 'light', 'claq:ordem': 'nome' };
+  const localStorage = {
+    getItem: k => (k in mem ? mem[k] : null),
+    setItem: (k, v) => (mem[k] = String(v)),
+    removeItem: k => delete mem[k],
+  };
+  const document = { documentElement: { setAttribute() {} } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../public/tema.js'), 'utf8'), { localStorage, document });
+  assert.equal(mem['smue:snap'], '{"a":1}');
+  assert.equal(mem['smue:ordem'], 'nome');
+  assert.equal(mem['smue:tema'], 'light'); // a chave nova vence
+  assert.ok(!Object.keys(mem).some(k => k.startsWith('claq:')));
 });

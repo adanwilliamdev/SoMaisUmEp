@@ -41,7 +41,7 @@ export async function atualizarDoTmdb(s) {
 }
 
 // Verificação automática: no máximo a cada 24 h por série (6 h quando a data do próximo episódio já chegou), algumas por vez.
-const CHAVE = 'claq:upd',
+const CHAVE = 'smue:upd',
   DIA = 864e5,
   HORAS6 = 216e5;
 export async function atualizarAutomatico({ max = 4, aoMudar } = {}) {

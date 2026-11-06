@@ -114,7 +114,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   if (e.target.id === 'ordem') {
     V.UI.ordem = e.target.value;
-    guardar('claq:ordem', V.UI.ordem);
+    guardar('smue:ordem', V.UI.ordem);
     renderLista(true);
   }
 });

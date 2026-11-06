@@ -19,12 +19,12 @@ export function pintaTema() {
 function alternarTema() {
   const novo = escuro() ? 'light' : 'dark';
   document.documentElement.dataset.theme = novo;
-  guardar('claq:tema', novo);
+  guardar('smue:tema', novo);
   pintaTema();
 }
 
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (!ler('claq:tema')) pintaTema();
+  if (!ler('smue:tema')) pintaTema();
 });
 
 export const acoes = { tema: alternarTema };

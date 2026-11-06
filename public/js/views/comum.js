@@ -1,7 +1,7 @@
 // Peças de HTML usadas por mais de uma tela: estado da interface (UI), capa/placeholder, esqueleto de carregamento e ícones.
 import { esc, hue, ler } from '../util.js';
 
-export const UI = { filtro: 'todas', busca: '', ordem: ler('claq:ordem', 'recente'), descTipo: 'tv' };
+export const UI = { filtro: 'todas', busca: '', ordem: ler('smue:ordem', 'recente'), descTipo: 'tv' };
 
 export const capa = (nome, img, urgente) =>
   img

@@ -22,7 +22,7 @@ let sujo = false,
   tentativa = 0,
   ultimaRecarga = 0;
 
-const SNAP = 'claq:snap';
+const SNAP = 'smue:snap';
 const chaves = () => {
   const o = {};
   L.series.forEach(s => (o['T' + s.id] = JSON.stringify(s)));

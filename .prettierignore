@@ -2,7 +2,6 @@ node_modules
 dist
 .vercel
 package-lock.json
-public/app.js
 public/style.css
 public/index.html
 neon/

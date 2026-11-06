@@ -109,11 +109,11 @@ async function depois() {
 // Uma vez por dia (por título): avisa o que sai hoje entre os títulos da estante.
 function avisosDeHoje() {
   const hoje = hojeISO(),
-    feito = lerJSON('claq:hoje', {}),
+    feito = lerJSON('smue:hoje', {}),
     vistos = feito.dia === hoje ? feito.ids || [] : [];
   const novos = proximosLancamentos(L.series, { dias: 0, max: 99 }).filter(x => !vistos.includes(x.s.id));
   if (!novos.length) return;
-  guardar('claq:hoje', { dia: hoje, ids: [...vistos, ...novos.map(x => x.s.id)] });
+  guardar('smue:hoje', { dia: hoje, ids: [...vistos, ...novos.map(x => x.s.id)] });
   const n = novos.map(x => x.s.nome),
     mostra = n.slice(0, 3);
   const lista =

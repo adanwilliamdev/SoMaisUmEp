@@ -85,7 +85,7 @@ const regras = {
 };
 
 module.exports = [
-  { ignores: ['node_modules/', 'dist/', '.vercel/', 'public/app.js'] }, // app.js: versão antiga em arquivo único, não é carregada por nenhuma página
+  { ignores: ['node_modules/', 'dist/', '.vercel/'] },
   { files: ['public/js/**/*.js'], languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globais(navegador) }, rules: regras },
   { files: ['public/tema.js'], languageOptions: { ecmaVersion: 'latest', sourceType: 'script', globals: globais(navegador) }, rules: regras },
   { files: ['public/sw.js'], languageOptions: { ecmaVersion: 'latest', sourceType: 'script', globals: globais(servico) }, rules: regras },

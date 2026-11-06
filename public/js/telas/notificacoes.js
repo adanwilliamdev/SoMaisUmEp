@@ -135,7 +135,7 @@ export async function sairPush() {
 // Uma vez por dia, com o app aberto: mantém o servidor em dia com a inscrição deste aparelho (ele pode ter perdido a linha,
 // ou a chave do servidor pode ter sido trocada).
 export async function sincronizarPush() {
-  if (!suportaPush() || Notification.permission !== 'granted' || ler('claq:push') === hojeISO()) return;
+  if (!suportaPush() || Notification.permission !== 'granted' || ler('smue:push') === hojeISO()) return;
   try {
     const reg = await registro();
     const sub = reg && (await reg.pushManager.getSubscription());
@@ -149,7 +149,7 @@ export async function sincronizarPush() {
       atual = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes });
     }
     await api(ROTA, { method: 'POST', body: { acao: 'assinar', assinatura: atual.toJSON() } });
-    guardar('claq:push', hojeISO());
+    guardar('smue:push', hojeISO());
   } catch {
     /* tenta de novo na próxima abertura */
   }
