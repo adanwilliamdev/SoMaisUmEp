@@ -38,7 +38,6 @@ jobs:
     timeout-minutes: 5
     # Só avisa por enquanto: o @vercel/blob 1.x puxa um undici vulnerável. Depois de `npm i @vercel/blob@^2` (e do lockfile
     # commitado), apague a linha abaixo para a auditoria voltar a barrar o CI.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
