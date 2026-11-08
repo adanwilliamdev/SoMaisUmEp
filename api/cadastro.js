@@ -19,7 +19,8 @@ module.exports = rota(
     await L.registrarFalha(sql, lim);
 
     const [{ n }] = await sql`select count(*)::int as n from usuarios`;
-    if (n > 0 && String(process.env.CADASTRO_ABERTO || '').toLowerCase() === 'false') throw erro('Os cadastros estão fechados neste site.', 403);
+    // Depois da primeira conta os cadastros ficam FECHADOS, a não ser que o dono ligue CADASTRO_ABERTO=true.
+    if (n > 0 && String(process.env.CADASTRO_ABERTO || '').toLowerCase() !== 'true') throw erro('Os cadastros estão fechados neste site.', 403);
 
     const u = { id: crypto.randomUUID(), versao: 1 },
       hash = await hashSenha(senha);

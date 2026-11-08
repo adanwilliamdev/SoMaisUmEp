@@ -14,7 +14,7 @@ neon/          migracoes/ (SQL numerado) e schema.sql (todas juntas, gerado)
 scripts/       migrar.js (aplica as migrações no banco), build.js (gera dist/ para o deploy) e vapid.js (chaves dos avisos por push)
 docs/          notificacoes.md (avisos por push) e acessibilidade.md (o que está coberto e como conferir)
 test/          testes (node --test)
-.github/       workflows/ci.yml (lint, formatação, testes e build a cada push e pull request)
+.github/       workflows/ci.yml (lint, formatação, testes e build em Node 20 e 22, mais npm audit) e dependabot.yml (atualizações semanais)
 ```
 
 ## Desenvolvimento
@@ -33,7 +33,7 @@ npm run vapid         gera o par de chaves dos avisos por push (veja docs/notifi
 - **API**: `api/tmdb.js` e `api/t.js` são só roteadores (`api/_roteador.js`, por método HTTP). As consultas do TMDb (`?acao=busca|detalhe|streaming|tendencias|parecidos`) estão em `api/_consultas.js`, a importação em `api/_importar.js`, a página pública do top em `api/_pagina.js` e o liga-desliga do link em `api/_compartilhar.js`. Um teste confere que `api/` não passa de 12 arquivos públicos.
 - **ESLint e Prettier** rodam com `npx` (versões fixas nos scripts), então não entram no `package.json` nem no `package-lock.json`. Se preferir tê-los em `devDependencies`, rode `npm i -D eslint@10.1.0 prettier@3.8.1`.
 
-## O que tem (v5.2.0)
+## O que tem (v5.2.1)
 
 - **PWA**: instale pela tela inicial do celular; abre sem barra do navegador, rápido e até sem internet (com a última cópia dos seus dados).
 - **Datas de lançamento (v5.1)**: o TMDb informa o próximo episódio (ou a estreia de um filme) e o app mostra "Novo ep sexta" / "Nova temporada em 12 jan" nos cards, no painel e numa fileira "Próximos episódios". Uma vez por dia aparece o aviso "Sai hoje: …", e quando uma série concluída volta com episódios novos o aviso diz quando. Títulos com a data já vencida são reconferidos a cada 6 h (os demais, a cada 24 h). Dentro do app o aviso aparece ao abri-lo; com os avisos por push ativados (veja abaixo) ele também chega como notificação, com o app fechado.
@@ -68,7 +68,7 @@ Linguagem de cartaz do cinema brasileiro, em duas cores: **grafite** (`--tx`/`--
 
 Para mudar o banco, crie `neon/migracoes/00N_descricao.sql` (um comando por `;`, sem `;` dentro de texto) e rode `npm run schema` para regenerar o `schema.sql`. Um teste confere se os dois estão em dia.
 
-> **Atualizando da versão de uma senha só?** Defina `ADOTAR_DADOS_ANTIGOS=true` (e, de preferência, `CADASTRO_ABERTO=false` até terminar), rode o novo `schema.sql`, faça o deploy e **crie a sua conta**: só a primeira conta criada herda os dados que já existiam, e só com essa variável ligada. Depois de criar a conta, remova a variável.
+> **Atualizando da versão de uma senha só?** Defina `ADOTAR_DADOS_ANTIGOS=true` (o cadastro já fica fechado depois da primeira conta, a não ser que você ligue `CADASTRO_ABERTO=true`), rode o novo `schema.sql`, faça o deploy e **crie a sua conta**: só a primeira conta criada herda os dados que já existiam, e só com essa variável ligada. Depois de criar a conta, remova a variável.
 
 > **Atualizando de uma versão anterior?** Rode `npm run migrar` (ou o novo `neon/schema.sql`) **antes** do deploy: a 003 acrescenta `titulos.proximo` e `tops.publico`/`publico_em`, e a 004 troca a chave de títulos e tops para `(user_id, id)`. O código novo depende da 004 (`on conflict (user_id, id)`); sem ela o app para de salvar.
 
@@ -91,7 +91,7 @@ Em themoviedb.org › Configurações › API, copie o **Token de Leitura da API
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | *(opcionais)* ligam os avisos por push; gere com `npm run vapid` (veja `docs/notificacoes.md`) |
 | `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM` | *(opcionais)* ligam o "Esqueci minha senha" (veja abaixo) |
 | `ADOTAR_DADOS_ANTIGOS` | *(opcional, só para atualizar da versão de uma senha)* `true` faz a primeira conta criada herdar as linhas sem dono; remova depois |
-| `CADASTRO_ABERTO` | *(opcional)* `false` fecha novos cadastros depois da primeira conta |
+| `CADASTRO_ABERTO` | *(opcional)* depois da primeira conta, os cadastros ficam **fechados**; `true` permite que outras pessoas criem conta |
 
 `APP_PASSWORD` não é mais usada. Se mudar variáveis, faça um **Redeploy**.
 
@@ -119,7 +119,7 @@ O link enviado vale por 1 hora, funciona uma vez só e encerra as sessões abert
 
 ## Cache e atualização do app
 
-CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker busca o código **na rede primeiro** (todos os módulos do mesmo deploy, sem misturar versões) e só usa a cópia guardada quando está offline; ícones e imagens vêm do cache. Para renovar o cache offline em um deploy novo, troque `VERSAO` em `public/sw.js`.
+CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker busca o código **na rede primeiro** (todos os módulos do mesmo deploy, sem misturar versões) e só usa a cópia guardada quando está offline; ícones e imagens vêm do cache. O cache offline se renova sozinho a cada deploy: `scripts/build.js` grava o commit em `dist/sw.js` (veja "Service worker" acima), então não precisa trocar `VERSAO` à mão.
 
 As respostas do TMDb (`/api/tmdb`) ficam em cache por 24 h na Vercel (`s-maxage`; 6 h para detalhes de séries, tendências e parecidos, por causa das datas) e 1 h no navegador. O CSP não permite `style=""` no HTML: estilos que dependem de dados usam `data-h`/`data-i`/`data-w`/`data-cover`, aplicados por `aplicarEstilos()` em `public/js/util.js`.
 
@@ -144,6 +144,10 @@ vercel dev
 - **Exclusão com checagem de versão (v5.1.2):** apagar um título ou top envia a versão conhecida (`base`). Se outro aparelho o alterou depois, o servidor não apaga, o app recarrega e a edição do outro aparelho vence (o item volta). O arquivo da capa no Blob só é apagado se o título foi mesmo apagado.
 - **Sessão renovável (v5.1.2):** o cookie vale 30 dias e é renovado por `/api/dados` quando faltam menos de 7 (abrir o app ou voltar à aba já basta). Só essa rota renova, porque é privada (`no-cache`); rotas com cache público (TMDb) nunca enviam `Set-Cookie`. Quem fica mais de 30 dias sem abrir precisa entrar de novo; "Sair de todos os dispositivos" continua derrubando tudo.
 - **Backup importado é saneado (v5.1.2):** ids, números, capas, histórico e textos do arquivo passam pelas mesmas regras do servidor antes de entrar no app (`limparTituloBackup`/`limparTopBackup` em `regras.js`), porque o app desenha os dados antes de salvá-los. Ids e números também são escapados (`esc()`) nos atributos HTML.
+- **Cadastro fechado por padrão (v5.2.1):** a primeira conta sempre pode ser criada; depois dela, só com `CADASTRO_ABERTO=true`. Quem já tinha o site aberto e quer manter assim precisa definir essa variável e fazer um Redeploy.
+- **Limite do TMDb por conta (v5.2.1):** `/api/tmdb` aceita até 600 consultas por hora por conta (janela fixa, contador `tm` na tabela `tentativas`). Como as respostas têm cache na Vercel, só as que chegam ao TMDb contam, que são as que gastam a cota do token. Passou disso, responde 429.
+- **Origem das requisições (v5.2.1):** POST/PUT/DELETE que trazem o cabeçalho `Origin` de outro site recebem 403 (`origemOk` em `api/_lib.js`), além do `SameSite=Strict` do cookie. Sem `Origin` (curl, testes) a requisição segue.
+- **Logs de erro (v5.2.1):** erros inesperados saem em uma linha de JSON (`nivel`, `metodo`, `rota`, `usuario`, `msg`, `codigo`, `pilha`), fácil de filtrar em Vercel › Logs.
 - **Decisão consciente:** o cadastro avisa quando o e-mail já existe (409). Isso revela quem tem conta, mas num app pessoal a clareza compensa. O login e o "Esqueci minha senha" não revelam nada (mesma resposta sempre).
 - Na conta, senha atual errada responde **403** (e não 401, que o app trataria como sessão expirada).
 - A imagem do top é desenhada no navegador com as capas do TMDb/Blob, que precisam de CORS. Se o navegador barrar, a imagem sai com letras coloridas no lugar das capas (e o app avisa). Capas enviadas por você em base64 não vão para a página pública.
