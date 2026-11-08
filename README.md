@@ -4,7 +4,7 @@ Seu diário de séries e filmes: progresso por episódio e temporada, filmes ass
 Front-end estático (PWA instalável) + funções serverless da Vercel + Postgres no Neon. Cada pessoa cria a própria conta e tem a própria biblioteca.
 
 ```
-public/        site (index.html, style.css, manifest.json, sw.js, icons/ e js/)
+public/        site (index.html, style.css, tema.js, manifest.json, sw.js, icons/ e js/)
   js/            main.js (liga tudo), loja.js (dados + sincronização), regras.js, views.js e os módulos abaixo
   js/views/      HTML de cada tela (estante, detalhe, tops, stats, conta, descobrir, compartilhar, importar)
   js/telas/      eventos de cada tela, um módulo por tela; cada um exporta `acoes` (data-act -> função)
@@ -119,7 +119,7 @@ O link enviado vale por 1 hora, funciona uma vez só e encerra as sessões abert
 
 ## Cache e atualização do app
 
-CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker busca o código **na rede primeiro** (todos os módulos do mesmo deploy, sem misturar versões) e só usa a cópia guardada quando está offline; ícones e imagens vêm do cache. Para renovar o cache offline em um deploy novo, troque `VERSAO` em `public/sw.js`.
+CSS e JS são revalidados a cada abertura (sem precisar mudar `?v=`). O service worker busca o código **na rede primeiro** (todos os módulos do mesmo deploy, sem misturar versões) e só usa a cópia guardada quando está offline; ícones e imagens vêm do cache. O cache offline é renovado sozinho a cada deploy (o `scripts/build.js` carimba a versão em `dist/sw.js`); não é preciso editar `VERSAO`.
 
 As respostas do TMDb (`/api/tmdb`) ficam em cache por 24 h na Vercel (`s-maxage`; 6 h para detalhes de séries, tendências e parecidos, por causa das datas) e 1 h no navegador. O CSP não permite `style=""` no HTML: estilos que dependem de dados usam `data-h`/`data-i`/`data-w`/`data-cover`, aplicados por `aplicarEstilos()` em `public/js/util.js`.
 

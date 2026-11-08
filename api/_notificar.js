@@ -33,7 +33,10 @@ function montarMensagem(itens) {
 async function enviarLancamentos(sql, { agora = Date.now(), vapid = W.chaves(), enviar = W.enviar } = {}) {
   if (!vapid) return { ativo: false };
   const hoje = dataNoFuso(agora);
-  const subs = await sql`select endpoint, p256dh, auth, user_id from push_assinaturas where ultimo_dia is distinct from ${hoje} limit 500`;
+  // Só entram aparelhos de quem tem algo para hoje: sem esse filtro, quem não tem lançamento nunca recebe "ultimo_dia" e os mesmos
+  // 500 aparelhos ocupariam o limite todo dia, deixando os demais sem aviso quando houver muitas assinaturas.
+  const subs = await sql`select endpoint, p256dh, auth, user_id from push_assinaturas where ultimo_dia is distinct from ${hoje}
+    and user_id in (select user_id from titulos where proximo->>'d' = ${hoje}) limit 500`;
   const r = { ativo: true, hoje, aparelhos: subs.length, enviados: 0, removidos: 0, falhas: 0 };
   if (!subs.length) return r;
 

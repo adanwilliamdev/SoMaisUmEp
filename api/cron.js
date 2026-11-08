@@ -7,7 +7,7 @@ const DIA = 864e5;
 //  - tentativas de login antigas e já desbloqueadas;
 //  - links de redefinição de senha vencidos;
 //  - capas do Blob que nenhum título usa mais (órfãs, com mais de 24 h para não pegar envio em andamento).
-const apagados = async (sql, consulta) => (await consulta)[0].n;
+const apagados = async consulta => (await consulta)[0].n;
 
 async function varrerCapas(sql) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) return 0;
@@ -44,13 +44,11 @@ module.exports = rota(
     const sql = db(),
       agora = Date.now();
     const tentativas = await apagados(
-      sql,
       sql`with d as (delete from tentativas where ate < ${agora} and ultima < ${agora - 2 * DIA} returning 1) select count(*)::int as n from d`,
     );
-    const links = await apagados(sql, sql`with d as (delete from reset_senha where expira < ${agora} returning 1) select count(*)::int as n from d`);
+    const links = await apagados(sql`with d as (delete from reset_senha where expira < ${agora} returning 1) select count(*)::int as n from d`);
     const capasBlob = await varrerCapas(sql);
     const capasRegistro = await apagados(
-      sql,
       sql`with d as (delete from capas c where c.criado < ${agora - DIA} and not exists (select 1 from titulos t where t.capa = c.url) returning 1) select count(*)::int as n from d`,
     );
     // Avisos de lançamento por push (só se as chaves VAPID estiverem configuradas). Falha aqui não impede o resto da faxina.

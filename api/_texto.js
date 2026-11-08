@@ -1,4 +1,4 @@
-// Comparação de nomes sem acento, maiúsculas ou espaços repetidos (mesma regra do front, em CommonJS).
+// Textos: comparação sem acento e escape de HTML (mesmas regras do front, em CommonJS).
 const normaliza = t =>
   String(t == null ? '' : t)
     .normalize('NFD')
@@ -6,4 +6,10 @@ const normaliza = t =>
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
-module.exports = { normaliza };
+
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+// Matiz (0-359) estável para um nome: cor do pôster provisório quando o título não tem capa.
+const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
+
+module.exports = { normaliza, esc, hue };

@@ -1,11 +1,10 @@
 const { db } = require('./_lib');
+const { esc, hue } = require('./_texto');
 
 // Página pública de um top (GET /t/<código>, veja "rewrites" no vercel.json): HTML pronto no servidor,
 // para a prévia do link (Open Graph) aparecer em redes e mensageiros, que não rodam JavaScript.
-const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const CODIGO = /^[\w-]{8,32}$/;
 const urlOk = c => (typeof c === 'string' && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(c) && c.length < 600 ? c : null);
-const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
 
 const pagina = ({ titulo, descricao, imagem, corpo, status = 200 }) => ({
   status,
@@ -16,7 +15,7 @@ const pagina = ({ titulo, descricao, imagem, corpo, status = 200 }) => ({
 ${imagem ? `<meta property="og:image" content="${esc(imagem)}"><meta name="twitter:card" content="summary_large_image">` : '<meta name="twitter:card" content="summary">'}
 <meta name="theme-color" content="#120f1e"><link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="/style.css"><script src="/tema.js"></script></head>
+<link rel="stylesheet" href="/style.css"><script src="/tema.js"></script><script type="module" src="/js/publico.js"></script></head>
 <body class="publico"><main class="pub">${corpo}</main></body></html>`,
 });
 

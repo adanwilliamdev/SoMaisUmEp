@@ -1,7 +1,6 @@
 // Envio de e-mail transacional pelo Resend (https://resend.com). Sem as variáveis, a recuperação de senha fica desligada.
 const { erro } = require('./_erro');
-
-const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const { esc } = require('./_texto');
 
 // Endereço público do site, usado nos links. Nunca vem do cabeçalho Host (poderia ser forjado).
 const baseUrl = () =>
