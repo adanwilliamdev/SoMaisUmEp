@@ -28,7 +28,14 @@ function animarCard(card, de) {
   const capa = card.querySelector('.capa'),
     ep = card.querySelector('.cc-ep');
   if (capa && capa.animate) capa.animate([{ transform: 'scale(.96)' }, { transform: 'scale(1)' }], { duration: 300, easing: ease });
-  if (ep && ep.animate) ep.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 340, easing: ease });
+  if (ep && ep.animate)
+    ep.animate(
+      [
+        { opacity: 0, transform: 'translateY(8px)' },
+        { opacity: 1, transform: 'none' },
+      ],
+      { duration: 340, easing: ease },
+    );
 }
 
 // Troca só o(s) card(s) do título alterado (e os números do topo). Se o estado mudou, o filtro pode mudar: refaz a lista.
