@@ -62,11 +62,9 @@ function renovarSessao(res, u) {
 function origemOk(req) {
   const o = req.headers && req.headers.origin;
   if (!o) return true;
-  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '')
-    .split(',')[0]
-    .trim();
+  const [host = ''] = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',');
   try {
-    return !!host && new URL(o).host === host;
+    return !!host.trim() && new URL(o).host === host.trim();
   } catch (e) {
     return false;
   }
@@ -106,10 +104,10 @@ const rota =
       await fn(req, res, usuario);
     } catch (e) {
       // Uma linha de JSON por erro: fácil de filtrar nos logs da Vercel (Deployments › Logs) e de ligar a um serviço de erros depois.
-      if (!e.expose)
-        console.error(
-          JSON.stringify({ nivel: 'erro', metodo: req.method, rota: String(req.url || '').split('?')[0], usuario: usuario ? usuario.id : null, msg: e.message, codigo: e.code || null, pilha: e.stack }),
-        );
+      if (!e.expose) {
+        const info = { nivel: 'erro', metodo: req.method, rota: String(req.url || '').split('?')[0], usuario: usuario ? usuario.id : null };
+        console.error(JSON.stringify({ ...info, msg: e.message, codigo: e.code || null, pilha: e.stack }));
+      }
       const dica = e.expose ? null : erroDoBanco(e);
       res.status(e.status || 500).json({ erro: e.expose ? e.message : dica || 'Erro no servidor' });
     }

@@ -455,16 +455,17 @@ test('origem: POST de outro site é recusado (403); do próprio site ou sem Orig
 
 test('tmdb: limite por conta conta cada consulta e bloqueia depois de 600 por hora', async () => {
   const v = `${USER.id}.${USER.versao}.${Date.now() + 864e5}`;
-  const consultar = async falhas => {
+  const pedido = { method: 'GET', body: undefined, query: { acao: 'busca', tipo: 'tv', q: 'x' }, headers: { cookie: `sessao=${v}.${assinar(v)}` } };
+  const consultar = async (falhas, bloqueadoAte = null) => {
     limpar();
-    banco.resposta = (t, vals) => {
+    banco.resposta = t => {
       if (/select id, nome, email, versao from usuarios/.test(t)) return [USER];
-      if (/select ate from tentativas/.test(t)) return [];
+      if (/select ate from tentativas/.test(t)) return bloqueadoAte ? [{ ate: bloqueadoAte }] : [];
       if (/insert into tentativas/.test(t)) return [{ falhas }];
       return [];
     };
     const res = novoRes();
-    await require('../api/tmdb')({ method: 'GET', body: undefined, query: { acao: 'busca', tipo: 'tv', q: 'x' }, headers: { cookie: `sessao=${v}.${assinar(v)}` } }, res);
+    await require('../api/tmdb')(pedido, res);
     return res;
   };
   const antes = global.fetch;
@@ -476,23 +477,12 @@ test('tmdb: limite por conta conta cada consulta e bloqueia depois de 600 por ho
     const chave = banco.consultas.find(c => /insert into tentativas/.test(c.texto)).vals[0];
     assert.match(String(chave), /^tm:[a-f0-9]{32}:\d+$/, 'contador próprio do TMDb, por conta e por hora');
     await consultar(600);
-    assert.ok(
-      banco.consultas.some(c => /update tentativas set ate/.test(c.texto)),
-      'no limite grava o bloqueio',
-    );
+    assert.ok(banco.consultas.some(c => /update tentativas set ate/.test(c.texto)), 'no limite grava o bloqueio');
+    assert.equal((await consultar(1, Date.now() + 36e5)).code, 429, 'bloqueada: recusa antes de chamar o TMDb');
   } finally {
     global.fetch = antes;
     delete process.env.TMDB_READ_TOKEN;
   }
-  limpar();
-  banco.resposta = (t, vals) => {
-    if (/select id, nome, email, versao from usuarios/.test(t)) return [USER];
-    if (/select ate from tentativas/.test(t)) return [{ ate: Date.now() + 36e5 }];
-    return [];
-  };
-  const bloqueado = novoRes();
-  await require('../api/tmdb')({ method: 'GET', body: undefined, query: { acao: 'busca', tipo: 'tv', q: 'x' }, headers: { cookie: `sessao=${v}.${assinar(v)}` } }, bloqueado);
-  assert.equal(bloqueado.code, 429);
 });
 
 test('sync: exclusão leva a versão (base) e só apaga se ninguém alterou depois', async () => {
