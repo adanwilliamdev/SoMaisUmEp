@@ -566,3 +566,85 @@ label.arq:focus-within{outline:3px solid var(--tx);outline-offset:3px}
   .menu a{min-height:56px}
   .aviso-acao{min-height:44px}
 }
+
+
+/* ===== v5.4: acabamento visual e fluidez =====
+   Só acrescenta: tokens, profundidade, movimento mais suave e melhor aproveitamento de tablets e telas grandes.
+   Nada aqui muda cores de texto/controles (o contraste conferido por test/acessibilidade.test.js continua valendo). */
+html{--ease:cubic-bezier(.2,.8,.2,1);--brilho:color-mix(in srgb,var(--acc) 34%,transparent);
+  scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--tx) 26%,transparent) transparent}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{text-wrap:balance}
+.sub,.sin,.vazio p{text-wrap:pretty}
+button,.chip,.ep,.mais,.btn,.menu a{-webkit-user-select:none;user-select:none}
+.card .capa img{-webkit-user-drag:none;-webkit-touch-callout:none}
+
+/* profundidade: dois brilhos suaves no fundo (fixos, atrás de tudo) */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(900px 460px at 82% -10%,color-mix(in srgb,var(--acc) 10%,transparent),transparent 70%),
+             radial-gradient(760px 420px at 0% 108%,color-mix(in srgb,#7c5cff 11%,transparent),transparent 70%)}
+
+/* capas: anel fino, sombra macia, véu embaixo (o +1 e os selos ficam legíveis) e zoom leve no hover */
+.card .capa{box-shadow:0 8px 22px -12px rgba(0,0,0,.45);transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+.card .capa::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);background:linear-gradient(to top,rgba(10,7,20,.5),transparent 36%)}
+.card .capa img{transition:opacity .35s ease,transform .6s var(--ease)}
+.sel{z-index:1}
+@media (hover:hover){
+  .card .capa:hover img{transform:scale(1.05)}
+  .card.cc:not(.cc-hero){transition:background-color .2s,transform .25s var(--ease)}
+  .card.cc:not(.cc-hero):hover{background:var(--card2);transform:translateX(3px)}
+  .prox-b:hover{transform:translateY(-2px)}
+}
+.card.cc .capa::after{background:none}
+.prox-b{transition:border-color .15s,transform .25s var(--ease),box-shadow .25s var(--ease)}
+
+/* progresso e botões com um brilho discreto na cor de destaque */
+@media (forced-colors:none){
+  .linha i,.barra i{background-image:linear-gradient(90deg,color-mix(in srgb,var(--acc) 72%,#fff),var(--acc));box-shadow:0 0 12px var(--brilho)}
+}
+.btn:not(.sec):not(.perigo):not(:disabled){box-shadow:0 10px 22px -12px var(--brilho),inset 0 1px 0 rgba(255,255,255,.2)}
+.card.cc-hero{box-shadow:0 22px 56px -28px rgba(0,0,0,.6)}
+.card.cc-hero .mais.mais-grande{box-shadow:0 14px 30px -12px var(--brilho),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .2s var(--ease),filter .15s,box-shadow .2s var(--ease)}
+@media (hover:hover){.card.cc-hero .mais.mais-grande:hover{transform:translateY(-2px)}}
+.mais{transition:transform .2s var(--ease),opacity .2s,filter .15s}
+.chip,.ep,.icone{transition-timing-function:var(--ease)}
+.menu a{transition:color .2s,background-color .2s,transform .15s var(--ease)}
+.menu a[aria-current=page] span{font-weight:700}
+.aviso-flutuante{animation:sobe .3s var(--ease) both}
+
+/* entrada da página ao trocar de aba: some a aparecer e subir um pouco (uma vez só, sem escalonar os cartões) */
+@keyframes aparece-sobe{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#app.entra{animation:aparece-sobe .4s var(--ease) both}
+
+/* o próximo episódio a ver respira (desligado em "reduzir movimento") */
+@keyframes pulso{0%,100%{box-shadow:0 0 0 3px var(--foco)}50%{box-shadow:0 0 0 6px transparent}}
+.ep[aria-pressed=true]+.ep[aria-pressed=false]{animation:pulso 2.6s ease-in-out infinite}
+
+/* painel de detalhes */
+dialog{box-shadow:var(--sombra-alta),-1px 0 0 var(--line)}
+dialog::backdrop{background:rgba(10,7,20,.56)}
+
+/* telas grandes: mais espaço e capas um pouco maiores */
+.grade{grid-template-columns:repeat(auto-fill,minmax(clamp(150px,13.5vw,196px),1fr))}
+@media (min-width:1500px){.palco{max-width:1320px}}
+
+/* tablets (560-899px): em vez de duas colunas enormes, a grade se adapta; a fila e a gaveta usam melhor a largura */
+@media (min-width:560px) and (max-width:899px){
+  .grade{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:30px 18px}
+  .desc-sec .grade{gap:30px 18px}
+}
+@media (min-width:640px) and (max-width:899px){
+  .fila-grade:not(.so-um){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+  dialog{width:min(640px,100%);margin:auto auto 0}
+}
+
+/* celular: barra de abas flutuante, com cantos arredondados, acima da borda da tela */
+@media (max-width:899px){
+  .menu{left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:5px 6px;border:1px solid var(--line);border-radius:22px;
+    box-shadow:0 14px 34px -14px rgba(0,0,0,.5)}
+  .menu a[aria-current=page]{background:color-mix(in srgb,var(--acc) 13%,transparent)}
+  .menu a[aria-current=page]::after{display:none}
+  .palco{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+  .avisos{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+}

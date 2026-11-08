@@ -54,6 +54,10 @@ npm run vapid         gera o par de chaves dos avisos por push (veja docs/notifi
 - **Acessibilidade (v5.2)**: contraste AA nos dois temas (conferido por teste), foco visível, "pular para o conteúdo", foco e título da página ao trocar de aba, rótulos em todos os botões só com ícone, diálogos com nome, gráfico com tabela equivalente e reordenação dos tops sem arrastar. Veja [docs/acessibilidade.md](docs/acessibilidade.md).
 - **Segurança de dados**: salvamento com nova tentativa automática, aviso de "sem conexão", cópia local, e detecção de edição em dois aparelhos (campo `atualizado`); ao voltar para a aba, os dados são recarregados.
 
+## Acabamento visual (v5.4)
+
+Bloco "v5.4" no fim de `public/style.css`: brilhos suaves no fundo, capas com anel, véu e zoom leve, progresso com brilho na cor de destaque, barra de abas flutuante no celular, grade e gaveta adaptadas a tablets (560-899 px), capas maiores em telas largas e entrada de página mais suave. Ao dar +1, a barra de progresso corre do valor antigo ao novo (`animarCard` em `telas/estante.js`). Tudo respeita "reduzir movimento" e o alto contraste.
+
 ## Identidade visual (v4.4)
 
 Linguagem de cartaz do cinema brasileiro, em duas cores: **grafite** (`--tx`/`--acc`) e **amarelo-sol** (`--sol`, usado só para progresso, episódios vistos e botão +1). Sombras duras de serigrafia nos botões e pôsteres. Tipografia: **Hanken Grotesk** no texto e **Unbounded** nos títulos e na marca (`--corpo` e `--titulo`). Todas as cores e raios são tokens em `:root` no topo de `public/style.css` (claro, escuro automático e `data-theme`). O ícone do app é `public/icons/icon.svg` e os PNGs são gerados a partir dele.

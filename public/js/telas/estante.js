@@ -18,6 +18,19 @@ export function renderLista(anim = false) {
   revela();
 }
 
+// Dá retorno ao toque: a barra de progresso corre do valor antigo ao novo e a capa dá um leve "toque". Respeita "reduzir movimento".
+function animarCard(card, de) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const ease = 'cubic-bezier(.2,.8,.2,1)',
+    barra = card.querySelector('.linha i'),
+    ate = barra && barra.dataset.w;
+  if (barra && barra.animate && de != null && de !== ate) barra.animate([{ width: de + '%' }, { width: ate + '%' }], { duration: 520, easing: ease });
+  const capa = card.querySelector('.capa'),
+    ep = card.querySelector('.cc-ep');
+  if (capa && capa.animate) capa.animate([{ transform: 'scale(.96)' }, { transform: 'scale(1)' }], { duration: 300, easing: ease });
+  if (ep && ep.animate) ep.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 340, easing: ease });
+}
+
 // Troca só o(s) card(s) do título alterado (e os números do topo). Se o estado mudou, o filtro pode mudar: refaz a lista.
 export function patchCard(id, mudouEstado) {
   if (!naLista() || !$('#stats')) return;
@@ -27,8 +40,11 @@ export function patchCard(id, mudouEstado) {
   $('#stats').innerHTML = V.htmlStats(tipoAtual());
   document.querySelectorAll(`.card[data-id="${CSS.escape(String(id))}"]`).forEach(el => {
     const t = document.createElement('template');
+    const antes = el.querySelector('.linha i');
     t.innerHTML = (el.classList.contains('cc') ? V.cardContinuar : V.cardHtml)(s, +el.style.getPropertyValue('--i') || 0);
-    el.replaceWith(t.content.firstElementChild);
+    const novo = t.content.firstElementChild;
+    el.replaceWith(novo);
+    animarCard(novo, antes && antes.dataset.w);
   });
   revela();
 }
@@ -69,6 +85,7 @@ export const acoes = {
   mais: ({ s }) => {
     const p = s && prox(s);
     if (!p) return;
+    if (navigator.vibrate) navigator.vibrate(8); // toque curto no celular (onde há suporte)
     mexer(
       s,
       () => {
