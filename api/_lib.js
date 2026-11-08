@@ -56,20 +56,6 @@ function renovarSessao(res, u) {
   if (u && u.expira && u.expira - Date.now() < RENOVAR_ABAIXO) criarSessao(res, u);
 }
 
-// Defesa extra contra CSRF (além do SameSite=Strict do cookie): requisições que alteram dados e trazem o cabeçalho Origin
-// precisam vir do próprio site. Sem Origin (ferramentas de linha de comando, testes) a requisição segue: o cookie
-// SameSite já impede que outro site a dispare com a sua sessão.
-function origemOk(req) {
-  const o = req.headers && req.headers.origin;
-  if (!o) return true;
-  const [host = ''] = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',');
-  try {
-    return !!host.trim() && new URL(o).host === host.trim();
-  } catch (e) {
-    return false;
-  }
-}
-
 // Traduz falhas comuns do banco em mensagens que dizem o que corrigir.
 // (Textos fixos: nunca repassam a mensagem original, que pode conter dados da conexão.)
 function erroDoBanco(e) {
@@ -91,26 +77,21 @@ const rota =
   (metodo, fn, publica = false) =>
   async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
-    let usuario = null;
     try {
       if (req.method !== metodo) return res.status(405).json({ erro: 'Método não permitido' });
-      if (metodo !== 'GET' && !origemOk(req)) return res.status(403).json({ erro: 'Origem não permitida' });
       const falta = OBRIGATORIAS.filter(k => !process.env[k]);
       if (falta.length) throw erro('Variáveis de ambiente ausentes: ' + falta.join(', '), 500);
+      let usuario = null;
       if (!publica) {
         usuario = await logado(req);
         if (!usuario) return res.status(401).json({ erro: 'Não autorizado' });
       }
       await fn(req, res, usuario);
     } catch (e) {
-      // Uma linha de JSON por erro: fácil de filtrar nos logs da Vercel (Deployments › Logs) e de ligar a um serviço de erros depois.
-      if (!e.expose) {
-        const info = { nivel: 'erro', metodo: req.method, rota: String(req.url || '').split('?')[0], usuario: usuario ? usuario.id : null };
-        console.error(JSON.stringify({ ...info, msg: e.message, codigo: e.code || null, pilha: e.stack }));
-      }
+      if (!e.expose) console.error(e);
       const dica = e.expose ? null : erroDoBanco(e);
       res.status(e.status || 500).json({ erro: e.expose ? e.message : dica || 'Erro no servidor' });
     }
   };
 
-module.exports = { origemOk, db, rota, erro, assinar, igual, hashSenha, confereSenha, criarSessao, encerrarSessao, renovarSessao, logado };
+module.exports = { db, rota, erro, assinar, igual, hashSenha, confereSenha, criarSessao, encerrarSessao, renovarSessao, logado };

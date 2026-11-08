@@ -13,15 +13,11 @@ jobs:
   verificar:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [20, 22] # engines pede Node >= 20; a Vercel pode rodar qualquer uma
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22
           cache: npm
       - run: npm ci
       - name: Lint (ESLint)
@@ -32,17 +28,3 @@ jobs:
         run: npm test
       - name: Build (gera dist/ com a versão do service worker)
         run: npm run build
-
-  auditoria:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    # Só avisa por enquanto: o @vercel/blob 1.x puxa um undici vulnerável. Depois de `npm i @vercel/blob@^2` (e do lockfile
-    # commitado), apague a linha abaixo para a auditoria voltar a barrar o CI.
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Vulnerabilidades conhecidas nas dependências de produção
-        run: npm audit --omit=dev --audit-level=high

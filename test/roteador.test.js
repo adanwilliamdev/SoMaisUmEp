@@ -11,13 +11,7 @@ const Module = require('module');
 const USER = { id: 'u1', nome: 'Ana', email: 'ana@exemplo.com', versao: 1 };
 const carregarMod = Module._load;
 Module._load = function (req, ...resto) {
-  if (req === '@neondatabase/serverless')
-    return {
-      neon: () => strings => {
-        const t = strings.join('?');
-        return Promise.resolve(/from usuarios/.test(t) ? [USER] : /insert into tentativas/.test(t) ? [{ falhas: 1 }] : []); // contador do limite do TMDb
-      },
-    };
+  if (req === '@neondatabase/serverless') return { neon: () => strings => Promise.resolve(/from usuarios/.test(strings.join('?')) ? [USER] : []) };
   return carregarMod.call(this, req, ...resto);
 };
 

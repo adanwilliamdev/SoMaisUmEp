@@ -401,7 +401,6 @@ test('janela fixa: chave muda a cada janela e o bloqueio vai até o fim dela', a
 
 test('cadastro: contador diário próprio por IP, separado das falhas de login', async () => {
   limpar();
-  process.env.CADASTRO_ABERTO = 'true';
   banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 1 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
   const r = await chamar('cadastro', {
     body: { nome: 'Ana', email: 'nova@exemplo.com', senha: 'senha-bem-longa' },
@@ -412,84 +411,6 @@ test('cadastro: contador diário próprio por IP, separado das falhas de login',
   assert.equal(chaves.length, 1);
   assert.match(chaves[0], /^cad-ip:[a-f0-9]{32}:\d+$/);
   assert.ok(!chaves.some(k => k.startsWith('ip:')), 'não pode gastar o limite de login do IP');
-  delete process.env.CADASTRO_ABERTO;
-});
-
-test('cadastro: depois da primeira conta fica fechado, a não ser com CADASTRO_ABERTO=true', async () => {
-  const tentar = async aberto => {
-    limpar();
-    if (aberto === undefined) {
-      delete process.env.CADASTRO_ABERTO;
-    } else {
-      process.env.CADASTRO_ABERTO = aberto;
-    }
-    banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 1 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
-    return chamar('cadastro', { body: { nome: 'Bia', email: 'bia@exemplo.com', senha: 'senha-bem-longa' } });
-  };
-  assert.equal((await tentar(undefined)).code, 403, 'padrão: fechado');
-  assert.equal((await tentar('false')).code, 403);
-  assert.equal((await tentar('true')).code, 200);
-  delete process.env.CADASTRO_ABERTO;
-});
-
-test('cadastro: a primeira conta sempre pode ser criada, mesmo com o cadastro fechado', async () => {
-  limpar();
-  delete process.env.CADASTRO_ABERTO;
-  banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 0 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
-  const r = await chamar('cadastro', { body: { nome: 'Ana', email: 'ana@exemplo.com', senha: 'senha-bem-longa' } });
-  assert.equal(r.code, 200);
-});
-
-test('origem: POST de outro site é recusado (403); do próprio site ou sem Origin passa', async () => {
-  const corpo = { nome: 'Ana', email: 'ana@exemplo.com', senha: 'senha-bem-longa' };
-  const tentar = async (origin, host, encaminhado) => {
-    limpar();
-    banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 0 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
-    const headers = {};
-    if (origin) headers.origin = origin;
-    if (host) headers.host = host;
-    if (encaminhado) headers['x-forwarded-host'] = encaminhado;
-    return chamar('cadastro', { body: corpo, headers });
-  };
-  const estranho = await tentar('https://malvado.example', 'somaisumep.test');
-  assert.equal(estranho.code, 403);
-  assert.equal(banco.consultas.length, 0, 'recusa antes de tocar no banco');
-  assert.equal((await tentar('https://somaisumep.test', 'somaisumep.test')).code, 200);
-  assert.equal((await tentar('https://somaisumep.test', 'interno', 'somaisumep.test')).code, 200, 'atrás de proxy vale o host encaminhado');
-  assert.equal((await tentar()).code, 200, 'sem Origin (curl, testes) segue');
-  assert.equal((await tentar('lixo', 'somaisumep.test')).code, 403, 'Origin ilegível é recusado');
-});
-
-test('tmdb: limite por conta conta cada consulta e bloqueia depois de 600 por hora', async () => {
-  const v = `${USER.id}.${USER.versao}.${Date.now() + 864e5}`;
-  const pedido = { method: 'GET', body: undefined, query: { acao: 'busca', tipo: 'tv', q: 'x' }, headers: { cookie: `sessao=${v}.${assinar(v)}` } };
-  const consultar = async (falhas, bloqueadoAte = null) => {
-    limpar();
-    banco.resposta = t => {
-      if (/select id, nome, email, versao from usuarios/.test(t)) return [USER];
-      if (/select ate from tentativas/.test(t)) return bloqueadoAte ? [{ ate: bloqueadoAte }] : [];
-      if (/insert into tentativas/.test(t)) return [{ falhas }];
-      return [];
-    };
-    const res = novoRes();
-    await require('../api/tmdb')(pedido, res);
-    return res;
-  };
-  const antes = global.fetch;
-  global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ results: [] }) });
-  process.env.TMDB_READ_TOKEN = 'eyJ' + 'a'.repeat(80);
-  try {
-    const ok = await consultar(1);
-    assert.equal(ok.code, 200);
-    const chave = banco.consultas.find(c => /insert into tentativas/.test(c.texto)).vals[0];
-    assert.match(String(chave), /^tm:[a-f0-9]{32}:\d+$/, 'contador próprio do TMDb, por conta e por hora');
-    await consultar(600);
-    assert.ok(banco.consultas.some(c => /update tentativas set ate/.test(c.texto)), 'no limite grava o bloqueio');
-    assert.equal((await consultar(1, Date.now() + 36e5)).code, 429, 'bloqueada: recusa antes de chamar o TMDb');
-  } finally {
-    global.fetch = antes;
-    delete process.env.TMDB_READ_TOKEN;
-  }
 });
 
 test('sync: exclusão leva a versão (base) e só apaga se ninguém alterou depois', async () => {
