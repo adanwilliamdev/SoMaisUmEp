@@ -418,8 +418,11 @@ test('cadastro: contador diário próprio por IP, separado das falhas de login',
 test('cadastro: depois da primeira conta fica fechado, a não ser com CADASTRO_ABERTO=true', async () => {
   const tentar = async aberto => {
     limpar();
-    if (aberto === undefined) delete process.env.CADASTRO_ABERTO;
-    else process.env.CADASTRO_ABERTO = aberto;
+    if (aberto === undefined) {
+      delete process.env.CADASTRO_ABERTO;
+    } else {
+      process.env.CADASTRO_ABERTO = aberto;
+    }
     banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 1 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
     return chamar('cadastro', { body: { nome: 'Bia', email: 'bia@exemplo.com', senha: 'senha-bem-longa' } });
   };
@@ -439,18 +442,22 @@ test('cadastro: a primeira conta sempre pode ser criada, mesmo com o cadastro fe
 
 test('origem: POST de outro site é recusado (403); do próprio site ou sem Origin passa', async () => {
   const corpo = { nome: 'Ana', email: 'ana@exemplo.com', senha: 'senha-bem-longa' };
-  const tentar = async headers => {
+  const tentar = async (origin, host, encaminhado) => {
     limpar();
     banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 0 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
+    const headers = {};
+    if (origin) headers.origin = origin;
+    if (host) headers.host = host;
+    if (encaminhado) headers['x-forwarded-host'] = encaminhado;
     return chamar('cadastro', { body: corpo, headers });
   };
-  const estranho = await tentar({ origin: 'https://malvado.example', host: 'somaisumep.test' });
+  const estranho = await tentar('https://malvado.example', 'somaisumep.test');
   assert.equal(estranho.code, 403);
   assert.equal(banco.consultas.length, 0, 'recusa antes de tocar no banco');
-  assert.equal((await tentar({ origin: 'https://somaisumep.test', host: 'somaisumep.test' })).code, 200);
-  assert.equal((await tentar({ origin: 'https://somaisumep.test', 'x-forwarded-host': 'somaisumep.test', host: 'interno' })).code, 200);
-  assert.equal((await tentar({})).code, 200, 'sem Origin (curl, testes) segue');
-  assert.equal((await tentar({ origin: 'lixo', host: 'somaisumep.test' })).code, 403, 'Origin ilegível é recusado');
+  assert.equal((await tentar('https://somaisumep.test', 'somaisumep.test')).code, 200);
+  assert.equal((await tentar('https://somaisumep.test', 'interno', 'somaisumep.test')).code, 200, 'atrás de proxy vale o host encaminhado');
+  assert.equal((await tentar()).code, 200, 'sem Origin (curl, testes) segue');
+  assert.equal((await tentar('lixo', 'somaisumep.test')).code, 403, 'Origin ilegível é recusado');
 });
 
 test('tmdb: limite por conta conta cada consulta e bloqueia depois de 600 por hora', async () => {
