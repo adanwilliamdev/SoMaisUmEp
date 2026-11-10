@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SóMaisUmEp">
-  <rect width="512" height="512" rx="118" fill="#ff5c6c"/>
-  <g fill="#1a0a12" transform="translate(36 36) scale(.86)">
+  <rect width="512" height="512" rx="118" fill="#0b1a1e"/>
+  <g fill="#ffa733" transform="translate(36 36) scale(.86)">
     <rect x="86" y="236" width="160" height="40" rx="12"/>
     <rect x="146" y="176" width="40" height="160" rx="12"/>
     <rect x="306" y="146" width="52" height="220" rx="12"/>

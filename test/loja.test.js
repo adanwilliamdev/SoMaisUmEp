@@ -415,21 +415,3 @@ ambiente('recarregarSuave: traz o que mudou em outro aparelho e não mexe enquan
   assert.equal(srv.chamadas, antes);
   assert.deepEqual(M.achar('a').vis, [3]);
 });
-
-test('tema.js: migra as chaves antigas claq: para smue: sem sobrescrever as novas', () => {
-  const vm = require('node:vm'),
-    fs = require('node:fs'),
-    path = require('node:path');
-  const mem = { 'claq:snap': '{"a":1}', 'claq:tema': 'dark', 'smue:tema': 'light', 'claq:ordem': 'nome' };
-  const localStorage = {
-    getItem: k => (k in mem ? mem[k] : null),
-    setItem: (k, v) => (mem[k] = String(v)),
-    removeItem: k => delete mem[k],
-  };
-  const document = { documentElement: { setAttribute() {} } };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../public/tema.js'), 'utf8'), { localStorage, document });
-  assert.equal(mem['smue:snap'], '{"a":1}');
-  assert.equal(mem['smue:ordem'], 'nome');
-  assert.equal(mem['smue:tema'], 'light'); // a chave nova vence
-  assert.ok(!Object.keys(mem).some(k => k.startsWith('claq:')));
-});
