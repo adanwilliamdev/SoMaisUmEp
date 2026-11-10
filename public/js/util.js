@@ -77,7 +77,7 @@ export const apagar = k => {
 
 // Estilos que dependem de dados (cor, atraso, largura, capa). Como o CSP não aceita style="" no HTML,
 // o HTML traz data-h / data-i / data-w / data-cover e estes viram propriedades CSS logo após a inserção.
-const ESTILOS = '[data-h],[data-i],[data-w],[data-n],[data-cover]';
+const ESTILOS = '[data-h],[data-i],[data-w],[data-cover]';
 export function aplicarEstilos(raiz = document) {
   const lista = raiz.matches && raiz.matches(ESTILOS) ? [raiz] : [];
   lista.push(...raiz.querySelectorAll(ESTILOS));
@@ -85,7 +85,6 @@ export function aplicarEstilos(raiz = document) {
     const d = el.dataset;
     if (d.h != null) el.style.setProperty('--h', d.h);
     if (d.i != null) el.style.setProperty('--i', d.i);
-    if (d.n != null) el.style.setProperty('--n', d.n);
     if (d.w != null) el.style.width = d.w + '%';
     if (d.cover != null) el.style.setProperty('--cover', `url("${d.cover.replace(/["\\\n]/g, '')}")`);
   }

@@ -4,9 +4,6 @@ import { L } from '../loja.js';
 import { tp, tot, vis, estado, prox, pct, rotulo, filtrar, ordenar, continuar, ORDENS, lancamento, proximosLancamentos } from '../regras.js';
 import { UI, capa, ICO_MAIS, ICO_OK } from './comum.js';
 
-// Segmentos da faixa de episódios: um por episódio, no máximo 40.
-const segs = s => Math.max(1, Math.min(tot(s), 40));
-
 // Selo "Novo ep sexta" / "Estreia em 12 nov" (some sozinho quando a data passa).
 const chipLanc = s => {
   const l = lancamento(s);
@@ -24,7 +21,7 @@ export function cardHtml(s, n = 0) {
         <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
         ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
       </div>
-      ${mv ? '' : `<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>`}
+      ${mv ? '' : `<div class="linha" aria-hidden="true"><i data-w="${p}"></i></div>`}
       <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>${chipLanc(s)}
     </article>`;
 }
@@ -40,7 +37,7 @@ export function cardContinuar(s, n = 0) {
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}</button>
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
         <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>${chipLanc(s)}
-        <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div></div>
+        <div class="linha" aria-hidden="true"><i data-w="${p}"></i></div></div>
       ${botao('', ICO_MAIS + '<b>1</b>')}
     </article>`;
   }
@@ -50,7 +47,7 @@ export function cardContinuar(s, n = 0) {
       <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa, true)}</button>
       <div class="cc-info"><h3>${esc(s.nome)}</h3>
         <p class="cc-ep">${prx ? `T${prx[0]} E${prx[1]}` : ''}</p>
-        <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>
+        <div class="linha" aria-hidden="true"><i data-w="${p}"></i></div>
         <small>Próximo episódio: ${vis(s)} de ${tot(s)} vistos</small>${chipLanc(s)}</div>
       ${botao('mais-grande', '<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>')}
     </article>`;
