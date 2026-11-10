@@ -5,17 +5,20 @@
 
 /* Contraste (WCAG 2.2 AA, conferido por test/acessibilidade.test.js nos dois temas): texto >= 4,5:1; bordas de campos e botões (--ctl) >= 3:1.
    --line/--line2 são só decorativos (divisórias); o que delimita um controle usa --ctl. */
+/* ===== SóMaisUmEp · v6 · "Sinal" =====
+   Tela de TV desligada (verde-petróleo), luz âmbar de "no ar" e chyron de transmissão.
+   Teclas de controle remoto (cantos 12px), episódios em faixa segmentada, números em condensada. */
 :root{
-  --bg:#f1eef8;--rail:#e9e5f4;--card:#fff;--card2:#f6f4fb;--tx:#1a1530;--mut:#5f587d;
-  --line:rgba(26,21,48,.12);--line2:rgba(26,21,48,.3);
-  --acc:#cc1a37;--on:#fff;--ok:#0b7a53;--on-ok:#fff;--perigo:#c4162e;--foco:rgba(204,26,55,.28);--ctl:#7a7496;
-  --sombra-alta:0 24px 60px rgba(26,21,48,.28);
-  --r-s:10px;--r-m:16px;--r-g:22px;--pilula:999px;
-  --corpo:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --titulo:"Unbounded","Arial Black","Segoe UI",system-ui,sans-serif;
-  --rail-w:256px;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#120f1e;--rail:#17132a;--card:#1d1932;--card2:#262140;--tx:#f3efff;--mut:#a59dc6;--line:rgba(190,175,255,.15);--line2:rgba(190,175,255,.34);--ctl:#7d739f;--acc:#ff5c6c;--on:#1a0a12;--ok:#5fe0ac;--on-ok:#06251a;--perigo:#ff8794;--foco:rgba(255,92,108,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#120f1e;--rail:#17132a;--card:#1d1932;--card2:#262140;--tx:#f3efff;--mut:#a59dc6;--line:rgba(190,175,255,.15);--line2:rgba(190,175,255,.34);--ctl:#7d739f;--acc:#ff5c6c;--on:#1a0a12;--ok:#5fe0ac;--on-ok:#06251a;--perigo:#ff8794;--foco:rgba(255,92,108,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}
+  --bg:#eaf1ef;--rail:#dfe9e6;--card:#fff;--card2:#f3f8f6;--tx:#0d2326;--mut:#4a6366;
+  --line:rgba(13,35,38,.12);--line2:rgba(13,35,38,.3);
+  --acc:#a8440a;--on:#fff;--ok:#0b7a53;--on-ok:#fff;--perigo:#b3122b;--foco:rgba(168,68,10,.28);--ctl:#5f7b7e;
+  --sombra-alta:0 24px 60px rgba(13,35,38,.28);
+  --r-s:6px;--r-m:10px;--r-g:14px;--pilula:12px;
+  --corpo:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --titulo:"Big Shoulders Display","Arial Narrow","Segoe UI",system-ui,sans-serif;
+  --rail-w:248px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1a1e;--rail:#0f2227;--card:#14292f;--card2:#1b343b;--tx:#eaf5f1;--mut:#9bb8b3;--line:rgba(160,220,210,.14);--line2:rgba(160,220,210,.32);--ctl:#6f9097;--acc:#ffa733;--on:#1c1000;--ok:#5fe0ac;--on-ok:#06251a;--perigo:#ff8794;--foco:rgba(255,167,51,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1a1e;--rail:#0f2227;--card:#14292f;--card2:#1b343b;--tx:#eaf5f1;--mut:#9bb8b3;--line:rgba(160,220,210,.14);--line2:rgba(160,220,210,.32);--ctl:#6f9097;--acc:#ffa733;--on:#1c1000;--ok:#5fe0ac;--on-ok:#06251a;--perigo:#ff8794;--foco:rgba(255,167,51,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}
 :root{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:inherit;margin:0}
@@ -648,3 +651,54 @@ dialog::backdrop{background:rgba(10,7,20,.56)}
   .palco{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
   .avisos{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 }
+
+/* ===== v6: identidade "Sinal" (camada sobre a base) ===== */
+body{background:radial-gradient(900px 420px at 78% -8%,color-mix(in srgb,var(--acc) 10%,transparent),transparent 70%) no-repeat,var(--bg)}
+h1,h2,h3,.marca,.auth-nome,.stat b,.n,.cc-ep,.mais-n,.prox-data b{letter-spacing:0;font-weight:800}
+h1{font-size:clamp(2.5rem,5.4vw,4rem);line-height:.95}
+.cabeca h1{font-size:clamp(2.3rem,9vw,3.6rem)}
+.sec-tit{font-size:1.5rem}
+.marca{font-size:1.45rem}
+.auth-nome{font-size:clamp(3.4rem,12vw,7rem);line-height:.9}
+.card h3,.card.cc h3{font-family:var(--corpo)}
+.stat b{font-size:2.3rem}
+.menu a{font-weight:600}
+.menu a[aria-current=page]{color:var(--tx)}
+@media (min-width:900px){
+  body:not(.deslogado) .menu a[aria-current=page]{background:var(--card);box-shadow:inset 3px 0 0 var(--acc)}
+  body:not(.deslogado) .menu a{border-radius:var(--r-m)}
+}
+/* teclas: botões e ícones são retângulos de cantos suaves, não pílulas */
+.icone,.mais{border-radius:var(--r-m)}
+.btn{font-weight:700;letter-spacing:.005em}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:var(--on)}
+select{border-radius:var(--r-m)}
+.card .capa{border-radius:var(--r-s)}
+.card .capa:hover{transform:translateY(-3px)}
+/* faixa de episódios: um segmento por episódio (até 40; acima disso, cada segmento agrupa vários) */
+.linha,.barra{--n:20;height:8px;border-radius:0;background:color-mix(in srgb,var(--tx) 18%,transparent);
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 calc(100%/var(--n) - 2px),transparent 0 calc(100%/var(--n)));
+  mask:repeating-linear-gradient(90deg,#000 0 calc(100%/var(--n) - 2px),transparent 0 calc(100%/var(--n)))}
+.linha i,.barra i{border-radius:0}
+.card.cc .linha{height:6px;margin-top:10px}
+.card.cc-hero .linha{height:12px;margin:16px 0 10px}
+/* destaque "no ar": o episódio vira um chyron de transmissão */
+.card.cc-hero{border-radius:var(--r-g);border:1.5px solid var(--line2)}
+.cc-ep{display:inline-block;margin:12px 0 4px;padding:.02em .2em .06em;border-radius:var(--r-s);background:var(--acc);color:var(--on);font-size:clamp(2.6rem,6vw,4.4rem)}
+.card.cc-hero h3{font-family:var(--titulo);font-size:clamp(1.6rem,3vw,2.3rem);line-height:1}
+.card.cc-hero .mais-grande{border-radius:var(--r-m);font-weight:800}
+.card.cc-hero .mais-grande .mais-n{font-size:1.9rem}
+/* episódios do painel: teclas numeradas */
+.ep{border-radius:var(--r-s);font-variant-numeric:tabular-nums}
+.ep[aria-pressed=true]+.ep[aria-pressed=false]{box-shadow:0 0 0 3px var(--foco)}
+/* tops: placar condensado */
+.n{font-size:2.8rem;width:58px;font-weight:800}
+.top-cab{border-bottom-width:3px}
+.top-cab h2{font-size:1.7rem}
+.top li:nth-child(-n+3) .n{color:var(--acc)}
+.prox-data{border-radius:var(--r-s)}
+dialog{border-radius:var(--r-g) 0 0 var(--r-g)}
+.graf rect{rx:0}
+.auth-form{border:1.5px solid var(--line2)}
+@media (max-width:899px){dialog{border-radius:var(--r-g) var(--r-g) 0 0}.n{font-size:2.2rem;width:44px}}
+@media (max-width:480px){.cc-ep{font-size:clamp(2.4rem,14vw,3.2rem)}.card.cc-hero h3{font-size:1.5rem}}
