@@ -1,4 +1,4 @@
-// Testes da v5.1 no backend: próximo lançamento, descobrir, importação, link público de tops e página /t/<código>.
+// Testes do backend: próximo lançamento, descobrir, importação, link público de tops e página /t/<código>.
 // Banco e TMDb são falsos (nada de rede); o que se confere é a lógica dos endpoints.
 process.env.SESSION_SECRET = 'segredo-de-teste-segredo-de-teste';
 process.env.DATABASE_URL = 'postgresql://x:y@localhost/z';

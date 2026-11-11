@@ -16,7 +16,7 @@ export function celula(valor, { planilha = true } = {}) {
 }
 
 // Cabeçalho + linhas, separados por CRLF (padrão do CSV). `bom` acrescenta o marcador UTF-8 que o Excel precisa para acertar os acentos.
-export function paraCsv(cabecalho, linhas, { planilha = true, bom = true } = {}) {
+function paraCsv(cabecalho, linhas, { planilha = true, bom = true } = {}) {
   const l = cols => cols.map(c => celula(c, { planilha })).join(',');
   return (bom ? '\uFEFF' : '') + [cabecalho, ...linhas].map(l).join('\r\n') + '\r\n';
 }
@@ -44,7 +44,7 @@ export const COLUNAS_PLANILHA = [
 const ESTADOS = { assistindo: 'assistindo', quero: 'na_fila', fim: 'concluido' };
 const data = ms => (Number.isFinite(+ms) && +ms > 0 ? hojeISO(+ms) : '');
 
-export function linhaPlanilha(s) {
+function linhaPlanilha(s) {
   const filme = tp(s) === 'movie';
   return [
     filme ? 'filme' : 'serie',
@@ -89,7 +89,7 @@ export const resenhaHtml = t =>
 
 export const filmesAssistidos = series => series.filter(s => tp(s) === 'movie' && vis(s) > 0);
 
-export function linhaLetterboxd(s) {
+function linhaLetterboxd(s) {
   const ano = /^\d{4}/.exec(String(s.ano || ''));
   return [s.tmdb || '', s.nome, ano ? ano[0] : '', data(s.visto_em), estrelas(s.nota_pessoal), resenhaHtml(s.resenha)];
 }

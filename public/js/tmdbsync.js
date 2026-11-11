@@ -69,22 +69,6 @@ export async function atualizarAutomatico({ max = 4, aoMudar } = {}) {
   }
 }
 
-// Completa a duração de todos os títulos que ainda não têm (para a conta de horas).
-export async function completarDuracoes(aoProgresso) {
-  const fila = L.series.filter(s => s.tmdb && !s.duracao);
-  let ok = 0;
-  for (let i = 0; i < fila.length; i++) {
-    try {
-      const r = await atualizarDoTmdb(fila[i]);
-      if (r.mudou && r.mudou.includes('duração')) ok++;
-    } catch (e) {
-      if (e.auth || e.rede) break;
-    }
-    if (aoProgresso) aoProgresso(i + 1, fila.length);
-  }
-  return { total: fila.length, ok };
-}
-
 const cache = new Map();
 export async function ondeAssistir(s) {
   if (!s.tmdb) return null;

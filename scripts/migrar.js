@@ -79,4 +79,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { listar, ler, comandos, schemaCompleto, NOME };
+module.exports = { listar, ler, comandos, schemaCompleto };

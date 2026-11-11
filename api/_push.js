@@ -70,4 +70,4 @@ const comando = rota('POST', async (req, res, u) => {
   res.json({ ok: true });
 });
 
-module.exports = { estado, comando, MAX_APARELHOS };
+module.exports = { estado, comando };

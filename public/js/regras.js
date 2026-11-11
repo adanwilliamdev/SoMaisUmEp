@@ -193,7 +193,7 @@ export function duracaoTexto(min) {
 /* ---------- datas de lançamento ---------- */
 const DIAS_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 // 'AAAA-MM-DD' vira meia-noite no fuso do aparelho (new Date('AAAA-MM-DD') seria UTC e erraria o dia).
-export const dataLocal = iso => {
+const dataLocal = iso => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
   return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
 };
@@ -201,7 +201,7 @@ export const hojeISO = (agora = Date.now()) => {
   const d = new Date(agora);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
-export function diasAte(iso, agora = Date.now()) {
+function diasAte(iso, agora = Date.now()) {
   const d = dataLocal(iso),
     h = dataLocal(hojeISO(agora));
   return d ? Math.round((d - h) / 864e5) : null;

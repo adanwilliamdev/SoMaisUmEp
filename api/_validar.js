@@ -126,4 +126,4 @@ function assinaturaPush(a) {
   return { endpoint, p256dh: k.p256dh, auth: k.auth };
 }
 
-module.exports = { ID, txt, inteiros, num, capaOk, historico, proximo, titulo, top, ids, exclusoes, email, senha, nomeUsuario, assinaturaPush };
+module.exports = { ID, txt, num, capaOk, historico, proximo, titulo, top, ids, exclusoes, email, senha, nomeUsuario, assinaturaPush };

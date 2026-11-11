@@ -41,7 +41,7 @@ const rr = (ctx, x, y, w, h, r) => {
 };
 
 // Desenha o top num canvas 1080x1350 (formato de feed). `imgs` = imagens já carregadas (ou null = letra colorida).
-export function desenhar(canvas, top, imgs) {
+function desenhar(canvas, top, imgs) {
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d'),
@@ -125,7 +125,7 @@ export async function gerarImagem(canvas, top) {
   }
 }
 
-export const paraBlob = canvas => new Promise((ok, no) => canvas.toBlob(b => (b ? ok(b) : no(new Error('Não foi possível gerar a imagem.'))), 'image/png'));
+const paraBlob = canvas => new Promise((ok, no) => canvas.toBlob(b => (b ? ok(b) : no(new Error('Não foi possível gerar a imagem.'))), 'image/png'));
 const nomeArquivo = nome =>
   'top-' +
   (String(nome)

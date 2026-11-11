@@ -82,4 +82,4 @@ function detalheDe(d, tipo) {
 }
 const detalhe = async (tipo, id) => detalheDe(await chamar('/' + tipo + '/' + id), tipo);
 
-module.exports = { poster, ano, chamar, resumo, proximoDe, detalheDe, detalhe, credencial };
+module.exports = { poster, ano, chamar, resumo, proximoDe, detalheDe, detalhe };

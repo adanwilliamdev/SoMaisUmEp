@@ -9,4 +9,4 @@ function novo(agora = Date.now()) {
   return { token, hash: hashToken(token), expira: agora + HORA };
 }
 
-module.exports = { novo, hashToken, valido, HORA };
+module.exports = { novo, hashToken, valido };

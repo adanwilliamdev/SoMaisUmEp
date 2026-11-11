@@ -56,7 +56,7 @@ export function cardContinuar(s, n = 0) {
     </article>`;
 }
 
-export const listaDe = tipo =>
+const listaDe = tipo =>
   ordenar(
     filtrar(
       L.series.filter(s => tp(s) === tipo),

@@ -34,4 +34,4 @@ function emailRedefinir(nome, token) {
   };
 }
 
-module.exports = { configurado, baseUrl, enviar, emailRedefinir, erro };
+module.exports = { configurado, enviar, emailRedefinir, erro };

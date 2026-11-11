@@ -7,7 +7,7 @@ import { chaveParaBytes, mesmaChave, diagnostico } from '../push.js';
 
 const ROTA = '/api/dados?r=push';
 
-export const suportaPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const suportaPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 const ios = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const instalado = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 

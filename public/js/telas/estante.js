@@ -58,7 +58,7 @@ export function patchCard(id, mudouEstado) {
 
 // Marca progresso: registra histórico, salva e atualiza só o que mudou na tela.
 // `rotuloDesfazer`: texto do aviso com botão "Desfazer" (só fora do painel de detalhes, onde o aviso ficaria atrás dele).
-export function mexer(s, fn, rotuloDesfazer) {
+function mexer(s, fn, rotuloDesfazer) {
   const antes = vis(s),
     est = estado(s),
     ant = { vis: [...s.vis], visto_em: s.visto_em, hist: s.hist };
