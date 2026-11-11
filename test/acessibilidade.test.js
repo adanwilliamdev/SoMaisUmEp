@@ -113,3 +113,10 @@ test('campos de arquivo escondidos só visualmente (nunca com hidden) e diálogo
   }
   assert.match(ler('public/js/telas/ctx.js'), /aria-labelledby/);
 });
+
+test('painel de detalhes: a capa da miniatura preenche a caixa (sem recorte em tamanho real) e clicar fora fecha', () => {
+  assert.match(css, /\.cab \.mini-capa img\{[^}]*width:100%[^}]*height:100%[^}]*object-fit:cover/);
+  const ctx = ler('public/js/telas/ctx.js');
+  assert.match(ctx, /dlg\.addEventListener\('click'/);
+  assert.match(ctx, /!dlg\.querySelector\('form'\)/); // painéis com formulário não fecham por clique fora
+});

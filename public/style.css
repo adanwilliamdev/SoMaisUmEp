@@ -200,6 +200,8 @@ dialog h2{font-size:1.4rem}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,transparent 25%,var(--card))}
 .cab{position:relative;display:flex;gap:18px;align-items:flex-end;margin-bottom:18px}
 .cab .mini-capa{width:108px;flex:none;aspect-ratio:2/3;border-radius:var(--r-m);overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.4);background:var(--line)}
+.cab .mini-capa img{width:100%;height:100%;object-fit:cover;display:block}
+.cab .mini-capa .ph span{font-size:2.6rem}
 .cab h2{font-size:1.55rem}
 .cab-info{flex:1;min-width:0;padding-bottom:2px}
 .cab-info small{color:var(--mut)}

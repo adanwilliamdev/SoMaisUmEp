@@ -14,6 +14,23 @@ new MutationObserver(() => {
   } else dlg.removeAttribute('aria-labelledby');
 }).observe(dlg, { childList: true });
 
+// Clicar fora do painel (no fundo escurecido) fecha. Só vale se o clique também COMEÇOU fora (selecionar texto e soltar fora não fecha)
+// e nunca em painéis com formulário (Editar, Entrar, Trocar senha...), para ninguém perder o que digitou sem querer.
+{
+  let comecouFora = false;
+  const fora = e => {
+    const r = dlg.getBoundingClientRect();
+    return e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+  };
+  dlg.addEventListener('pointerdown', e => {
+    comecouFora = fora(e);
+  });
+  dlg.addEventListener('click', e => {
+    if (comecouFora && fora(e) && !dlg.querySelector('form')) dlg.close();
+    comecouFora = false;
+  });
+}
+
 export const ctx = {
   logado: false,
   aberta: null, // id do título aberto no painel de detalhes
