@@ -2,10 +2,11 @@
 import { esc } from '../util.js';
 
 /* ---------- entrar / criar conta ---------- */
-// Um cartão centrado: a marca na horizontal no topo, depois o formulário.
-const casca = corpo => `<div class="auth"><div class="auth-form"><div class="auth-marca"><span class="auth-logo" aria-hidden="true"></span>
-    <p class="auth-nome">SóMaisUmEp</p></div>
-    <p class="auth-frase">Marque cada episódio e saiba sempre qual é o próximo.</p>${corpo}</div></div>`;
+// Um cartão centralizado: logotipo na horizontal no topo e o formulário; a frase de apoio fica abaixo.
+const casca = corpo => `<div class="auth"><div class="auth-form">
+    <div class="auth-marca"><span class="auth-logo" aria-hidden="true"></span><p class="auth-nome">SóMaisUmEp</p></div>
+    ${corpo}</div>
+    <p class="auth-frase">Marque cada episódio e saiba sempre qual é o próximo.</p></div>`;
 
 export function viewAuth(modo = 'entrar') {
   const nova = modo === 'criar';

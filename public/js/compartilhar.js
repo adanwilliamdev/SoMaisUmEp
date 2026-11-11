@@ -5,7 +5,7 @@ import { hue } from './util.js';
 
 const W = 1080,
   H = 1350;
-const COR = { fundo: '#121214', card: '#18181b', tx: '#f4f4f5', mut: '#a1a1aa', acc: '#9d7bf9' };
+const COR = { fundo: '#121214', card: '#1f1f23', tx: '#f4f4f5', mut: '#a1a1aa', acc: '#4ade80' };
 
 // Só imagens que a página pode usar (o CSP também barra o resto) e que dá para desenhar no canvas.
 const capaOk = c =>
@@ -49,8 +49,8 @@ function desenhar(canvas, top, imgs) {
   ctx.fillStyle = COR.fundo;
   ctx.fillRect(0, 0, W, H);
   const g = ctx.createRadialGradient(W, 0, 0, W, 0, 900);
-  g.addColorStop(0, 'rgba(255,92,108,.28)');
-  g.addColorStop(1, 'rgba(255,92,108,0)');
+  g.addColorStop(0, 'rgba(74,222,128,.16)');
+  g.addColorStop(1, 'rgba(74,222,128,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
