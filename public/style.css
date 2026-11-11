@@ -1,24 +1,21 @@
-/* ===== SóMaisUmEp · v5 · "Madrugada" =====
-   O sofá às duas da manhã: roxo-noite, a luz coral do play e a linha do tempo dos players de vídeo.
-   Superfícies são arredondadas, o que se toca é pílula, e o botão "Só mais um ep" é o centro de tudo.
+/* ===== SóMaisUmEp · v7 · "Letreiro" =====
+   Papel e tinta de cartaz de cinema: creme com azul-cobalto de dia; espresso com verde-limão de "luz acesa" à noite.
+   Títulos e números em serifada (Fraunces), texto corrido em DM Sans. Botões e teclas de cantos suaves, episódios em faixa segmentada.
    Tokens, base, estrutura (barra lateral / app), estante, painel de detalhes, tops, estatísticas, entrar, telas pequenas. */
 
 /* Contraste (WCAG 2.2 AA, conferido por test/acessibilidade.test.js nos dois temas): texto >= 4,5:1; bordas de campos e botões (--ctl) >= 3:1.
    --line/--line2 são só decorativos (divisórias); o que delimita um controle usa --ctl. */
-/* ===== SóMaisUmEp · v6 · "Sinal" =====
-   Tela de TV desligada (verde-petróleo), luz âmbar de "no ar" e chyron de transmissão.
-   Teclas de controle remoto (cantos 12px), episódios em faixa segmentada, números em condensada. */
 :root{
-  --bg:#eaf1ef;--rail:#dfe9e6;--card:#fff;--card2:#f3f8f6;--tx:#0d2326;--mut:#4a6366;
-  --line:rgba(13,35,38,.12);--line2:rgba(13,35,38,.3);
-  --acc:#a8440a;--on:#fff;--ok:#0b7a53;--on-ok:#fff;--perigo:#b3122b;--foco:rgba(168,68,10,.28);--ctl:#5f7b7e;
-  --sombra-alta:0 24px 60px rgba(13,35,38,.28);
+  --bg:#f5f0e6;--rail:#ece5d6;--card:#fffdf8;--card2:#f9f4e9;--tx:#1c1917;--mut:#5b5348;
+  --line:rgba(28,25,23,.12);--line2:rgba(28,25,23,.3);
+  --acc:#2b3fd6;--on:#fff;--ok:#1d7a3c;--on-ok:#fff;--perigo:#b3261e;--foco:rgba(43,63,214,.28);--ctl:#857b6c;
+  --sombra-alta:0 24px 60px rgba(28,25,23,.28);
   --r-s:6px;--r-m:10px;--r-g:14px;--pilula:12px;
-  --corpo:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --titulo:"Big Shoulders Display","Arial Narrow","Segoe UI",system-ui,sans-serif;
+  --corpo:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --titulo:"Fraunces",Georgia,"Times New Roman",serif;
   --rail-w:248px;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1a1e;--rail:#0f2227;--card:#14292f;--card2:#1b343b;--tx:#eaf5f1;--mut:#9bb8b3;--line:rgba(160,220,210,.14);--line2:rgba(160,220,210,.32);--ctl:#6f9097;--acc:#ffa733;--on:#1c1000;--ok:#5fe0ac;--on-ok:#06251a;--perigo:#ff8794;--foco:rgba(255,167,51,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0b1a1e;--rail:#0f2227;--card:#14292f;--card2:#1b343b;--tx:#eaf5f1;--mut:#9bb8b3;--line:rgba(160,220,210,.14);--line2:rgba(160,220,210,.32);--ctl:#6f9097;--acc:#ffa733;--on:#1c1000;--ok:#5fe0ac;--on-ok:#06251a;--perigo:#ff8794;--foco:rgba(255,167,51,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14110f;--rail:#1b1714;--card:#231e1a;--card2:#2c2621;--tx:#f5efe4;--mut:#b5aa99;--line:rgba(245,230,200,.13);--line2:rgba(245,230,200,.3);--ctl:#8c8070;--acc:#c8f04a;--on:#141a00;--ok:#7fe3a0;--on-ok:#06251a;--perigo:#ff8c82;--foco:rgba(200,240,74,.4);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14110f;--rail:#1b1714;--card:#231e1a;--card2:#2c2621;--tx:#f5efe4;--mut:#b5aa99;--line:rgba(245,230,200,.13);--line2:rgba(245,230,200,.3);--ctl:#8c8070;--acc:#c8f04a;--on:#141a00;--ok:#7fe3a0;--on-ok:#06251a;--perigo:#ff8c82;--foco:rgba(200,240,74,.4);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}
 :root{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:inherit;margin:0}
@@ -29,7 +26,7 @@ button{cursor:pointer}
 button,a,input,select,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:3px solid var(--tx);outline-offset:3px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-h1,h2,h3{font-family:var(--titulo);font-weight:700;letter-spacing:-.025em;line-height:1.12}
+h1,h2,h3{font-family:var(--titulo);font-weight:700;letter-spacing:-.01em;line-height:1.15;font-optical-sizing:auto}
 h1{font-size:clamp(1.7rem,3.6vw,2.6rem)}
 .sub{color:var(--mut);margin-top:10px;max-width:54ch}
 a{color:var(--tx);text-decoration-thickness:1.5px;text-underline-offset:3px}
@@ -139,7 +136,7 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 .card img{width:100%;height:100%;object-fit:cover;display:block}
 .ph{width:100%;height:100%;display:grid;place-items:center;background:linear-gradient(160deg,hsl(var(--h) 42% 30%),hsl(calc(var(--h) + 30) 40% 16%))}
 .ph span{font-family:var(--titulo);font-weight:800;font-size:3.2rem;line-height:1;color:rgba(255,255,255,.9)}
-.sel{position:absolute;top:10px;left:10px;background:rgba(18,15,30,.82);color:#fff;font-weight:700;font-size:.74rem;padding:4px 10px;border-radius:var(--pilula);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.sel{position:absolute;top:10px;left:10px;background:rgba(20,17,15,.82);color:#fff;font-weight:700;font-size:.74rem;padding:4px 10px;border-radius:var(--pilula);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .sel.ok{background:var(--ok);color:var(--on-ok)}
 .sel.dir{left:auto;right:10px}
 /* linha do tempo: o progresso como num player de vídeo */
@@ -193,7 +190,7 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 /* ----- painel de detalhes (diálogo): lateral no computador, folha no celular ----- */
 dialog{--dp:28px;background:var(--card);color:var(--tx);border:0;padding:var(--dp);width:min(580px,100vw);max-width:100vw;height:100vh;height:100dvh;max-height:none;overflow:auto;
   margin:0 0 0 auto;border-radius:var(--r-g) 0 0 var(--r-g);box-shadow:var(--sombra-alta);overscroll-behavior:contain}
-dialog::backdrop{background:rgba(10,7,20,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+dialog::backdrop{background:rgba(12,9,7,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 dialog h2{font-size:1.4rem}
 .hero{position:relative;height:190px;margin:calc(-1 * var(--dp)) calc(-1 * var(--dp)) -92px;overflow:hidden;background:linear-gradient(150deg,hsl(var(--h,260) 36% 26%),hsl(calc(var(--h,260) + 40) 36% 12%))}
 .hero::before{content:"";position:absolute;inset:-24px;background:var(--cover) center/cover;filter:blur(26px) saturate(1.3);opacity:.6}
@@ -587,12 +584,12 @@ button,.chip,.ep,.mais,.btn,.menu a{-webkit-user-select:none;user-select:none}
 /* profundidade: dois brilhos suaves no fundo (fixos, atrás de tudo) */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:radial-gradient(900px 460px at 82% -10%,color-mix(in srgb,var(--acc) 10%,transparent),transparent 70%),
-             radial-gradient(760px 420px at 0% 108%,color-mix(in srgb,#7c5cff 11%,transparent),transparent 70%)}
+             radial-gradient(760px 420px at 0% 108%,color-mix(in srgb,#ff6b4a 11%,transparent),transparent 70%)}
 
 /* capas: anel fino, sombra macia, véu embaixo (o +1 e os selos ficam legíveis) e zoom leve no hover */
 .card .capa{box-shadow:0 8px 22px -12px rgba(0,0,0,.45);transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
 .card .capa::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);background:linear-gradient(to top,rgba(10,7,20,.5),transparent 36%)}
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);background:linear-gradient(to top,rgba(12,9,7,.5),transparent 36%)}
 .card .capa img{transition:opacity .35s ease,transform .6s var(--ease)}
 .sel{z-index:1}
 @media (hover:hover){
@@ -628,7 +625,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
 
 /* painel de detalhes */
 dialog{box-shadow:var(--sombra-alta),-1px 0 0 var(--line)}
-dialog::backdrop{background:rgba(10,7,20,.56)}
+dialog::backdrop{background:rgba(12,9,7,.56)}
 
 /* telas grandes: mais espaço e capas um pouco maiores */
 .grade{grid-template-columns:repeat(auto-fill,minmax(clamp(150px,13.5vw,196px),1fr))}
@@ -654,16 +651,17 @@ dialog::backdrop{background:rgba(10,7,20,.56)}
   .avisos{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 }
 
-/* ===== v6: identidade "Sinal" (camada sobre a base) ===== */
+/* ===== v7: identidade "Letreiro" (camada sobre a base) ===== */
 body{background:radial-gradient(900px 420px at 78% -8%,color-mix(in srgb,var(--acc) 10%,transparent),transparent 70%) no-repeat,var(--bg)}
-h1,h2,h3,.marca,.auth-nome,.stat b,.n,.cc-ep,.mais-n,.prox-data b{letter-spacing:0;font-weight:800}
-h1{font-size:clamp(2.5rem,5.4vw,4rem);line-height:.95}
-.cabeca h1{font-size:clamp(2.3rem,9vw,3.6rem)}
+h1,h2,h3,.marca,.auth-nome,.stat b,.n,.cc-ep,.mais-n,.prox-data b{letter-spacing:-.015em;font-weight:700;font-optical-sizing:auto}
+.auth-nome,.cc-ep,.n{font-weight:800}
+h1{font-size:clamp(2.3rem,5vw,3.7rem);line-height:1.02}
+.cabeca h1{font-size:clamp(2.1rem,8vw,3.3rem)}
 .sec-tit{font-size:1.5rem}
-.marca{font-size:1.45rem}
-.auth-nome{font-size:clamp(3.4rem,12vw,7rem);line-height:.9}
+.marca{font-size:1.35rem}
+.auth-nome{font-size:clamp(3rem,11vw,6.4rem);line-height:1;letter-spacing:-.035em}
 .card h3,.card.cc h3{font-family:var(--corpo)}
-.stat b{font-size:2.3rem}
+.stat b{font-size:2.2rem;font-variant-numeric:lining-nums tabular-nums}
 .menu a{font-weight:600}
 .menu a[aria-current=page]{color:var(--tx)}
 @media (min-width:900px){
@@ -684,17 +682,17 @@ select{border-radius:var(--r-m)}
 .linha i,.barra i{border-radius:0}
 .card.cc .linha{height:6px;margin-top:10px}
 .card.cc-hero .linha{height:12px;margin:16px 0 10px}
-/* destaque "no ar": o episódio vira um chyron de transmissão */
+/* destaque "no ar": o episódio vira uma plaquinha de letreiro */
 .card.cc-hero{border-radius:var(--r-g);border:1.5px solid var(--line2)}
 .cc-ep{display:inline-block;margin:12px 0 4px;padding:.02em .2em .06em;border-radius:var(--r-s);background:var(--acc);color:var(--on);font-size:clamp(2.6rem,6vw,4.4rem)}
-.card.cc-hero h3{font-family:var(--titulo);font-size:clamp(1.6rem,3vw,2.3rem);line-height:1}
+.card.cc-hero h3{font-family:var(--titulo);font-size:clamp(1.5rem,2.8vw,2.1rem);line-height:1.1}
 .card.cc-hero .mais-grande{border-radius:var(--r-m);font-weight:800}
 .card.cc-hero .mais-grande .mais-n{font-size:1.9rem}
 /* episódios do painel: teclas numeradas */
 .ep{border-radius:var(--r-s);font-variant-numeric:tabular-nums}
 .ep[aria-pressed=true]+.ep[aria-pressed=false]{box-shadow:0 0 0 3px var(--foco)}
-/* tops: placar condensado */
-.n{font-size:2.8rem;width:58px;font-weight:800}
+/* tops: placar em serifada */
+.n{font-size:2.6rem;width:58px;font-weight:800;font-variant-numeric:lining-nums tabular-nums}
 .top-cab{border-bottom-width:3px}
 .top-cab h2{font-size:1.7rem}
 .top li:nth-child(-n+3) .n{color:var(--acc)}

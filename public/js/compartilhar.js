@@ -5,7 +5,7 @@ import { hue } from './util.js';
 
 const W = 1080,
   H = 1350;
-const COR = { fundo: '#120f1e', card: '#1d1932', tx: '#f3efff', mut: '#a59dc6', acc: '#ff5c6c' };
+const COR = { fundo: '#14110f', card: '#231e1a', tx: '#f5efe4', mut: '#b5aa99', acc: '#c8f04a' };
 
 // Só imagens que a página pode usar (o CSP também barra o resto) e que dá para desenhar no canvas.
 const capaOk = c =>
