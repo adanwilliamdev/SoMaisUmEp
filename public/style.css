@@ -1,21 +1,21 @@
-/* ===== SóMaisUmEp · v7 · "Letreiro" =====
-   Papel e tinta de cartaz de cinema: creme com azul-cobalto de dia; espresso com verde-limão de "luz acesa" à noite.
-   Títulos e números em serifada (Fraunces), texto corrido em DM Sans. Botões e teclas de cantos suaves, episódios em faixa segmentada.
+/* ===== SóMaisUmEp · v8 · "Noturno" =====
+   Interface escura de alto padrão: cinza-grafite com leve toque frio, superfícies um degrau acima do fundo, bordas translúcidas
+   no lugar de sombras pesadas e um único acento violeta. Tipografia só em Inter (títulos em 700, números tabulares).
    Tokens, base, estrutura (barra lateral / app), estante, painel de detalhes, tops, estatísticas, entrar, telas pequenas. */
 
 /* Contraste (WCAG 2.2 AA, conferido por test/acessibilidade.test.js nos dois temas): texto >= 4,5:1; bordas de campos e botões (--ctl) >= 3:1.
    --line/--line2 são só decorativos (divisórias); o que delimita um controle usa --ctl. */
 :root{
-  --bg:#f5f0e6;--rail:#ece5d6;--card:#fffdf8;--card2:#f9f4e9;--tx:#1c1917;--mut:#5b5348;
-  --line:rgba(28,25,23,.12);--line2:rgba(28,25,23,.3);
-  --acc:#2b3fd6;--on:#fff;--ok:#1d7a3c;--on-ok:#fff;--perigo:#b3261e;--foco:rgba(43,63,214,.28);--ctl:#857b6c;
-  --sombra-alta:0 24px 60px rgba(28,25,23,.28);
-  --r-s:6px;--r-m:10px;--r-g:14px;--pilula:12px;
-  --corpo:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --titulo:"Fraunces",Georgia,"Times New Roman",serif;
+  --bg:#f6f6f8;--rail:#fff;--card:#fff;--card2:#f0f0f3;--tx:#18181b;--mut:#52525b;
+  --line:rgba(24,24,27,.09);--line2:rgba(24,24,27,.18);
+  --acc:#6d3fe0;--on:#fff;--ok:#15803d;--on-ok:#fff;--perigo:#b91c1c;--foco:rgba(109,63,224,.28);--ctl:#85858f;
+  --sombra-alta:0 24px 60px rgba(24,24,27,.22);
+  --r-s:8px;--r-m:12px;--r-g:16px;--pilula:12px;
+  --corpo:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --titulo:var(--corpo);
   --rail-w:248px;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14110f;--rail:#1b1714;--card:#231e1a;--card2:#2c2621;--tx:#f5efe4;--mut:#b5aa99;--line:rgba(245,230,200,.13);--line2:rgba(245,230,200,.3);--ctl:#8c8070;--acc:#c8f04a;--on:#141a00;--ok:#7fe3a0;--on-ok:#06251a;--perigo:#ff8c82;--foco:rgba(200,240,74,.4);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#14110f;--rail:#1b1714;--card:#231e1a;--card2:#2c2621;--tx:#f5efe4;--mut:#b5aa99;--line:rgba(245,230,200,.13);--line2:rgba(245,230,200,.3);--ctl:#8c8070;--acc:#c8f04a;--on:#141a00;--ok:#7fe3a0;--on-ok:#06251a;--perigo:#ff8c82;--foco:rgba(200,240,74,.4);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121214;--rail:#16161a;--card:#18181b;--card2:#1f1f23;--tx:#f4f4f5;--mut:#a1a1aa;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);--ctl:#71717a;--acc:#9d7bf9;--on:#14082e;--ok:#4ade80;--on-ok:#052e16;--perigo:#f87171;--foco:rgba(157,123,249,.4);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121214;--rail:#16161a;--card:#18181b;--card2:#1f1f23;--tx:#f4f4f5;--mut:#a1a1aa;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);--ctl:#71717a;--acc:#9d7bf9;--on:#14082e;--ok:#4ade80;--on-ok:#052e16;--perigo:#f87171;--foco:rgba(157,123,249,.4);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}
 :root{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:inherit;margin:0}
@@ -26,7 +26,7 @@ button{cursor:pointer}
 button,a,input,select,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:3px solid var(--tx);outline-offset:3px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-h1,h2,h3{font-family:var(--titulo);font-weight:700;letter-spacing:-.01em;line-height:1.15;font-optical-sizing:auto}
+h1,h2,h3{font-family:var(--titulo);font-weight:700;letter-spacing:-.02em;line-height:1.2}
 h1{font-size:clamp(1.7rem,3.6vw,2.6rem)}
 .sub{color:var(--mut);margin-top:10px;max-width:54ch}
 a{color:var(--tx);text-decoration-thickness:1.5px;text-underline-offset:3px}
@@ -583,8 +583,8 @@ button,.chip,.ep,.mais,.btn,.menu a{-webkit-user-select:none;user-select:none}
 
 /* profundidade: dois brilhos suaves no fundo (fixos, atrás de tudo) */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:radial-gradient(900px 460px at 82% -10%,color-mix(in srgb,var(--acc) 10%,transparent),transparent 70%),
-             radial-gradient(760px 420px at 0% 108%,color-mix(in srgb,#ff6b4a 11%,transparent),transparent 70%)}
+  background:radial-gradient(900px 460px at 82% -10%,color-mix(in srgb,var(--acc) 8%,transparent),transparent 70%),
+             radial-gradient(760px 420px at 0% 108%,color-mix(in srgb,var(--acc) 5%,transparent),transparent 70%)}
 
 /* capas: anel fino, sombra macia, véu embaixo (o +1 e os selos ficam legíveis) e zoom leve no hover */
 .card .capa{box-shadow:0 8px 22px -12px rgba(0,0,0,.45);transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
@@ -651,54 +651,94 @@ dialog::backdrop{background:rgba(12,9,7,.56)}
   .avisos{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 }
 
-/* ===== v7: identidade "Letreiro" (camada sobre a base) ===== */
-body{background:radial-gradient(900px 420px at 78% -8%,color-mix(in srgb,var(--acc) 10%,transparent),transparent 70%) no-repeat,var(--bg)}
-h1,h2,h3,.marca,.auth-nome,.stat b,.n,.cc-ep,.mais-n,.prox-data b{letter-spacing:-.015em;font-weight:700;font-optical-sizing:auto}
-.auth-nome,.cc-ep,.n{font-weight:800}
-h1{font-size:clamp(2.3rem,5vw,3.7rem);line-height:1.02}
-.cabeca h1{font-size:clamp(2.1rem,8vw,3.3rem)}
-.sec-tit{font-size:1.5rem}
-.marca{font-size:1.35rem}
-.auth-nome{font-size:clamp(3rem,11vw,6.4rem);line-height:1;letter-spacing:-.035em}
-.card h3,.card.cc h3{font-family:var(--corpo)}
-.stat b{font-size:2.2rem;font-variant-numeric:lining-nums tabular-nums}
-.menu a{font-weight:600}
+/* ===== v8: identidade "Noturno" (camada sobre a base) ===== */
+body{background:radial-gradient(900px 420px at 78% -8%,color-mix(in srgb,var(--acc) 7%,transparent),transparent 70%) no-repeat,var(--bg);letter-spacing:-.003em}
+
+/* tipografia: Inter; títulos em 700 e tamanhos contidos; números tabulares e alinhados */
+h1,h2,h3,.marca,.auth-nome,.stat b,.n,.cc-ep,.mais-n,.prox-data b{font-weight:700;letter-spacing:-.02em}
+.stat b,.n,.cc-ep,.mais-n,.prox-data b,.ep,.graf text{font-variant-numeric:tabular-nums}
+h1{font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.2}
+.cabeca h1{font-size:clamp(1.5rem,5.5vw,2rem)}
+.sec-tit{font-size:1.15rem}
+.marca{font-size:1.05rem}
+.stat b{font-size:1.6rem}
+.sub,.sin{letter-spacing:0}
+.menu a{font-weight:500}
 .menu a[aria-current=page]{color:var(--tx)}
+
+/* menu lateral: ícones de traço fino; o item ativo ganha um fundo suave na cor de destaque (sem barrinha) */
+.menu .ico{stroke-width:1.6}
+.menu a[aria-current=page] span{font-weight:600}
 @media (min-width:900px){
-  body:not(.deslogado) .menu a[aria-current=page]{background:var(--card);box-shadow:inset 3px 0 0 var(--acc)}
-  body:not(.deslogado) .menu a{border-radius:var(--r-m)}
+  body:not(.deslogado) .menu{gap:2px}
+  body:not(.deslogado) .menu a{border-radius:var(--r-m);padding:11px 14px;gap:12px}
+  body:not(.deslogado) .menu a[aria-current=page]{background:color-mix(in srgb,var(--acc) 12%,transparent);box-shadow:none}
 }
-/* teclas: botões e ícones são retângulos de cantos suaves, não pílulas */
-.icone,.mais{border-radius:var(--r-m)}
-.btn{font-weight:700;letter-spacing:.005em}
-.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:var(--on)}
-select{border-radius:var(--r-m)}
-.card .capa{border-radius:var(--r-s)}
+.deslogado .marca{visibility:hidden}
+
+/* profundidade por borda fina e translúcida, não por sombra pesada */
+.card .capa{border-radius:14px;box-shadow:0 8px 20px -12px rgba(0,0,0,.5)}
 .card .capa:hover{transform:translateY(-3px)}
+.card.cc,.graf-caixa,.auth-form{border:1px solid var(--line)}
+.card.cc-hero{border:1px solid var(--line);border-radius:var(--r-g);box-shadow:none}
+.icone{border-radius:var(--r-m)}
+select{border-radius:var(--r-m)}
+.btn{font-weight:600}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:var(--on)}
+
+/* botão +1: vidro fosco sobre a capa (escuro semitransparente com desfoque) */
+.mais{border-radius:var(--r-m);background:rgba(18,18,20,.5);color:#fff;border:1px solid rgba(255,255,255,.22);
+  -webkit-backdrop-filter:blur(12px) saturate(1.5);backdrop-filter:blur(12px) saturate(1.5);box-shadow:0 8px 20px -8px rgba(0,0,0,.5)}
+.mais:hover{background:rgba(18,18,20,.66);filter:none}
+/* na lista "continuar assistindo" o botão fica sobre o cartão: vidro tingido com o acento */
+.card.cc .mais{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 42%,transparent);
+  box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* o botão grande do destaque continua sólido: é a ação principal da tela */
+.card.cc-hero .mais.mais-grande{background:var(--acc);color:var(--on);border:1px solid var(--acc);font-weight:700;border-radius:var(--r-m)}
+.card.cc-hero .mais.mais-grande:hover{filter:brightness(1.08)}
+.card.cc-hero .mais-grande .mais-n{font-size:1.3rem}
+
 /* faixa de episódios: um segmento por episódio (até 40; acima disso, cada segmento agrupa vários) */
-.linha,.barra{--n:20;height:8px;border-radius:0;background:color-mix(in srgb,var(--tx) 18%,transparent);
+.linha,.barra{--n:20;height:6px;border-radius:0;background:color-mix(in srgb,var(--tx) 14%,transparent);
   -webkit-mask:repeating-linear-gradient(90deg,#000 0 calc(100%/var(--n) - 2px),transparent 0 calc(100%/var(--n)));
   mask:repeating-linear-gradient(90deg,#000 0 calc(100%/var(--n) - 2px),transparent 0 calc(100%/var(--n)))}
 .linha i,.barra i{border-radius:0}
-.card.cc .linha{height:6px;margin-top:10px}
-.card.cc-hero .linha{height:12px;margin:16px 0 10px}
-/* destaque "no ar": o episódio vira uma plaquinha de letreiro */
-.card.cc-hero{border-radius:var(--r-g);border:1.5px solid var(--line2)}
-.cc-ep{display:inline-block;margin:12px 0 4px;padding:.02em .2em .06em;border-radius:var(--r-s);background:var(--acc);color:var(--on);font-size:clamp(2.6rem,6vw,4.4rem)}
-.card.cc-hero h3{font-family:var(--titulo);font-size:clamp(1.5rem,2.8vw,2.1rem);line-height:1.1}
-.card.cc-hero .mais-grande{border-radius:var(--r-m);font-weight:800}
-.card.cc-hero .mais-grande .mais-n{font-size:1.9rem}
-/* episódios do painel: teclas numeradas */
-.ep{border-radius:var(--r-s);font-variant-numeric:tabular-nums}
+.card.cc .linha{height:5px;margin-top:10px}
+.card.cc-hero .linha{height:8px;margin:16px 0 10px}
+
+/* destaque "no ar": a plaquinha do episódio, em escala contida */
+.cc-ep{display:inline-block;margin:10px 0 2px;padding:.04em .22em .08em;border-radius:var(--r-s);background:var(--acc);color:var(--on);font-weight:800;font-size:clamp(1.9rem,4.2vw,2.8rem)}
+.card.cc-hero h3{font-family:var(--titulo);font-size:clamp(1.2rem,2.2vw,1.55rem);line-height:1.2}
+/* episódios do painel */
+.ep{border-radius:var(--r-s)}
 .ep[aria-pressed=true]+.ep[aria-pressed=false]{box-shadow:0 0 0 3px var(--foco)}
-/* tops: placar em serifada */
-.n{font-size:2.6rem;width:58px;font-weight:800;font-variant-numeric:lining-nums tabular-nums}
-.top-cab{border-bottom-width:3px}
-.top-cab h2{font-size:1.7rem}
+/* tops */
+.n{font-size:1.7rem;width:44px;font-weight:700}
+.top-cab{border-bottom-width:1px}
+.top-cab h2{font-size:1.35rem}
 .top li:nth-child(-n+3) .n{color:var(--acc)}
 .prox-data{border-radius:var(--r-s)}
 dialog{border-radius:var(--r-g) 0 0 var(--r-g)}
-.graf rect{rx:0}
-.auth-form{border:1.5px solid var(--line2)}
-@media (max-width:899px){dialog{border-radius:var(--r-g) var(--r-g) 0 0}.n{font-size:2.2rem;width:44px}}
-@media (max-width:480px){.cc-ep{font-size:clamp(2.4rem,14vw,3.2rem)}.card.cc-hero h3{font-size:1.5rem}}
+
+/* estatísticas: grade simétrica com divisórias quase invisíveis; o número principal ocupa a primeira linha, em escala contida */
+.stats.grande{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:20px 0 22px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-g);overflow:hidden}
+.stats.grande .stat{display:block;padding:20px 22px;background:var(--card);border-top:0}
+.stats.grande .stat b{display:block;font-size:1.7rem;line-height:1.1}
+.stats.grande .stat span{display:block;margin-top:6px;font-size:.88rem}
+.stats.grande .stat:first-child{grid-column:1/-1;padding:24px 22px}
+.stats.grande .stat:first-child b{font-size:clamp(2.2rem,5vw,3rem);letter-spacing:-.03em;line-height:1}
+.stats.grande .stat:first-child span{font-size:.95rem}
+@media (max-width:899px){.stats.grande{grid-template-columns:repeat(2,minmax(0,1fr))}.stats.grande .stat b{font-size:1.5rem}}
+
+/* entrar: marca na horizontal, no topo do cartão, sem título gigante */
+.auth{display:block;max-width:420px;margin:clamp(16px,8vh,88px) auto 0}
+.auth-form{padding:28px 26px;border-radius:var(--r-g)}
+.auth-marca{display:flex;flex-direction:row;align-items:center;gap:12px;margin:0}
+.auth-logo{width:40px;height:40px;border-radius:12px}
+.auth-nome{font-size:1.25rem;font-weight:800;line-height:1;white-space:nowrap}
+.auth-frase{margin:12px 0 22px;font-size:.92rem;max-width:none}
+.auth-form h1{font-size:1.35rem}
+.auth-form .sub{margin:6px 0 18px}
+@media (min-width:860px){.auth{display:block;gap:0}.auth-marca{gap:12px}.auth-logo{width:40px;height:40px;border-radius:12px}.auth-nome{font-size:1.25rem}}
+@media (max-width:899px){dialog{border-radius:var(--r-g) var(--r-g) 0 0}.n{font-size:1.5rem;width:38px}}
+@media (max-width:480px){.cc-ep{font-size:clamp(1.8rem,10vw,2.3rem)}.card.cc-hero h3{font-size:1.25rem}.auth-form{padding:24px 20px}}

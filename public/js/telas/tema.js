@@ -13,7 +13,7 @@ export function pintaTema() {
   b.innerHTML = d ? SOL : LUA;
   b.setAttribute('aria-label', d ? 'Mudar para o tema claro' : 'Mudar para o tema escuro');
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.content = d ? '#14110f' : '#f5f0e6';
+  if (m) m.content = d ? '#121214' : '#f6f6f8';
 }
 
 function alternarTema() {
