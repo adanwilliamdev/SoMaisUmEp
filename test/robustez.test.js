@@ -19,7 +19,7 @@ const falsos = {
           return Promise.reject(e);
         }
       };
-      sql.transaction = (qs) => Promise.all(qs);
+      sql.transaction = qs => Promise.all(qs);
       return sql;
     },
   },
@@ -61,10 +61,7 @@ const novoRes = () => ({
     return this;
   },
 });
-async function chamar(
-  arquivo,
-  { metodo = 'POST', body, query = {}, headers = {}, logado = true } = {},
-) {
+async function chamar(arquivo, { metodo = 'POST', body, query = {}, headers = {}, logado = true } = {}) {
   const res = novoRes();
   await require('../api/' + arquivo)(
     {
@@ -77,20 +74,13 @@ async function chamar(
   );
   return res;
 }
-const sessao = (extra) => (t, v) =>
-  /select id, nome, email, versao from usuarios/.test(t)
-    ? [USER]
-    : extra
-      ? extra(t, v) || []
-      : [];
+const sessao = extra => (t, v) => (/select id, nome, email, versao from usuarios/.test(t) ? [USER] : extra ? extra(t, v) || [] : []);
 
 /* ---------- origem ---------- */
 test('origemOk: GET sempre passa; POST sem Origin passa; POST do mesmo site passa', () => {
   assert.ok(origemOk({ method: 'GET', headers: { origin: 'https://mau.com' } }));
   assert.ok(origemOk({ method: 'POST', headers: { host: 'app.com' } }));
-  assert.ok(
-    origemOk({ method: 'POST', headers: { host: 'app.com', origin: 'https://app.com' } }),
-  );
+  assert.ok(origemOk({ method: 'POST', headers: { host: 'app.com', origin: 'https://app.com' } }));
   assert.ok(
     origemOk({
       method: 'POST',
@@ -99,9 +89,7 @@ test('origemOk: GET sempre passa; POST sem Origin passa; POST do mesmo site pass
   );
 });
 test('origemOk: POST de outro site, Origin inválido ou sec-fetch-site cross-site são recusados', () => {
-  assert.ok(
-    !origemOk({ method: 'POST', headers: { host: 'app.com', origin: 'https://mau.com' } }),
-  );
+  assert.ok(!origemOk({ method: 'POST', headers: { host: 'app.com', origin: 'https://mau.com' } }));
   assert.ok(!origemOk({ method: 'POST', headers: { host: 'app.com', origin: 'null' } }));
   assert.ok(
     !origemOk({
@@ -136,27 +124,19 @@ test('endpoint de escrita aceita o mesmo Origin', async () => {
 });
 
 /* ---------- cotas ---------- */
-const titulo = (id) => ({ id, nome: 'X', tipo: 'tv', eps: [3], vis: [0] });
+const titulo = id => ({ id, nome: 'X', tipo: 'tv', eps: [3], vis: [0] });
 test('sync: recusa título novo acima da cota (413), mas aceita atualizar os já existentes', async () => {
-  banco.resposta = sessao((t) =>
-    /from titulos where user_id = \? *$/.test(t) && /count\(\*\)::int as n/.test(t)
-      ? [{ n: 5000, ja: 0 }]
-      : [],
-  );
+  banco.resposta = sessao(t => (/from titulos where user_id = \? *$/.test(t) && /count\(\*\)::int as n/.test(t) ? [{ n: 5000, ja: 0 }] : []));
   const cheio = await chamar('sync', { body: { titulos: [titulo('novo')] } });
   assert.equal(cheio.code, 413);
   assert.match(cheio.body.erro, /5000/);
 
-  banco.resposta = sessao((t) =>
-    /count\(\*\)::int as n/.test(t) ? [{ n: 5000, ja: 1 }] : [{ id: 'velho', atualizado: 1 }],
-  );
+  banco.resposta = sessao(t => (/count\(\*\)::int as n/.test(t) ? [{ n: 5000, ja: 1 }] : [{ id: 'velho', atualizado: 1 }]));
   const ok = await chamar('sync', { body: { titulos: [titulo('velho')] } });
   assert.equal(ok.code, 200);
 });
 test('sync: recusa Top novo acima da cota', async () => {
-  banco.resposta = sessao((t) =>
-    /from tops where user_id/.test(t) && /count\(\*\)::int as n/.test(t) ? [{ n: 200, ja: 0 }] : [],
-  );
+  banco.resposta = sessao(t => (/from tops where user_id/.test(t) && /count\(\*\)::int as n/.test(t) ? [{ n: 200, ja: 0 }] : []));
   const r = await chamar('sync', { body: { tops: [{ id: 'p1', nome: 'T', itens: [] }] } });
   assert.equal(r.code, 413);
 });
@@ -185,16 +165,9 @@ test('api: pedido que passa do prazo vira erro de rede (não trava a fila)', asy
   const { api } = await import('../public/js/api.js');
   const antes = globalThis.fetch;
   globalThis.fetch = (url, { signal }) =>
-    new Promise((_, no) =>
-      signal.addEventListener('abort', () =>
-        no(Object.assign(new Error('abortado'), { name: 'AbortError' })),
-      ),
-    );
+    new Promise((_, no) => signal.addEventListener('abort', () => no(Object.assign(new Error('abortado'), { name: 'AbortError' }))));
   try {
-    await assert.rejects(
-      api('/api/dados', { prazo: 20 }),
-      (e) => e.rede === true && e.demorou === true && /demorou/.test(e.message),
-    );
+    await assert.rejects(api('/api/dados', { prazo: 20 }), e => e.rede === true && e.demorou === true && /demorou/.test(e.message));
   } finally {
     globalThis.fetch = antes;
   }
@@ -206,13 +179,13 @@ test('api: falha de rede e 401 continuam com as flags de sempre', async () => {
     globalThis.fetch = async () => {
       throw new TypeError('Failed to fetch');
     };
-    await assert.rejects(api('/x'), (e) => e.rede === true && !e.demorou);
+    await assert.rejects(api('/x'), e => e.rede === true && !e.demorou);
     globalThis.fetch = async () => ({
       status: 401,
       ok: false,
       json: async () => ({ erro: 'Não autorizado' }),
     });
-    await assert.rejects(api('/x'), (e) => e.auth === true);
+    await assert.rejects(api('/x'), e => e.auth === true);
   } finally {
     globalThis.fetch = antes;
   }
@@ -226,7 +199,11 @@ test('erros globais: avisa no máximo uma vez por janela e ignora erros de rede/
   const log = console.error;
   console.error = () => {};
   try {
-    instalarErros((m) => avisos.push(m), alvo, () => t);
+    instalarErros(
+      m => avisos.push(m),
+      alvo,
+      () => t,
+    );
     ev.error({ message: 'boom', error: new Error('boom') });
     ev.error({ message: 'boom2' });
     assert.equal(avisos.length, 1);
