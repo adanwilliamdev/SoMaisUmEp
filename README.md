@@ -210,6 +210,9 @@ A importação utiliza a API do TMDb para localizar os títulos. Duplicados são
 - Alteração de senha e e-mail.
 - Encerramento de sessões em todos os dispositivos.
 - Exclusão completa da conta e dos respectivos dados.
+- Checagem de `Origin` em toda requisição que altera dados (defesa extra contra CSRF, além do cookie `SameSite=Strict`).
+- Cotas por conta: até 5.000 títulos e 200 listas Top.
+- Verificação de saúde pública para monitoramento: `GET /api/dados?r=saude` (200 ou 503, sem expor detalhes).
 
 ### ♿ Acessibilidade
 
@@ -268,6 +271,8 @@ A aplicação implementa mecanismos para sincronização entre dispositivos.
 - Preservação do maior progresso de episódios por temporada.
 - Controle de versão para exclusões.
 - Salvamento com novas tentativas automáticas.
+- Prazo de 25 s por requisição: uma conexão pendurada não trava a fila de salvamento.
+- Tratamento global de erros inesperados, com aviso curto ao usuário e detalhe no console.
 - ETag para evitar consultas desnecessárias à biblioteca.
 
 ### Cache e funcionamento offline

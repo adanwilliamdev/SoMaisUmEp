@@ -1,5 +1,10 @@
 const { db, rota } = require('./_lib');
 const V = require('./_validar');
+const { erro } = require('./_erro');
+
+// Cotas por usuário: sem elas, uma conta (ou um script) poderia encher o banco. Só contam títulos/tops NOVOS.
+const MAX_TITULOS = 5000,
+  MAX_TOPS = 200;
 
 // Cada título/top carrega "base": a versão (campo `atualizado`) que o navegador conhecia.
 // Vale também para exclusões (del: [{ id, base }]). Se outro aparelho gravou depois, a linha não é alterada nem apagada e o id volta em `conflitos`;
@@ -15,6 +20,20 @@ module.exports = rota('POST', async (req, res, u) => {
     agora = Date.now();
   const idsDelT = delT.map(x => x.id),
     idsDelP = delP.map(x => x.id);
+
+  if (T.length) {
+    const [c] = await sql`
+      select count(*)::int as n, count(*) filter (where id = any(${T.map(t => t.id)}))::int as ja
+      from titulos where user_id = ${u.id}`;
+    if (c && c.n + (T.length - c.ja) > MAX_TITULOS)
+      throw erro(`Limite de ${MAX_TITULOS} títulos por conta atingido. Remova alguns antes de adicionar outros.`, 413);
+  }
+  if (P.length) {
+    const [c] = await sql`
+      select count(*)::int as n, count(*) filter (where id = any(${P.map(t => t.id)}))::int as ja
+      from tops where user_id = ${u.id}`;
+    if (c && c.n + (P.length - c.ja) > MAX_TOPS) throw erro(`Limite de ${MAX_TOPS} listas Top por conta atingido.`, 413);
+  }
 
   // Capas antigas no Blob (para apagar o arquivo se a capa mudar ou o título for excluído)
   const antigas = {};

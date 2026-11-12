@@ -4,6 +4,7 @@ import { L, achar, carregar, ligar, ligarRede, recarregarSuave } from './loja.js
 import { lancamento, proximosLancamentos, hojeISO } from './regras.js';
 import * as V from './views.js';
 import { migrarCapas } from './capas.js';
+import { instalarErros } from './erros.js';
 import { atualizarAutomatico } from './tmdbsync.js';
 import { app, dlg, ctx, gancho, aba, tipoAtual, naLista, revela } from './telas/ctx.js';
 import * as estante from './telas/estante.js';
@@ -18,6 +19,7 @@ import * as importar from './telas/importar.js';
 import * as tema from './telas/tema.js';
 import * as notificacoes from './telas/notificacoes.js';
 
+instalarErros(aviso);
 observarEstilos(); // aplica os estilos vindos de data-* (o CSP não aceita style="" no HTML)
 
 /* ---------- renderização ---------- */
