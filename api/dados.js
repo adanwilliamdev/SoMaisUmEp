@@ -52,9 +52,36 @@ const dados = rota('GET', async (req, res, u) => {
   });
 });
 
-// GET = a biblioteca (acima); GET ?r=push e POST = notificações push (_push.js). Um só arquivo para caber no limite
+// Health check (GET ?r=saude): público e sem cache, para monitoramento. Nunca repassa a mensagem de erro do banco.
+async function saude(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const config = {
+    sessao: !!process.env.SESSION_SECRET,
+    banco: !!process.env.DATABASE_URL,
+    blob: !!process.env.BLOB_READ_WRITE_TOKEN,
+  };
+  const versao = String(process.env.VERCEL_GIT_COMMIT_SHA || 'dev')
+    .slice(0, 7)
+    .replace(/[^\w-]/g, '');
+  let banco = 'ok';
+  try {
+    if (!config.banco) throw new Error('sem DATABASE_URL');
+    await db()`select 1`;
+  } catch (e) {
+    console.error('saude', e.message);
+    banco = 'erro';
+  }
+  const ok = banco === 'ok' && config.sessao;
+  res.status(ok ? 200 : 503).json({ ok, banco, config, versao });
+}
+
+// GET = a biblioteca (acima); GET ?r=saude (health check), GET ?r=push e POST = notificações push (_push.js). Um só arquivo para caber no limite
 // de funções da Vercel (plano Hobby: 12).
 module.exports = roteador({
-  GET: (req, res) => (req.query && req.query.r === 'push' ? require('./_push').estado(req, res) : dados(req, res)),
+  GET: (req, res) => {
+    const r = req.query && req.query.r;
+    if (r === 'saude') return saude(req, res);
+    return r === 'push' ? require('./_push').estado(req, res) : dados(req, res);
+  },
   POST: (req, res) => require('./_push').comando(req, res),
 });
