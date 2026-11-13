@@ -12,11 +12,13 @@ const nomeTipo = tipo => (tipo === 'movie' ? 'filmes' : 'séries');
 function itemRadar(x, tipo, sementes) {
   const tem = naEstante(L.series, tipo, x.id);
   // Um motivo por semente; a frase usa o que você realmente fez com aquele título (concluiu, nota).
-  const frases = (x.porque || [])
-    .map(m => frasePorque(m, sementes.find(s => s.tmdb === m.seed)))
-    .filter(Boolean)
-    .slice(0, 2);
-  const onde = (x.onde || []).length ? `<span class="onde-selo" title="Onde assistir no Brasil">▶ ${esc(x.onde.join(' · '))}</span>` : '';
+  const frases = [];
+  for (const m of x.porque || []) {
+    const f = frasePorque(m, sementes.find(s => s.tmdb === m.seed));
+    if (f && frases.length < 2) frases.push(f);
+  }
+  const servicos = (x.onde || []).join(' · ');
+  const onde = servicos ? `<span class="onde-selo" title="Onde assistir no Brasil">▶ ${esc(servicos)}</span>` : '';
   return `<article class="radar-item" data-tid="${esc(x.id)}">
     <button class="capa" data-act="desc-abrir" aria-label="Ver ${esc(x.nome)}">${capa(x.nome, x.poster)}${tem ? '<span class="sel ok">Na estante</span>' : ''}</button>
     <div class="radar-info">
@@ -41,12 +43,15 @@ function blocoDna(dna, sementes, tipo) {
 export function htmlDescobrir(tipo, d) {
   const sementes = sementesRadar(L.series, tipo);
   const r = d && d.radar;
-  if (r === null || r === undefined || !sementes.length)
+  if (!r || !sementes.length) {
     return `<div class="vazio">O radar ainda não tem de onde partir.<br><small>Conclua ou avalie com nota 7 ou mais ao menos um ${tipo === 'movie' ? 'filme' : 'título'} ligado ao TMDb e as sugestões aparecem aqui, sempre dizendo por quê.</small></div>`;
-  if (r === 'carregando')
+  }
+  if (r === 'carregando') {
     return `<div class="radar-lista" aria-busy="true">${Array.from({ length: 4 }, () => '<div class="radar-item"><div class="sk sk-capa"></div><div class="radar-info"><div class="sk sk-l1"></div><div class="sk sk-l1"></div></div></div>').join('')}</div>`;
-  if (r === 'erro')
+  }
+  if (r === 'erro') {
     return '<p class="aviso">Não foi possível montar o radar agora. <button class="btn sec mini" data-act="desc-recarregar">Tentar de novo</button></p>';
+  }
   const lista = (r.resultados || []).filter(x => !naEstante(L.series, tipo, x.id));
   const corpo = lista.length
     ? `<div class="radar-lista">${lista.map(x => itemRadar(x, tipo, sementes)).join('')}</div>`
