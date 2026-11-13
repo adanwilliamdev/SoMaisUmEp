@@ -1,28 +1,31 @@
-// Descobrir: "em alta" e "parecidos" do TMDb, detalhe de um título do TMDb e adicionar à estante.
+// Descobrir: radar de afinidade pessoal (cruza só com o seu histórico), detalhe de um título do TMDb e adicionar à estante.
 import { $, uid, aviso, avisoDesfazer } from '../util.js';
 import { L, save } from '../loja.js';
-import { acharDuplicado, sementes } from '../regras.js';
+import { acharDuplicado, sementesRadar, idsRadar } from '../regras.js';
 import * as V from '../views.js';
-import { ondeAssistir, emAlta, parecidos, detalheTmdb } from '../tmdbsync.js';
+import { ondeAssistir, radar, detalheTmdb } from '../tmdbsync.js';
 import { dlg, ctx, gancho, onde, aba, revela } from './ctx.js';
 
-const desc = { tv: null, movie: null }; // por tipo: { alta, parecidos } (lista, 'carregando', 'erro' ou null); guardado só durante a sessão
+const desc = { tv: null, movie: null }; // por tipo: { chave, radar } (radar: dados, 'carregando', 'erro' ou null); guardado só durante a sessão
 let descAberto = null; // { x, tipo }: título do TMDb aberto no painel
 
 export const limparDescobrir = () => {
   desc.tv = desc.movie = null;
 };
 
-export const descDados = () => desc[V.UI.descTipo] || { alta: 'carregando', parecidos: sementes(L.series, V.UI.descTipo).length ? 'carregando' : null };
+// A chave muda quando as sementes mudam (você concluiu ou avaliou algo): aí o radar é refeito.
+const chaveRadar = tipo => idsRadar(sementesRadar(L.series, tipo)).join(',');
+
+export const descDados = () => {
+  const tipo = V.UI.descTipo,
+    d = desc[tipo];
+  if (d && d.chave === chaveRadar(tipo)) return d;
+  return { radar: chaveRadar(tipo) ? 'carregando' : null };
+};
 
 const descItem = (tipo, tid) => {
-  const d = desc[tipo] || {};
-  for (const l of [d.parecidos, d.alta])
-    if (Array.isArray(l)) {
-      const x = l.find(y => String(y.id) === String(tid));
-      if (x) return x;
-    }
-  return null;
+  const l = ((desc[tipo] || {}).radar || {}).resultados;
+  return (Array.isArray(l) && l.find(y => String(y.id) === String(tid))) || null;
 };
 
 export function pintaDesc() {
@@ -33,22 +36,20 @@ export function pintaDesc() {
 }
 
 export async function carregaDescobrir(tipo) {
-  if (desc[tipo]) return;
-  const sem = sementes(L.series, tipo).map(s => s.tmdb);
-  const d = (desc[tipo] = { alta: 'carregando', parecidos: sem.length ? 'carregando' : null });
-  const pega = (campo, p) =>
-    p
-      .then(
-        r => {
-          d[campo] = r;
-        },
-        e => {
-          d[campo] = 'erro';
-          if (e.auth) gancho.telaAuth('entrar');
-        },
-      )
-      .then(pintaDesc);
-  await Promise.all([pega('alta', emAlta(tipo)), sem.length ? pega('parecidos', parecidos(tipo, sem)) : null]);
+  const chave = chaveRadar(tipo);
+  if (desc[tipo] && desc[tipo].chave === chave) return;
+  if (!chave) {
+    desc[tipo] = { chave, radar: null };
+    return;
+  }
+  const d = (desc[tipo] = { chave, radar: 'carregando' });
+  try {
+    d.radar = await radar(tipo, chave.split(','));
+  } catch (e) {
+    d.radar = 'erro';
+    if (e.auth) gancho.telaAuth('entrar');
+  }
+  if (desc[tipo] === d) pintaDesc();
 }
 
 function abrirDescDetalhe(x, tipo) {

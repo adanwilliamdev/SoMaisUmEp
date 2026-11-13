@@ -77,11 +77,14 @@ function titulo(x, userId) {
   };
 }
 
+// Nota de rodapé íntima de cada item do top ("Assisti em 2024, maratonei num fim de semana").
+const OBS_MAX = 160;
+
 function top(x) {
   if (!x || !ID.test(x.id || '')) throw erro('Top inválido');
   const itens = (Array.isArray(x.itens) ? x.itens : [])
     .slice(0, 10)
-    .map(i => ({ t: txt(i && i.t, 80), sid: i && ID.test(i.sid || '') ? i.sid : undefined }))
+    .map(i => ({ t: txt(i && i.t, 80), sid: i && ID.test(i.sid || '') ? i.sid : undefined, obs: txt(i && i.obs, OBS_MAX) || undefined }))
     .filter(i => i.t);
   return { id: x.id, nome: txt(x.nome, 60) || 'Top 10', itens, criado: num(x.criado, 0, 8.64e15) ?? Date.now(), base: num(x.base, 0, 8.64e15) };
 }
@@ -126,4 +129,4 @@ function assinaturaPush(a) {
   return { endpoint, p256dh: k.p256dh, auth: k.auth };
 }
 
-module.exports = { ID, txt, num, capaOk, historico, proximo, titulo, top, ids, exclusoes, email, senha, nomeUsuario, assinaturaPush };
+module.exports = { OBS_MAX, ID, txt, num, capaOk, historico, proximo, titulo, top, ids, exclusoes, email, senha, nomeUsuario, assinaturaPush };

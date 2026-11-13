@@ -1,5 +1,6 @@
 const { erro } = require('./_lib');
 const { poster, ano, chamar, resumo, detalhe } = require('./_tmdb');
+const { perfilDe, dnaDe, pontuar, ondeCurto } = require('./_afinidade');
 
 const PAIS = 'BR';
 
@@ -10,6 +11,7 @@ const cache = (res, json, seg = 86400) => {
 };
 
 const IDS = /^\d{1,9}$/;
+const SEMENTE = /^\d{1,9}(:\d{1,2}(\.\d)?)?$/; // "id" ou "id:nota"
 
 // Consultas ao TMDb (GET /api/tmdb?acao=...). Cada uma recebe (req, res, tipo) e responde com cache.
 const consultas = {
@@ -72,6 +74,40 @@ const consultas = {
       .slice(0, 18)
       .map(({ pop, ...x }) => x);
     return cache(res, { resultados: saida }, 21600);
+  },
+
+  // Descobrir (radar de afinidade): ids = títulos que a pessoa viu, no formato "id" ou "id:nota" (nota pessoal 0-10).
+  // Devolve o DNA (diretores, atores e gêneros que se repetem) e candidatos com o motivo de cada um e um atalho de onde assistir.
+  async afinidade(req, res, tipo) {
+    const brutos = [...new Set(String(req.query.ids || '').split(','))].filter(i => SEMENTE.test(i)).slice(0, 6);
+    const sementes = brutos.map(b => {
+      const [id, nota] = b.split(':');
+      return { id: Number(id), peso: nota === undefined ? 0.7 : Math.min(1, Math.max(0.1, Number(nota) / 10)) };
+    });
+    if (!sementes.length) throw erro('Informe títulos do TMDb');
+    const dets = await Promise.allSettled(sementes.map(s => chamar('/' + tipo + '/' + s.id, { append_to_response: 'credits,recommendations' })));
+    if (dets.every(r => r.status === 'rejected')) throw erro('Não foi possível falar com o TMDb.', 502);
+    const boas = [],
+      cands = new Map();
+    dets.forEach((r, k) => {
+      if (r.status !== 'fulfilled') return;
+      const s = { ...sementes[k], perfil: perfilDe(r.value) };
+      boas.push(s);
+      for (const x of ((r.value.recommendations || {}).results || []).slice(0, 20)) {
+        if (sementes.some(y => y.id === x.id)) continue;
+        const c = cands.get(x.id) || { resumo: resumo(x), recomendadoPor: [], pop: x.popularity || 0 };
+        c.recomendadoPor.push(s.id);
+        cands.set(x.id, c);
+      }
+    });
+    // Só os mais indicados ganham a segunda chamada (elenco, direção e onde assistir vêm juntos).
+    const finalistas = [...cands.values()].sort((a, b) => b.recomendadoPor.length - a.recomendadoPor.length || b.pop - a.pop).slice(0, 12);
+    const ext = await Promise.allSettled(finalistas.map(c => chamar('/' + tipo + '/' + c.resumo.id, { append_to_response: 'credits,watch/providers' })));
+    const completos = finalistas.map((c, i) => {
+      const d = ext[i].status === 'fulfilled' ? ext[i].value : {};
+      return { ...c, perfil: perfilDe(d), onde: ondeCurto(d) };
+    });
+    return cache(res, { dna: dnaDe(boas), resultados: pontuar(boas, completos).slice(0, 12) }, 21600);
   },
 };
 

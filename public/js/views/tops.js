@@ -1,10 +1,20 @@
-// Tela dos tops 10.
+// Tela dos tops 10: o Hall da Fama pessoal (rankings seus, cada título com uma nota de rodapé íntima).
 import { esc } from '../util.js';
 import { L, achar } from '../loja.js';
 import { capa } from './comum.js';
+import { OBS_MAX } from '../regras.js';
 
 const SETA_CIMA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
 const SETA_BAIXO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+
+/* ---------- nota de rodapé de cada item ---------- */
+// Texto (ou convite para escrever) e o campo de edição; telas/tops.js troca um pelo outro no lugar, sem redesenhar a lista.
+export const htmlObs = it =>
+  it.obs
+    ? `<button type="button" class="obs-txt" data-act="obs-edit" aria-label="Editar a nota de rodapé de ${esc(it.t)}: ${esc(it.obs)}">${esc(it.obs)}</button>`
+    : `<button type="button" class="obs-add" data-act="obs-edit" aria-label="Escrever uma nota de rodapé para ${esc(it.t)}">+ nota de rodapé</button>`;
+export const htmlObsCampo = it =>
+  `<input type="text" class="obs-in" maxlength="${OBS_MAX}" value="${esc(it.obs || '')}" placeholder="Ex.: Assisti em 2024, maratonei em um fim de semana" aria-label="Nota de rodapé de ${esc(it.t)}">`;
 
 /* ---------- tops ---------- */
 export function viewTops() {
@@ -16,7 +26,8 @@ export function viewTops() {
           const s = it.sid ? achar(it.sid) : null;
           return `<li data-i="${i}"><button class="alca" data-alca aria-label="Arrastar ${esc(it.t)}, posição ${i + 1} de ${t.itens.length}. Setas para cima e para baixo também movem" aria-keyshortcuts="ArrowUp ArrowDown Home End" title="Arraste para reordenar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
         <span class="n">${i + 1}</span><div class="p">${capa(it.t, s && s.capa)}</div><span class="t">${esc(it.t)}</span>
-        <span class="mv"><span class="ord"><button type="button" data-act="sobe" aria-label="Subir ${esc(it.t)} (posição ${i + 1} de ${t.itens.length})"${i === 0 ? ' disabled' : ''}>${SETA_CIMA}</button><button type="button" data-act="desce" aria-label="Descer ${esc(it.t)} (posição ${i + 1} de ${t.itens.length})"${i === t.itens.length - 1 ? ' disabled' : ''}>${SETA_BAIXO}</button></span><button type="button" data-act="tira" aria-label="Remover ${esc(it.t)}">✕</button></span></li>`;
+        <span class="mv"><span class="ord"><button type="button" data-act="sobe" aria-label="Subir ${esc(it.t)} (posição ${i + 1} de ${t.itens.length})"${i === 0 ? ' disabled' : ''}>${SETA_CIMA}</button><button type="button" data-act="desce" aria-label="Descer ${esc(it.t)} (posição ${i + 1} de ${t.itens.length})"${i === t.itens.length - 1 ? ' disabled' : ''}>${SETA_BAIXO}</button></span><button type="button" data-act="tira" aria-label="Remover ${esc(it.t)}">✕</button></span>
+        <div class="obs">${htmlObs(it)}</div></li>`;
         })
         .join('');
       return `<section class="top" data-top="${esc(t.id)}" data-i="${Math.min(n, 8)}">
@@ -26,8 +37,8 @@ export function viewTops() {
     </section>`;
     })
     .join('');
-  return `<div class="cabeca"><div><h1>Meus tops 10</h1>
-    <p class="sub">Monte rankings do seu jeito. Arraste a alça ⋮⋮ ou use as setas ▲▼ para mudar a posição.</p></div></div>
-    <div class="nova-top"><input type="text" id="nt" maxlength="60" placeholder="Nome do top (ex.: Melhores séries de 2026)" aria-label="Nome do novo top"><button class="btn" data-act="novo-top">Criar</button></div>
-    ${L.tops.length ? `<div class="tops">${cards}</div>` : '<div class="vazio">Nenhum top criado ainda.</div>'}${dl}`;
+  return `<div class="cabeca"><div><h1>Meu Hall da Fama</h1>
+    <p class="sub">Seus rankings, só com a sua opinião. Arraste a alça ⋮⋮ ou use as setas ▲▼ para mudar a posição e deixe uma nota de rodapé em cada título para lembrar do que ele significou.</p></div></div>
+    <div class="nova-top"><input type="text" id="nt" maxlength="60" placeholder="Nome do ranking (ex.: Melhores séries de 2026)" aria-label="Nome do novo ranking"><button class="btn" data-act="novo-top">Criar</button></div>
+    ${L.tops.length ? `<div class="tops">${cards}</div>` : '<div class="vazio">Seu Hall da Fama está vazio. Crie o primeiro ranking acima.</div>'}${dl}`;
 }

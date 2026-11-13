@@ -1,7 +1,9 @@
-// Tops 10: criar, adicionar/remover itens, reordenar (arrastar pela alça ou pelo teclado).
+// Tops 10 (Hall da Fama): criar, adicionar/remover itens, reordenar (arrastar pela alça ou pelo teclado) e notas de rodapé.
 import { $, uid, aviso, anunciar, avisoDesfazer, confirma } from '../util.js';
 import { L, save } from '../loja.js';
 import { gancho } from './ctx.js';
+import { htmlObs, htmlObsCampo } from '../views/tops.js';
+import { OBS_MAX } from '../regras.js';
 
 function addItem(tid) {
   const t = L.tops.find(x => x.id === tid),
@@ -120,8 +122,57 @@ function deslocar(t, de, passo, b) {
   focarItem(t, para, b.dataset.act);
 }
 
+/* ---------- nota de rodapé ---------- */
+const itemDoCampo = campo => {
+  const li = campo.closest('li'),
+    topo = campo.closest('[data-top]'),
+    t = topo && L.tops.find(x => x.id === topo.dataset.top);
+  return { t, it: t && li ? t.itens[+li.dataset.i] : null, caixa: campo.closest('.obs') };
+};
+// Fecha o campo (salvando ou não) e volta ao texto, sem redesenhar a lista (o resto da tela não mexe).
+function fecharObs(campo, salvar, devolverFoco = false) {
+  if (campo.dataset.fim) return;
+  campo.dataset.fim = '1';
+  const { it, caixa } = itemDoCampo(campo);
+  if (!it || !caixa) return;
+  if (salvar) {
+    const v = campo.value.trim().slice(0, OBS_MAX);
+    if ((it.obs || '') !== v) {
+      if (v) it.obs = v;
+      else delete it.obs;
+      save();
+      anunciar(v ? `Nota de rodapé de ${it.t} salva` : `Nota de rodapé de ${it.t} removida`);
+    }
+  }
+  caixa.innerHTML = htmlObs(it);
+  if (devolverFoco) caixa.querySelector('button').focus();
+}
+document.addEventListener('focusout', e => {
+  if (e.target.matches && e.target.matches('.obs-in')) fecharObs(e.target, true);
+});
+document.addEventListener('keydown', e => {
+  if (!e.target.matches || !e.target.matches('.obs-in')) return;
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    fecharObs(e.target, true, true);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation(); // não fecha nada além do campo
+    fecharObs(e.target, false, true);
+  }
+});
+
 /* ---------- eventos ---------- */
 export const acoes = {
+  'obs-edit': ({ t, i, b }) => {
+    const it = t && t.itens[i],
+      caixa = b.closest('.obs');
+    if (!it || !caixa) return;
+    caixa.innerHTML = htmlObsCampo(it);
+    const campo = caixa.querySelector('input');
+    campo.focus();
+    campo.setSelectionRange(campo.value.length, campo.value.length);
+  },
   'novo-top': () => {
     const v = $('#nt').value.trim();
     if (!v) return;

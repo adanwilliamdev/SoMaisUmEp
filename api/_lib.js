@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const { neon } = require('@neondatabase/serverless');
 const { erro } = require('./_erro');
-const { origemOk } = require('./_origem');
 
 const OBRIGATORIAS = ['SESSION_SECRET', 'DATABASE_URL'];
 
@@ -80,7 +79,6 @@ const rota =
     res.setHeader('Cache-Control', 'no-store');
     try {
       if (req.method !== metodo) return res.status(405).json({ erro: 'Método não permitido' });
-      if (!origemOk(req)) return res.status(403).json({ erro: 'Origem não permitida' });
       const falta = OBRIGATORIAS.filter(k => !process.env[k]);
       if (falta.length) throw erro('Variáveis de ambiente ausentes: ' + falta.join(', '), 500);
       let usuario = null;

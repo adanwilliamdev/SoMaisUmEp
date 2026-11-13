@@ -281,14 +281,6 @@ input[type=file]::file-selector-button{margin-right:12px;padding:8px 16px;border
 .top li.arrastando .alca{cursor:grabbing}
 
 /* ----- estatísticas ----- */
-.stats.grande{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 28px;margin:20px 0 22px}
-.stats.grande .stat{display:block;padding:20px 0 4px;border-top:1px solid var(--line2)}
-.stats.grande .stat b{display:block;font-size:2.1rem}
-.stats.grande .stat span{display:block;margin-top:6px;font-size:.88rem}
-.stats.grande .stat:first-child{grid-column:1/-1;border-top:0;padding:0 0 26px}
-.stats.grande .stat:first-child b{font-size:clamp(3.2rem,11vw,7rem);letter-spacing:-.06em;line-height:.95}
-.stats.grande .stat:first-child span{font-size:1.05rem}
-.stats.grande+.aviso{margin:4px 0 34px}
 .graf-caixa{background:var(--card);border-radius:var(--r-g);padding:22px 18px 10px;overflow-x:hidden;margin-bottom:12px}
 .graf{width:100%;max-width:860px;height:auto;display:block;margin:0 auto}
 .graf line{stroke:var(--line2);stroke-width:1.5}
@@ -296,6 +288,49 @@ input[type=file]::file-selector-button{margin-right:12px;padding:8px 16px;border
 .graf rect.vz{fill:var(--line)}
 .graf text{fill:var(--mut);font-size:11px;font-family:var(--corpo)}
 .graf text.v{fill:var(--tx);font-weight:700}
+
+/* ----- descobrir: radar de afinidade ----- */
+.dna{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.dna li{display:inline-flex;align-items:baseline;gap:7px;padding:6px 14px;border-radius:var(--pilula);background:color-mix(in srgb,var(--acc) 14%,transparent);font-weight:700;font-size:.92rem}
+.dna small{color:var(--acc);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}
+.desc-sec{margin-bottom:34px}
+.radar-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(420px,100%),1fr));gap:22px 36px}
+.radar-item{display:flex;gap:16px;min-width:0;align-items:flex-start}
+.radar-item .capa{display:block;flex:none;width:92px;padding:0;border:0;position:relative;aspect-ratio:2/3;border-radius:var(--r-m);overflow:hidden;background:var(--card)}
+.radar-item .capa img{width:100%;height:100%;object-fit:cover;display:block}
+.radar-item .sk-capa{width:92px;flex:none}
+.radar-info{min-width:0;flex:1}
+.radar-info h3{font-size:1.05rem;line-height:1.25}
+.radar-info small{color:var(--mut);display:block;font-size:.84rem;margin-top:2px}
+.porque{margin-top:8px;font-size:.9rem;line-height:1.4}
+.radar-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px}
+.radar-acoes .btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;vertical-align:-1px}
+.onde-selo{font-size:.78rem;font-weight:700;color:var(--mut);border:1px solid var(--line2);border-radius:var(--pilula);padding:3px 10px}
+
+/* ----- tops: hall da fama ----- */
+.top li{flex-wrap:wrap}
+.top li .obs{flex-basis:100%;padding-left:42px;margin-top:-4px}
+.obs-txt,.obs-add{display:block;max-width:100%;padding:2px 0;border:0;background:transparent;text-align:left;font-size:.86rem;line-height:1.4}
+.obs-txt{color:var(--mut);font-style:italic}
+.obs-txt::before{content:"“"}.obs-txt::after{content:"”"}
+.obs-add{color:var(--mut);opacity:.7}
+.obs-txt:hover,.obs-add:hover,.obs-add:focus-visible{color:var(--acc);opacity:1}
+.obs-in{width:100%;padding:7px 12px;border-radius:var(--pilula);font-size:.88rem}
+
+/* ----- estatísticas: história do espectador ----- */
+.wrapped{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:6px 0 40px}
+.w-card{background:var(--card);border-radius:var(--r-g);padding:22px 22px 20px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.w-card small{color:var(--mut);font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+.w-card b{font-family:var(--titulo);font-weight:800;font-size:clamp(1.5rem,4vw,2.1rem);line-height:1.1;letter-spacing:-.03em;color:var(--acc);overflow-wrap:anywhere}
+.w-card p{color:var(--mut);font-size:.94rem;line-height:1.45}
+.w-tempo{grid-column:1/-1;padding:28px 24px 26px}
+.w-tempo b{font-size:clamp(2.6rem,9vw,5.4rem);letter-spacing:-.05em;line-height:.98}
+.stats.numeros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 28px;margin:0 0 22px}
+.stats.numeros .stat{display:block;padding:16px 0 4px;border-top:1px solid var(--line2)}
+.stats.numeros .stat b{display:block;font-size:2rem}
+.stats.numeros .stat span{display:block;margin-top:6px;font-size:.88rem}
+.stats.numeros+.aviso{margin:4px 0 34px}
+@media (max-width:640px){.wrapped{grid-template-columns:1fr}.stats.numeros{grid-template-columns:repeat(2,minmax(0,1fr))}.radar-item .capa,.radar-item .sk-capa{width:78px}}
 
 /* ----- entrar / criar conta ----- */
 .auth{display:grid;grid-template-columns:1fr;gap:28px;max-width:960px;margin:clamp(12px,5vh,56px) auto 0;align-items:center}
@@ -358,8 +393,7 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
   .cabeca .btn.nova>span:first-child{font-size:1.2rem}
   .stats{gap:6px 24px;margin-bottom:26px}
   .stat b{font-size:1.45rem}
-  .stats.grande{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .fila-grade{grid-template-columns:1fr}
+    .fila-grade{grid-template-columns:1fr}
   .ferramentas{gap:10px}
   .busca{flex:1 1 100%;order:1}
   .ordem{flex:1 1 100%;order:2}
@@ -400,8 +434,7 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
   .top li .p{display:none}
   .n{width:42px;font-size:1.6rem}
   .card.cc-hero{padding:18px}
-  .stats.grande .stat b{font-size:1.7rem}
-}
+  }
 @media (pointer:coarse){
   .ep{width:46px;height:46px;font-size:.92rem}
   .eps{gap:8px}
@@ -815,15 +848,7 @@ input[type=text],input[type=number],input[type=password],input[type=search],text
 
 /* --- estatísticas: grade simétrica em um bloco só, divisórias quase invisíveis --- */
 .stat b{font-size:1.6rem;font-weight:700;letter-spacing:-.03em}
-.stats.grande{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:22px 0 18px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-g);overflow:hidden}
-.stats.grande .stat,.stats.grande .stat:first-child{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:22px 24px;background:var(--card);border:0;min-width:0}
-.stats.grande .stat:first-child{grid-column:1/-1}
-.stats.grande .stat b,.stats.grande .stat:first-child b{font-size:1.7rem;line-height:1.1;letter-spacing:-.03em}
-.stats.grande .stat:first-child b{font-size:clamp(2.2rem,5.2vw,2.9rem);line-height:1}
-.stats.grande .stat span,.stats.grande .stat:first-child span{margin:0;font-size:.86rem;color:var(--mut)}
-.stats.grande .stat:first-child span{font-size:.95rem}
-@media (max-width:899px){.stats.grande{grid-template-columns:repeat(2,minmax(0,1fr))}.stats.grande .stat,.stats.grande .stat:first-child{padding:18px 18px}}
-.graf-caixa{padding:22px 18px 10px}
+@media (max-width:899px){.graf-caixa{padding:22px 18px 10px}
 .graf rect{rx:4px}
 .graf line{stroke:var(--line2);stroke-width:1}
 

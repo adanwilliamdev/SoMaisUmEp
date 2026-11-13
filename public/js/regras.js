@@ -242,6 +242,104 @@ export function sementes(series, tipo, max = 5) {
 }
 export const naEstante = (series, tipo, tmdb) => series.some(s => tp(s) === tipo && s.tmdb === tmdb);
 
+/* ---------- radar de afinidade (aba Descobrir) ---------- */
+// Pontos de partida do radar: só o que você de fato viu e curtiu. Entra quem tem nota sua >= 7 ou quem você concluiu sem avaliar
+// (nesse caso vale como 7). Quem tem nota mais alta vem antes; no empate, o concluído e depois o visto mais recentemente.
+export const NOTA_ALTA = 7;
+const pesoRadar = s => (s.nota_pessoal != null ? s.nota_pessoal : NOTA_ALTA);
+export function sementesRadar(series, tipo, max = 6) {
+  return series
+    .filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal != null ? s.nota_pessoal >= NOTA_ALTA : estado(s) === 'fim'))
+    .sort(
+      (a, b) =>
+        pesoRadar(b) - pesoRadar(a) ||
+        (estado(b) === 'fim') - (estado(a) === 'fim') ||
+        (b.visto_em || b.criado || 0) - (a.visto_em || a.criado || 0),
+    )
+    .slice(0, max);
+}
+// Parâmetro `ids` de /api/tmdb?acao=afinidade: "id" ou "id:nota".
+export const idsRadar = sementes => sementes.map(s => (s.nota_pessoal != null ? `${s.tmdb}:${s.nota_pessoal}` : String(s.tmdb)));
+
+const notaTxt = n => String(n).replace('.', ',');
+// "Como você concluiu X e deu nota 10: mesmo diretor (Nolan)."
+export function frasePorque(motivo, semente) {
+  if (!motivo || !semente) return '';
+  const filme = tp(semente) === 'movie',
+    fim = estado(semente) === 'fim';
+  const verbo = fim ? (filme ? 'assistiu' : 'concluiu') : 'viu';
+  const nota = semente.nota_pessoal != null ? ` e deu nota ${notaTxt(semente.nota_pessoal)}` : '';
+  const alvo = {
+    dir: `${filme ? 'mesma direção' : 'mesma criação'} (${motivo.nome})`,
+    ator: `com ${motivo.nome}, que também está lá`,
+    genero: `mesmo clima: ${motivo.nome}`,
+    rec: 'quem gosta de um costuma gostar do outro',
+  }[motivo.tipo];
+  return alvo ? `Como você ${verbo} ${semente.nome}${nota}: ${alvo}.` : '';
+}
+// O que se repete nas suas sementes (diretores, atores, gêneros) em rótulos curtos.
+export function rotulosDna(dna) {
+  if (!dna) return [];
+  const f = (lista, rot) => (lista || []).map(x => ({ rot, nome: x.nome, n: x.n }));
+  return [...f(dna.generos, 'Gênero'), ...f(dna.diretores, 'Direção'), ...f(dna.atores, 'Elenco')];
+}
+
+/* ---------- retrato do espectador (aba Estatísticas) ---------- */
+const MESES_LONGOS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+export const mesPorExtenso = k => {
+  const [a, m] = String(k).split('-');
+  return `${MESES_LONGOS[+m - 1] || ''} de ${a}`;
+};
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+export function perfilEspectador(series, agora = Date.now()) {
+  const r = estatisticas(series);
+  // Mês mais ativo (empate: o mais recente).
+  const meses = Object.entries(r.porMes).filter(([, n]) => n > 0);
+  const topo = meses.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? 1 : -1))[0];
+  const mesAtivo = topo ? { mes: topo[0], rotulo: mesPorExtenso(topo[0]), valor: topo[1], atual: topo[0] === mesDe(agora) } : null;
+
+  // Seu jeito de avaliar.
+  const notas = series.filter(s => s.nota_pessoal != null).map(s => s.nota_pessoal);
+  let jeito = null;
+  if (notas.length) {
+    const media = r.notaMedia,
+      altas = notas.filter(n => n >= 8).length,
+      dezes = notas.filter(n => n >= 10).length;
+    const comTmdb = series.filter(s => s.nota_pessoal != null && s.nota != null);
+    const dif = comTmdb.length >= 3 ? Math.round((comTmdb.reduce((a, s) => a + s.nota_pessoal - s.nota, 0) / comTmdb.length) * 10) / 10 : null;
+    jeito = {
+      n: notas.length,
+      media,
+      dezes,
+      pctAltas: Math.round((altas / notas.length) * 100),
+      dif, // quanto você nota acima (+) ou abaixo (−) da média do TMDb, nos títulos que têm as duas notas
+      perfil: notas.length < 3 ? null : media < 6.5 ? 'rigoroso' : media < 8 ? 'equilibrado' : 'generoso',
+    };
+  }
+
+  // Tempo, em comparações tangíveis.
+  let tempo = null;
+  if (r.minutos > 0) {
+    const dias = Math.round((r.minutos / 1440) * 10) / 10;
+    const comp = [];
+    const trab = Math.round(r.minutos / 480),
+      voos = Math.round(r.minutos / 600);
+    if (trab >= 1) comp.push(`${plural(trab, 'jornada de trabalho', 'jornadas de trabalho')} de 8 h`);
+    if (voos >= 1) comp.push(`${plural(voos, 'voo', 'voos')} São Paulo–Lisboa sem escala`);
+    tempo = { minutos: r.minutos, dias, inteiros: Math.floor(r.minutos / 1440), comparacoes: comp, texto: duracaoTexto(r.minutos) };
+  }
+
+  // O título em que você mais investiu tempo.
+  let campeao = null;
+  for (const s of series) {
+    if (!s.duracao) continue;
+    const min = s.duracao * (tp(s) === 'movie' ? (vis(s) > 0 ? 1 : 0) : vis(s));
+    if (min > 0 && (!campeao || min > campeao.minutos)) campeao = { nome: s.nome, minutos: min, tipo: tp(s) };
+  }
+  return { r, mesAtivo, jeito, tempo, campeao };
+}
+
 /* ---------- backup importado: nada do arquivo entra no app sem passar por aqui ---------- */
 // Mesmas regras de api/_validar.js. O servidor sanea de novo ao salvar, mas o app desenha os dados ANTES disso;
 // sem este filtro, um backup malicioso poderia pôr texto/aspas em ids e números que vão para atributos HTML.
@@ -302,11 +400,14 @@ export function limparTituloBackup(x, criadoPadrao = Date.now()) {
   };
 }
 
+// Tamanho máximo da nota de rodapé de um item do top (igual a api/_validar.js).
+export const OBS_MAX = 160;
+
 export function limparTopBackup(x, criadoPadrao = Date.now()) {
   if (!x || typeof x !== 'object' || typeof x.id !== 'string' || !ID_OK.test(x.id) || !Array.isArray(x.itens)) return null;
   const itens = x.itens
     .slice(0, 10)
-    .map(i => ({ t: txt(i && i.t, 80), sid: i && typeof i.sid === 'string' && ID_OK.test(i.sid) ? i.sid : undefined }))
+    .map(i => ({ t: txt(i && i.t, 80), sid: i && typeof i.sid === 'string' && ID_OK.test(i.sid) ? i.sid : undefined, obs: txt(i && i.obs, OBS_MAX) || undefined }))
     .filter(i => i.t);
   return { id: x.id, nome: txt(x.nome, 60) || 'Top 10', itens, criado: num(x.criado, 0, 8.64e15) ?? criadoPadrao };
 }

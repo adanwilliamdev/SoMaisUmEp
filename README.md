@@ -30,9 +30,9 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 - Acompanhamento de episódios e temporadas.
 - Registro de filmes assistidos.
 - Avaliações e resenhas pessoais.
-- Tops 10 personalizados e compartilháveis.
-- Estatísticas de tempo assistido e histórico.
-- Descoberta de títulos e recomendações.
+- Hall da Fama: tops 10 pessoais, com nota de rodapé íntima em cada título, e compartilháveis.
+- Estatísticas narradas como a sua história de espectador (estilo “Wrapped”).
+- Radar de afinidade: sugestões cruzadas só com o seu histórico, sempre com o motivo.
 - Notificações de novos episódios.
 - Importação de bibliotecas de outras plataformas.
 - Backup e exportação de dados.
@@ -144,7 +144,7 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 - Verificação diária de novas temporadas e episódios.
 - Sinopses, capas e datas de lançamento.
 - Informações sobre onde assistir no Brasil.
-- Recomendações baseadas no histórico da biblioteca.
+- Radar de afinidade: diretores/criadores, elenco e gêneros que se repetem nos títulos que você concluiu ou avaliou com nota 7+ (`/api/tmdb?acao=afinidade`). Cada sugestão explica o porquê e traz o atalho de onde assistir.
 
 ### 🔔 Lançamentos e notificações
 
@@ -158,14 +158,17 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 
 - Avaliações individuais por título.
 - Resenhas pessoais.
-- Criação de múltiplas listas Top 10.
+- Criação de múltiplas listas Top 10 (o Hall da Fama).
+- Nota de rodapé de até 160 caracteres em cada item (fica só com você: não vai para a imagem nem para o link público).
 - Reordenação por arrastar e soltar ou controles de teclado.
 - Compartilhamento por imagem PNG.
 - Links públicos para compartilhar listas.
 
 ### 📊 Estatísticas
 
-- Tempo total assistido.
+- Tempo total assistido, traduzido em dias inteiros e comparações tangíveis.
+- Seu mês mais ativo e o título em que você mais investiu tempo.
+- Seu jeito de avaliar: crítico rigoroso, equilibrado ou de coração generoso (e como você se compara ao TMDb).
 - Quantidade de séries e filmes.
 - Média das avaliações.
 - Histórico mensal de atividades.
@@ -210,9 +213,6 @@ A importação utiliza a API do TMDb para localizar os títulos. Duplicados são
 - Alteração de senha e e-mail.
 - Encerramento de sessões em todos os dispositivos.
 - Exclusão completa da conta e dos respectivos dados.
-- Checagem de `Origin` em toda requisição que altera dados (defesa extra contra CSRF, além do cookie `SameSite=Strict`).
-- Cotas por conta: até 5.000 títulos e 200 listas Top.
-- Verificação de saúde pública para monitoramento: `GET /api/dados?r=saude` (200 ou 503, sem expor detalhes).
 
 ### ♿ Acessibilidade
 
@@ -271,8 +271,6 @@ A aplicação implementa mecanismos para sincronização entre dispositivos.
 - Preservação do maior progresso de episódios por temporada.
 - Controle de versão para exclusões.
 - Salvamento com novas tentativas automáticas.
-- Prazo de 25 s por requisição: uma conexão pendurada não trava a fila de salvamento.
-- Tratamento global de erros inesperados, com aviso curto ao usuário e detalhe no console.
 - ETag para evitar consultas desnecessárias à biblioteca.
 
 ### Cache e funcionamento offline

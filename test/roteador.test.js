@@ -106,7 +106,7 @@ test('/api/tmdb: GET valida tipo e ação; POST vai para a importação; outros 
 
 test('tabela de consultas do TMDb: as ações conhecidas existem e nomes herdados do Object não valem', () => {
   const { consultas } = require('../api/_consultas');
-  assert.deepEqual(Object.keys(consultas).sort(), ['busca', 'detalhe', 'parecidos', 'streaming', 'tendencias']);
+  assert.deepEqual(Object.keys(consultas).sort(), ['afinidade', 'busca', 'detalhe', 'parecidos', 'streaming', 'tendencias']);
   assert.equal(Object.hasOwn(consultas, 'constructor'), false);
 });
 

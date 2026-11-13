@@ -85,6 +85,6 @@ export async function ondeAssistir(s) {
 }
 
 /* ---------- descobrir ---------- */
-export const emAlta = tipo => tmdb({ acao: 'tendencias', tipo }).then(d => d.resultados);
-export const parecidos = (tipo, ids) => tmdb({ acao: 'parecidos', tipo, ids: ids.join(',') }).then(d => d.resultados);
+// Radar de afinidade: `ids` vem de idsRadar() ("id" ou "id:nota"). Devolve { dna, resultados }.
+export const radar = (tipo, ids) => tmdb({ acao: 'afinidade', tipo, ids: ids.join(',') });
 export const detalheTmdb = (tipo, id) => tmdb({ acao: 'detalhe', tipo, id });

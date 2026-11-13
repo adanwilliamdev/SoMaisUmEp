@@ -11,9 +11,9 @@ const MAU = '"><img src=x onerror=alert(1)>';
 test('views: id malicioso é escapado em todo atributo (cards, detalhe, tops, compartilhar, descobrir)', async () => {
   const V = await import('../public/js/views.js');
   const { L } = await import('../public/js/loja.js');
-  const s = { id: MAU, tipo: 'tv', nome: 'S', eps: [3], vis: [1], criado: 1, hist: {} };
+  const s = { id: MAU, tipo: 'tv', nome: 'S', eps: [3], vis: [1], criado: 1, hist: {}, tmdb: 1, nota_pessoal: 9 };
   L.series = [s];
-  L.tops = [{ id: MAU, nome: 'T', itens: [{ t: 'S', sid: MAU }], criado: 1 }];
+  L.tops = [{ id: MAU, nome: 'T', itens: [{ t: 'S', sid: MAU, obs: MAU }], criado: 1 }];
   L.links = {};
   const tmdb = { id: MAU, nome: 'D', ano: '2020', poster: null };
   const saidas = {
@@ -22,7 +22,8 @@ test('views: id malicioso é escapado em todo atributo (cards, detalhe, tops, co
     htmlDetalhe: V.htmlDetalhe(s, null),
     viewTops: V.viewTops(),
     htmlCompartilhar: V.htmlCompartilhar(L.tops[0], null, ''),
-    htmlDescobrir: V.htmlDescobrir('tv', { alta: [tmdb], parecidos: [] }),
+    htmlDescobrir: V.htmlDescobrir('tv', { radar: { dna: {}, resultados: [{ ...tmdb, nome: MAU, onde: [MAU], porque: [{ tipo: 'dir', seed: 1, nome: MAU }] }] } }),
+    viewStats: V.viewStats(),
     htmlDescDetalhe: V.htmlDescDetalhe(tmdb, 'tv', null),
   };
   for (const [nome, html] of Object.entries(saidas)) {

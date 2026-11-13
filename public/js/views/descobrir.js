@@ -1,51 +1,58 @@
-// Aba Descobrir (em alta e parecidos) e o painel de um título do TMDb.
+// Aba Descobrir: radar de afinidade pessoal (só cruza com o seu histórico) e o painel de um título do TMDb.
 import { esc } from '../util.js';
 import { L } from '../loja.js';
-import { tp, naEstante, sementes } from '../regras.js';
+import { naEstante, sementesRadar, frasePorque, rotulosDna } from '../regras.js';
 import { UI, capa, ICO_MAIS } from './comum.js';
 import { htmlOnde } from './detalhe.js';
 
 /* ---------- descobrir ---------- */
-// `d` = { alta, parecidos } (cada um: lista, 'carregando', 'erro' ou null quando não se aplica).
-function cardDescobrir(x, tipo, porque = '') {
+// `d` = { radar }: radar é { dna, resultados }, 'carregando', 'erro' ou null (ainda não há o que cruzar).
+const nomeTipo = tipo => (tipo === 'movie' ? 'filmes' : 'séries');
+
+function itemRadar(x, tipo, sementes) {
   const tem = naEstante(L.series, tipo, x.id);
-  return `<article class="card desc" data-tid="${esc(x.id)}">
-    <div class="poster"><button class="capa" data-act="desc-abrir" aria-label="Ver ${esc(x.nome)}">${capa(x.nome, x.poster)}${tem ? '<span class="sel ok">Na estante</span>' : ''}${x.nota ? `<span class="sel dir" title="Nota no TMDb">★ ${x.nota}</span>` : ''}</button>
-      ${tem ? '' : `<button class="mais mais-add" data-act="desc-add" aria-label="Adicionar ${esc(x.nome)} à estante" title="Adicionar à estante">${ICO_MAIS}</button>`}</div>
-    <h3>${esc(x.nome)}</h3><small>${esc(x.ano || '')}${porque ? (x.ano ? ' · ' : '') + esc(porque) : ''}</small></article>`;
+  // Um motivo por semente; a frase usa o que você realmente fez com aquele título (concluiu, nota).
+  const frases = (x.porque || [])
+    .map(m => frasePorque(m, sementes.find(s => s.tmdb === m.seed)))
+    .filter(Boolean)
+    .slice(0, 2);
+  const onde = (x.onde || []).length ? `<span class="onde-selo" title="Onde assistir no Brasil">▶ ${esc(x.onde.join(' · '))}</span>` : '';
+  return `<article class="radar-item" data-tid="${esc(x.id)}">
+    <button class="capa" data-act="desc-abrir" aria-label="Ver ${esc(x.nome)}">${capa(x.nome, x.poster)}${tem ? '<span class="sel ok">Na estante</span>' : ''}</button>
+    <div class="radar-info">
+      <h3>${esc(x.nome)}</h3>
+      <small>${esc([x.ano, x.nota ? '★ ' + x.nota + ' no TMDb' : ''].filter(Boolean).join(' · '))}</small>
+      ${frases.map(f => `<p class="porque">${esc(f)}</p>`).join('')}
+      <div class="radar-acoes">${onde}${tem ? '' : `<button class="btn mini" data-act="desc-add" aria-label="Adicionar ${esc(x.nome)} à estante">${ICO_MAIS} Estante</button>`}</div>
+    </div></article>`;
 }
-function blocoDescobrir(titulo, id, d, tipo, porque) {
-  const corpo =
-    d === 'carregando'
-      ? `<div class="grade">${Array.from({ length: 6 }, () => '<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div></div>').join('')}</div>`
-      : d === 'erro'
-        ? '<p class="aviso">Não foi possível buscar no TMDb agora. <button class="btn sec mini" data-act="desc-recarregar">Tentar de novo</button></p>'
-        : !d.length
-          ? '<p class="aviso">Nada novo por aqui: tudo o que o TMDb indicou já está na sua estante.</p>'
-          : `<div class="grade">${d.map((x, i) => cardDescobrir(x, tipo, porque ? porque(x) : '')).join('')}</div>`;
-  return `<section class="desc-sec" aria-labelledby="${id}"><h2 class="sec-tit" id="${id}">${titulo}</h2>${corpo}</section>`;
+
+function blocoDna(dna, sementes, tipo) {
+  const rotulos = rotulosDna(dna);
+  const base = sementes
+    .map(s => `${esc(s.nome)}${s.nota_pessoal != null ? ` (${esc(String(s.nota_pessoal).replace('.', ','))})` : ''}`)
+    .join(', ');
+  const chips = rotulos.length
+    ? `<ul class="dna" aria-label="Padrões nos seus ${nomeTipo(tipo)} favoritos">${rotulos.map(r => `<li><small>${esc(r.rot)}</small> ${esc(r.nome)}${r.n > 1 ? ` <span class="mut-leve">×${esc(r.n)}</span>` : ''}</li>`).join('')}</ul>`
+    : `<p class="mut-peq">Ainda não há padrões repetidos entre os seus favoritos. Quanto mais você avalia, mais o radar aprende.</p>`;
+  return `<section class="desc-sec" aria-labelledby="t-dna"><h2 class="sec-tit" id="t-dna">Seu DNA em ${nomeTipo(tipo)}</h2>${chips}
+    <p class="mut-peq">Baseado no que você concluiu ou avaliou com nota 7 ou mais: ${base}.</p></section>`;
 }
+
 export function htmlDescobrir(tipo, d) {
-  const nomeDe = id => (L.series.find(s => tp(s) === tipo && s.tmdb === id) || {}).nome;
-  const semente = sementes(L.series, tipo).length;
-  const par =
-    d.parecidos === null
-      ? ''
-      : blocoDescobrir(
-          'Parecidos com o que você viu',
-          't-par',
-          Array.isArray(d.parecidos) ? d.parecidos.filter(x => !naEstante(L.series, tipo, x.id)) : d.parecidos,
-          tipo,
-          x => {
-            const n = (x.porque || []).map(nomeDe).find(Boolean);
-            return n ? 'como ' + n : '';
-          },
-        );
-  const alta = blocoDescobrir('Em alta esta semana', 't-alta', d.alta, tipo, null);
-  const dica = !semente
-    ? `<p class="aviso">Marque alguns episódios ou filmes ligados ao TMDb e aparece aqui uma lista “parecidos com o que você viu”.</p>`
-    : '';
-  return par + (par ? '' : dica) + alta;
+  const sementes = sementesRadar(L.series, tipo);
+  const r = d && d.radar;
+  if (r === null || r === undefined || !sementes.length)
+    return `<div class="vazio">O radar ainda não tem de onde partir.<br><small>Conclua ou avalie com nota 7 ou mais ao menos um ${tipo === 'movie' ? 'filme' : 'título'} ligado ao TMDb e as sugestões aparecem aqui, sempre dizendo por quê.</small></div>`;
+  if (r === 'carregando')
+    return `<div class="radar-lista" aria-busy="true">${Array.from({ length: 4 }, () => '<div class="radar-item"><div class="sk sk-capa"></div><div class="radar-info"><div class="sk sk-l1"></div><div class="sk sk-l1"></div></div></div>').join('')}</div>`;
+  if (r === 'erro')
+    return '<p class="aviso">Não foi possível montar o radar agora. <button class="btn sec mini" data-act="desc-recarregar">Tentar de novo</button></p>';
+  const lista = (r.resultados || []).filter(x => !naEstante(L.series, tipo, x.id));
+  const corpo = lista.length
+    ? `<div class="radar-lista">${lista.map(x => itemRadar(x, tipo, sementes)).join('')}</div>`
+    : '<p class="aviso">Nada novo por aqui: tudo o que combina com o seu gosto já está na sua estante.</p>';
+  return `${blocoDna(r.dna, sementes, tipo)}<section class="desc-sec" aria-labelledby="t-rad"><h2 class="sec-tit" id="t-rad">Talvez você curta</h2>${corpo}</section>`;
 }
 export function viewDescobrir(d) {
   const tipo = UI.descTipo,
@@ -53,7 +60,7 @@ export function viewDescobrir(d) {
       ['tv', 'Séries'],
       ['movie', 'Filmes'],
     ];
-  return `<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">O que está em alta e o que combina com o seu gosto. Toque no + para adicionar à estante.</p></div></div>
+  return `<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">Seu radar de afinidade: sugestões tiradas só do que você já viu e avaliou, com o motivo de cada uma.</p></div></div>
     <div class="ferramentas centro"><div class="barra-acoes" role="group" aria-label="Tipo">${fs.map(([k, r]) => `<button class="chip" data-act="desc-tipo" data-k="${k}" aria-pressed="${tipo === k}">${r}</button>`).join('')}</div></div>
     <div id="desc">${htmlDescobrir(tipo, d)}</div>`;
 }

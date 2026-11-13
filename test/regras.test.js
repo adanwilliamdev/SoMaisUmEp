@@ -314,3 +314,59 @@ test('backup: ids, números, capas e textos passam pelo saneamento (nada de aspa
   assert.equal(lp({ id: 'a b', itens: [] }), null);
   assert.equal(lp({ id: 'ok', itens: 'x' }), null);
 });
+
+/* ---------- radar de afinidade e retrato do espectador ---------- */
+test('sementesRadar: só nota 7+ ou concluído sem nota; melhor nota primeiro; idsRadar leva a nota', async () => {
+  const { sementesRadar, idsRadar, frasePorque } = await R();
+  const l = [
+    serie({ id: '1', tmdb: 1, vis: [10, 8], nota_pessoal: 10, nome: 'Alfa' }),
+    serie({ id: '2', tmdb: 2, vis: [10, 8] }), // concluída sem nota: vale
+    serie({ id: '3', tmdb: 3, vis: [1, 0] }), // só começou, sem nota: fora
+    serie({ id: '4', tmdb: 4, vis: [10, 8], nota_pessoal: 4 }), // nota baixa: fora
+    serie({ id: '5', vis: [10, 8], nota_pessoal: 9 }), // sem TMDb: fora
+    serie({ id: '6', tmdb: 6, vis: [1, 0], nota_pessoal: 8 }), // começada mas com nota alta: vale
+  ];
+  const sem = sementesRadar(l, 'tv');
+  assert.deepEqual(
+    sem.map(s => s.id),
+    ['1', '6', '2'],
+  );
+  assert.deepEqual(idsRadar(sem), ['1:10', '6:8', '2']);
+  assert.equal(frasePorque({ tipo: 'dir', nome: 'Nolan' }, sem[0]), 'Como você concluiu Alfa e deu nota 10: mesma criação (Nolan).');
+  assert.match(frasePorque({ tipo: 'rec' }, sem[1]), /^Como você viu Série e deu nota 8: /);
+  assert.equal(frasePorque({ tipo: 'x' }, sem[0]), '');
+});
+
+test('perfilEspectador: mês ativo, jeito de avaliar, tempo e título campeão', async () => {
+  const { perfilEspectador } = await R();
+  const agora = Date.parse('2026-11-12T12:00:00');
+  const l = [
+    serie({ id: '1', eps: [4], vis: [4], duracao: 60, nota_pessoal: 10, nota: 8, hist: { '2026-10': 1, '2026-11': 3 } }),
+    serie({ id: '2', eps: [4], vis: [4], duracao: 60, nota_pessoal: 9, nota: 8, nome: 'B', hist: { '2026-11': 4 } }),
+    serie({ id: '3', eps: [4], vis: [2], duracao: 60, nota_pessoal: 8, nota: 7, hist: {} }),
+  ];
+  const p = perfilEspectador(l, agora);
+  assert.equal(p.mesAtivo.rotulo, 'novembro de 2026');
+  assert.equal(p.mesAtivo.valor, 7);
+  assert.equal(p.mesAtivo.atual, true);
+  assert.equal(p.jeito.perfil, 'generoso');
+  assert.equal(p.jeito.dezes, 1);
+  assert.equal(p.jeito.pctAltas, 100);
+  assert.equal(p.jeito.dif, 1.3);
+  assert.equal(p.tempo.minutos, 600);
+  assert.ok(p.tempo.comparacoes.some(c => /voo/.test(c)));
+  assert.equal(p.campeao.minutos, 240);
+  const vazio = perfilEspectador([serie()], agora);
+  assert.equal(vazio.mesAtivo, null);
+  assert.equal(vazio.jeito, null);
+  assert.equal(vazio.tempo, null);
+  assert.equal(perfilEspectador([serie({ nota_pessoal: 3 }), serie({ nota_pessoal: 4 }), serie({ nota_pessoal: 5 })], agora).jeito.perfil, 'rigoroso');
+});
+
+test('backup: a nota de rodapé do top é limpa e limitada', async () => {
+  const { limparTopBackup, OBS_MAX } = await R();
+  const t = limparTopBackup({ id: 't1', nome: 'T', itens: [{ t: 'A', obs: '  Assisti em 2024  ' }, { t: 'B', obs: 'x'.repeat(500) }, { t: 'C', obs: 42 }] });
+  assert.equal(t.itens[0].obs, 'Assisti em 2024');
+  assert.equal(t.itens[1].obs.length, OBS_MAX);
+  assert.equal(t.itens[2].obs, undefined);
+});
