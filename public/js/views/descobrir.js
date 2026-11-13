@@ -14,7 +14,10 @@ function itemRadar(x, tipo, sementes) {
   // Um motivo por semente; a frase usa o que você realmente fez com aquele título (concluiu, nota).
   const frases = [];
   for (const m of x.porque || []) {
-    const f = frasePorque(m, sementes.find(s => s.tmdb === m.seed));
+    const f = frasePorque(
+      m,
+      sementes.find(s => s.tmdb === m.seed),
+    );
     if (f && frases.length < 2) frases.push(f);
   }
   const servicos = (x.onde || []).join(' · ');
