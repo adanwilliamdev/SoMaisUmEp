@@ -29,9 +29,8 @@ function itemRadar(x, tipo, sementes) {
 
 function blocoDna(dna, sementes, tipo) {
   const rotulos = rotulosDna(dna);
-  const base = sementes
-    .map(s => `${esc(s.nome)}${s.nota_pessoal != null ? ` (${esc(String(s.nota_pessoal).replace('.', ','))})` : ''}`)
-    .join(', ');
+  const rot = s => esc(s.nome + (s.nota_pessoal != null ? ` (${String(s.nota_pessoal).replace('.', ',')})` : ''));
+  const base = sementes.map(rot).join(', ');
   const chips = rotulos.length
     ? `<ul class="dna" aria-label="Padrões nos seus ${nomeTipo(tipo)} favoritos">${rotulos.map(r => `<li><small>${esc(r.rot)}</small> ${esc(r.nome)}${r.n > 1 ? ` <span class="mut-leve">×${esc(r.n)}</span>` : ''}</li>`).join('')}</ul>`
     : `<p class="mut-peq">Ainda não há padrões repetidos entre os seus favoritos. Quanto mais você avalia, mais o radar aprende.</p>`;

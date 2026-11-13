@@ -66,11 +66,9 @@ const gen = (...n) => n.map((nome, i) => ({ id: i + 1, name: nome }));
 const pessoa = (id, name, job) => ({ id, name, job });
 
 test('perfilDe: criadores e diretores viram "direção"; elenco limitado a 5', () => {
-  const p = A.perfilDe({
-    created_by: [{ id: 1, name: 'Criadora' }],
-    genres: gen('Drama'),
-    credits: { crew: [pessoa(2, 'Diretor', 'Director'), pessoa(3, 'Editor', 'Editor')], cast: Array.from({ length: 8 }, (_, i) => ({ id: 100 + i, name: 'A' + i })) },
-  });
+  const crew = [pessoa(2, 'Diretor', 'Director'), pessoa(3, 'Editor', 'Editor')];
+  const cast = Array.from({ length: 8 }, (_, i) => ({ id: 100 + i, name: 'A' + i }));
+  const p = A.perfilDe({ created_by: [{ id: 1, name: 'Criadora' }], genres: gen('Drama'), credits: { crew, cast } });
   assert.deepEqual([...p.dirs.values()], ['Criadora', 'Diretor']);
   assert.equal(p.atores.size, 5);
   assert.deepEqual([...p.generos.values()], ['Drama']);
@@ -105,7 +103,9 @@ test('pontuar: mesma direção pesa mais que indicação; sem motivo, fora; um m
 });
 
 test('ondeCurto: até 2 serviços do Brasil (assinatura ou grátis)', () => {
-  const d = { 'watch/providers': { results: { BR: { flatrate: [{ provider_name: 'A' }, { provider_name: 'B' }], free: [{ provider_name: 'C' }] }, US: { flatrate: [{ provider_name: 'Z' }] } } } };
+  const prov = nomes => nomes.map(provider_name => ({ provider_name }));
+  const BR = { flatrate: prov(['A', 'B']), free: prov(['C']) };
+  const d = { 'watch/providers': { results: { BR, US: { flatrate: prov(['Z']) } } } };
   assert.deepEqual(A.ondeCurto(d), ['A', 'B']);
   assert.deepEqual(A.ondeCurto({}), []);
 });
@@ -118,10 +118,12 @@ test('/api/tmdb afinidade: DNA, motivos e onde assistir; valida ids; falha geral
     return res;
   };
   const rec = id => ({ id, name: 'S' + id, first_air_date: '2020-01-01', popularity: 1 });
+  const base = (id, extra) => ({ id, genres: gen('Drama'), created_by: [{ id: 5, name: 'Criador' }], credits: { cast: [], crew: [] }, ...extra });
+  const onde = { 'watch/providers': { results: { BR: { flatrate: [{ provider_name: 'Max' }] } } } };
   tmdb.rotas = {
-    '/tv/1': { id: 1, genres: gen('Drama'), created_by: [{ id: 5, name: 'Criador' }], credits: { cast: [], crew: [] }, recommendations: { results: [rec(10), rec(11)] } },
-    '/tv/2': { id: 2, genres: gen('Drama'), created_by: [{ id: 5, name: 'Criador' }], credits: { cast: [], crew: [] }, recommendations: { results: [rec(10)] } },
-    '/tv/10': { id: 10, genres: gen('Drama'), created_by: [{ id: 5, name: 'Criador' }], credits: {}, 'watch/providers': { results: { BR: { flatrate: [{ provider_name: 'Max' }] } } } },
+    '/tv/1': base(1, { recommendations: { results: [rec(10), rec(11)] } }),
+    '/tv/2': base(2, { recommendations: { results: [rec(10)] } }),
+    '/tv/10': base(10, onde),
     '/tv/11': { id: 11, genres: gen('Ação'), credits: {} },
   };
   const r = await chamar({ acao: 'afinidade', tipo: 'tv', ids: '1:10,2:8.5,abc,1:10' });
@@ -138,7 +140,8 @@ test('/api/tmdb afinidade: DNA, motivos e onde assistir; valida ids; falha geral
 
 test('top: a nota de rodapé passa pelo validador (limite e tipo)', () => {
   const V = require('../api/_validar');
-  const t = V.top({ id: 'a', nome: 'T', itens: [{ t: 'A', obs: '  boa maratona  ' }, { t: 'B', obs: 'y'.repeat(999) }, { t: 'C', obs: { x: 1 } }, { t: 'D' }] });
+  const itens = [{ t: 'A', obs: '  boa maratona  ' }, { t: 'B', obs: 'y'.repeat(999) }, { t: 'C', obs: { x: 1 } }, { t: 'D' }];
+  const t = V.top({ id: 'a', nome: 'T', itens });
   assert.equal(t.itens[0].obs, 'boa maratona');
   assert.equal(t.itens[1].obs.length, V.OBS_MAX);
   assert.equal(t.itens[2].obs, undefined);

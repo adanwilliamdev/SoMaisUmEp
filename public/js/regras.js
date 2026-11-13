@@ -247,15 +247,12 @@ export const naEstante = (series, tipo, tmdb) => series.some(s => tp(s) === tipo
 // (nesse caso vale como 7). Quem tem nota mais alta vem antes; no empate, o concluído e depois o visto mais recentemente.
 export const NOTA_ALTA = 7;
 const pesoRadar = s => (s.nota_pessoal != null ? s.nota_pessoal : NOTA_ALTA);
+const concluido = s => (estado(s) === 'fim' ? 1 : 0);
+const recente = s => s.visto_em || s.criado || 0;
 export function sementesRadar(series, tipo, max = 6) {
   return series
     .filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal != null ? s.nota_pessoal >= NOTA_ALTA : estado(s) === 'fim'))
-    .sort(
-      (a, b) =>
-        pesoRadar(b) - pesoRadar(a) ||
-        (estado(b) === 'fim') - (estado(a) === 'fim') ||
-        (b.visto_em || b.criado || 0) - (a.visto_em || a.criado || 0),
-    )
+    .sort((a, b) => pesoRadar(b) - pesoRadar(a) || concluido(b) - concluido(a) || recente(b) - recente(a))
     .slice(0, max);
 }
 // Parâmetro `ids` de /api/tmdb?acao=afinidade: "id" ou "id:nota".
@@ -267,7 +264,7 @@ export function frasePorque(motivo, semente) {
   if (!motivo || !semente) return '';
   const filme = tp(semente) === 'movie',
     fim = estado(semente) === 'fim';
-  const verbo = fim ? (filme ? 'assistiu' : 'concluiu') : 'viu';
+  const verbo = !fim ? 'viu' : filme ? 'assistiu' : 'concluiu';
   const nota = semente.nota_pessoal != null ? ` e deu nota ${notaTxt(semente.nota_pessoal)}` : '';
   const alvo = {
     dir: `${filme ? 'mesma direção' : 'mesma criação'} (${motivo.nome})`,
@@ -334,7 +331,8 @@ export function perfilEspectador(series, agora = Date.now()) {
   let campeao = null;
   for (const s of series) {
     if (!s.duracao) continue;
-    const min = s.duracao * (tp(s) === 'movie' ? (vis(s) > 0 ? 1 : 0) : vis(s));
+    const vistos = tp(s) === 'movie' ? Math.min(vis(s), 1) : vis(s);
+    const min = s.duracao * vistos;
     if (min > 0 && (!campeao || min > campeao.minutos)) campeao = { nome: s.nome, minutos: min, tipo: tp(s) };
   }
   return { r, mesAtivo, jeito, tempo, campeao };
@@ -407,7 +405,11 @@ export function limparTopBackup(x, criadoPadrao = Date.now()) {
   if (!x || typeof x !== 'object' || typeof x.id !== 'string' || !ID_OK.test(x.id) || !Array.isArray(x.itens)) return null;
   const itens = x.itens
     .slice(0, 10)
-    .map(i => ({ t: txt(i && i.t, 80), sid: i && typeof i.sid === 'string' && ID_OK.test(i.sid) ? i.sid : undefined, obs: txt(i && i.obs, OBS_MAX) || undefined }))
+    .map(i => ({
+      t: txt(i && i.t, 80),
+      sid: i && typeof i.sid === 'string' && ID_OK.test(i.sid) ? i.sid : undefined,
+      obs: txt(i && i.obs, OBS_MAX) || undefined,
+    }))
     .filter(i => i.t);
   return { id: x.id, nome: txt(x.nome, 60) || 'Top 10', itens, criado: num(x.criado, 0, 8.64e15) ?? criadoPadrao };
 }

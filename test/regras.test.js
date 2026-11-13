@@ -365,7 +365,15 @@ test('perfilEspectador: mês ativo, jeito de avaliar, tempo e título campeão',
 
 test('backup: a nota de rodapé do top é limpa e limitada', async () => {
   const { limparTopBackup, OBS_MAX } = await R();
-  const t = limparTopBackup({ id: 't1', nome: 'T', itens: [{ t: 'A', obs: '  Assisti em 2024  ' }, { t: 'B', obs: 'x'.repeat(500) }, { t: 'C', obs: 42 }] });
+  const t = limparTopBackup({
+    id: 't1',
+    nome: 'T',
+    itens: [
+      { t: 'A', obs: '  Assisti em 2024  ' },
+      { t: 'B', obs: 'x'.repeat(500) },
+      { t: 'C', obs: 42 },
+    ],
+  });
   assert.equal(t.itens[0].obs, 'Assisti em 2024');
   assert.equal(t.itens[1].obs.length, OBS_MAX);
   assert.equal(t.itens[2].obs, undefined);

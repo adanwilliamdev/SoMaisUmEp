@@ -32,44 +32,51 @@ const num1 = n => String(n).replace('.', ',');
 const maiuscula = t => t.charAt(0).toUpperCase() + t.slice(1);
 
 // Cada cartão da história: título pequeno, destaque grande e uma frase. Só aparece o que tem dados.
-const cartao = (cls, kicker, destaque, texto) =>
-  `<article class="w-card ${cls}"><small>${kicker}</small><b>${destaque}</b><p>${texto}</p></article>`;
+const cartao = (cls, kicker, destaque, texto) => `<article class="w-card ${cls}"><small>${kicker}</small><b>${destaque}</b><p>${texto}</p></article>`;
+const nomeJeito = { rigoroso: 'Crítico rigoroso', equilibrado: 'Olhar equilibrado', generoso: 'Coração generoso' };
+const pontos = n => `${num1(n)} ponto${n <= 1 ? '' : 's'}`;
+
+function cartaoTempo(tempo) {
+  const dias = tempo.dias === 1 ? 'dia inteiro' : 'dias inteiros';
+  const grande = tempo.dias >= 1 ? `${num1(tempo.dias)} ${dias}` : tempo.texto;
+  const iguais = tempo.comparacoes.length ? `Dá ${tempo.comparacoes.join(', ou ')}.` : 'É só o começo da sua história.';
+  return cartao('w-tempo', 'Tempo dedicado a histórias', grande, `Sem piscar, sem dormir. ${iguais}`);
+}
+
+function cartaoMes(mes) {
+  const marcados = mes.valor === 1 ? 'episódio ou filme marcado' : 'episódios e filmes marcados';
+  const fim = mes.atual ? '. E o mês ainda não acabou.' : '.';
+  return cartao('w-mes', 'Seu mês mais ativo', esc(maiuscula(mes.rotulo)), `${mes.valor} ${marcados}${fim}`);
+}
+
+function cartaoNota(j) {
+  const base = `Média ${num1(j.media)} em ${j.n} ${j.n === 1 ? 'título' : 'títulos'}`;
+  if (!j.perfil) {
+    const aviso = `${base}. Avalie pelo menos 3 para descobrir que tipo de crítico você é.`;
+    return cartao('w-nota', 'Seu jeito de avaliar', `Média ${num1(j.media)}`, aviso);
+  }
+  const dez = j.dezes === 1 ? 'virou 10' : 'viraram 10';
+  const dezes = j.dezes ? ` e ${j.dezes} ${dez}` : '';
+  let dif = '';
+  if (j.dif != null && Math.abs(j.dif) < 0.3) dif = ' Você anda alinhado com a nota média do TMDb.';
+  else if (j.dif != null) dif = ` Você dá, em média, ${pontos(Math.abs(j.dif))} ${j.dif > 0 ? 'a mais' : 'a menos'} que o TMDb.`;
+  return cartao('w-nota', 'Seu jeito de avaliar', nomeJeito[j.perfil], `${base}: ${j.pctAltas}% das notas são 8 ou mais${dezes}.${dif}`);
+}
+
+function cartaoCampeao(c) {
+  const tempo = `${duracaoTexto(c.minutos)} da sua vida, e valeu cada minuto.`;
+  return cartao('w-campeao', 'Onde você mais investiu tempo', esc(c.nome), tempo);
+}
 
 export function historiaEspectador(series) {
   const { mesAtivo, jeito, tempo, campeao } = perfilEspectador(series);
+  const dica = 'Dê notas aos títulos que você viu para descobrir se é um crítico rigoroso ou de coração generoso.';
   const out = [];
-  if (tempo) {
-    const grande = tempo.dias >= 1 ? `${num1(tempo.dias)} ${tempo.dias === 1 ? 'dia inteiro' : 'dias inteiros'}` : tempo.texto;
-    const iguais = tempo.comparacoes.length ? `Dá ${tempo.comparacoes.join(', ou ')}.` : 'É só o começo da sua história.';
-    out.push(cartao('w-tempo', 'Tempo dedicado a histórias', grande, `Sem piscar, sem dormir. ${iguais}`));
-  }
-  if (mesAtivo)
-    out.push(
-      cartao(
-        'w-mes',
-        'Seu mês mais ativo',
-        esc(maiuscula(mesAtivo.rotulo)),
-        `${mesAtivo.valor} ${mesAtivo.valor === 1 ? 'episódio ou filme marcado' : 'episódios e filmes marcados'}${mesAtivo.atual ? '. E o mês ainda não acabou.' : '.'}`,
-      ),
-    );
-  if (jeito) {
-    const nome = { rigoroso: 'Crítico rigoroso', equilibrado: 'Olhar equilibrado', generoso: 'Coração generoso' }[jeito.perfil];
-    const dif =
-      jeito.dif == null
-        ? ''
-        : Math.abs(jeito.dif) < 0.3
-          ? ' Você anda alinhado com a nota média do TMDb.'
-          : ` Você dá, em média, ${num1(Math.abs(jeito.dif))} ponto${Math.abs(jeito.dif) === 1 ? '' : 's'} ${jeito.dif > 0 ? 'a mais' : 'a menos'} que o TMDb.`;
-    const base = `Média ${num1(jeito.media)} em ${jeito.n} ${jeito.n === 1 ? 'título' : 'títulos'}`;
-    out.push(
-      jeito.perfil
-        ? cartao('w-nota', 'Seu jeito de avaliar', nome, `${base}: ${jeito.pctAltas}% das notas são 8 ou mais${jeito.dezes ? ` e ${jeito.dezes} ${jeito.dezes === 1 ? 'virou 10' : 'viraram 10'}` : ''}.${dif}`)
-        : cartao('w-nota', 'Seu jeito de avaliar', `Média ${num1(jeito.media)}`, `${base}. Avalie pelo menos 3 para descobrir que tipo de crítico você é.`),
-    );
-  } else out.push(cartao('w-nota', 'Seu jeito de avaliar', 'Ainda sem notas', 'Dê notas aos títulos que você viu para descobrir se é um crítico rigoroso ou de coração generoso.'));
-  if (campeao)
-    out.push(cartao('w-campeao', 'Onde você mais investiu tempo', esc(campeao.nome), `${duracaoTexto(campeao.minutos)} da sua vida, e valeu cada minuto.`));
-  return out.length ? `<section class="wrapped" aria-label="Sua história como espectador">${out.join('')}</section>` : '';
+  if (tempo) out.push(cartaoTempo(tempo));
+  if (mesAtivo) out.push(cartaoMes(mesAtivo));
+  out.push(jeito ? cartaoNota(jeito) : cartao('w-nota', 'Seu jeito de avaliar', 'Ainda sem notas', dica));
+  if (campeao) out.push(cartaoCampeao(campeao));
+  return `<section class="wrapped" aria-label="Sua história como espectador">${out.join('')}</section>`;
 }
 
 export function viewStats() {

@@ -16,13 +16,14 @@ test('views: id malicioso é escapado em todo atributo (cards, detalhe, tops, co
   L.tops = [{ id: MAU, nome: 'T', itens: [{ t: 'S', sid: MAU, obs: MAU }], criado: 1 }];
   L.links = {};
   const tmdb = { id: MAU, nome: 'D', ano: '2020', poster: null };
+  const resultado = { ...tmdb, nome: MAU, onde: [MAU], porque: [{ tipo: 'dir', seed: 1, nome: MAU }] };
   const saidas = {
     cardHtml: V.cardHtml(s, 0),
     cardContinuar: V.cardContinuar(s, 0),
     htmlDetalhe: V.htmlDetalhe(s, null),
     viewTops: V.viewTops(),
     htmlCompartilhar: V.htmlCompartilhar(L.tops[0], null, ''),
-    htmlDescobrir: V.htmlDescobrir('tv', { radar: { dna: {}, resultados: [{ ...tmdb, nome: MAU, onde: [MAU], porque: [{ tipo: 'dir', seed: 1, nome: MAU }] }] } }),
+    htmlDescobrir: V.htmlDescobrir('tv', { radar: { dna: {}, resultados: [resultado] } }),
     viewStats: V.viewStats(),
     htmlDescDetalhe: V.htmlDescDetalhe(tmdb, 'tv', null),
   };
