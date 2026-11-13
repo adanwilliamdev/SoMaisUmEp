@@ -25,7 +25,8 @@ module.exports = rota('POST', async (req, res, u) => {
   if (T.length) {
     const ids = [...new Set(T.map(t => t.id))];
     const [c] = await sql`select count(*)::int as n, count(*) filter (where id = any(${ids}))::int as ja from titulos where user_id = ${u.id}`;
-    if (c && c.n + (ids.length - c.ja) > MAX_TITULOS) throw erro(`Limite de ${MAX_TITULOS} títulos por conta atingido. Exclua alguns para adicionar novos.`, 413);
+    if (c && c.n + (ids.length - c.ja) > MAX_TITULOS)
+      throw erro(`Limite de ${MAX_TITULOS} títulos por conta atingido. Exclua alguns para adicionar novos.`, 413);
   }
   if (P.length) {
     const ids = [...new Set(P.map(t => t.id))];
