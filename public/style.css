@@ -10,16 +10,20 @@
    Tela de TV desligada (verde-petróleo), luz âmbar de "no ar" e chyron de transmissão.
    Teclas de controle remoto (cantos 12px), episódios em faixa segmentada, números em condensada. */
 :root{
-  --bg:#f6f6f7;--rail:#fff;--card:#fff;--card2:#f1f1f3;--tx:#18181b;--mut:#52525b;
-  --line:rgba(24,24,27,.09);--line2:rgba(24,24,27,.18);
-  --acc:#166534;--on:#fff;--ok:#166534;--on-ok:#fff;--perigo:#b91c1c;--foco:rgba(22,101,52,.3);--ctl:#71717a;
-  --sombra-alta:0 24px 60px rgba(24,24,27,.18);
+  --bg:#f4f6fa;--rail:#fff;--card:#fff;--card2:#edf0f6;--tx:#0e1320;--mut:#4f586a;
+  --line:rgba(14,19,32,.08);--line2:rgba(14,19,32,.16);
+  --acc:#1f4fd8;--on:#fff;--ok:#15803d;--on-ok:#fff;--perigo:#c0262d;--foco:rgba(31,79,216,.28);--ctl:#6b7587;
+  --sombra-alta:0 24px 60px rgba(14,19,32,.16);
   --r-s:8px;--r-m:12px;--r-g:16px;--pilula:999px;
   --corpo:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --titulo:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --rail-w:248px;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121214;--rail:#18181b;--card:#18181b;--card2:#1f1f23;--tx:#f4f4f5;--mut:#a1a1aa;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);--ctl:#71717a;--acc:#4ade80;--on:#052e16;--ok:#34d399;--on-ok:#022c22;--perigo:#f87171;--foco:rgba(74,222,128,.35);--sombra-alta:0 24px 60px rgba(0,0,0,.55);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#121214;--rail:#18181b;--card:#18181b;--card2:#1f1f23;--tx:#f4f4f5;--mut:#a1a1aa;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);--ctl:#71717a;--acc:#4ade80;--on:#052e16;--ok:#34d399;--on-ok:#022c22;--perigo:#f87171;--foco:rgba(74,222,128,.35);--sombra-alta:0 24px 60px rgba(0,0,0,.55);color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c0e13;--rail:#11141b;--card:#151922;--card2:#1b202b;--tx:#eef1f6;--mut:#98a2b3;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.14);--ctl:#6b7587;--acc:#6ea8fe;--on:#04132f;--ok:#3ddc97;--on-ok:#04251a;--perigo:#ff7a7a;--foco:rgba(110,168,254,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c0e13;--rail:#11141b;--card:#151922;--card2:#1b202b;--tx:#eef1f6;--mut:#98a2b3;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.14);--ctl:#6b7587;--acc:#6ea8fe;--on:#04132f;--ok:#3ddc97;--on-ok:#04251a;--perigo:#ff7a7a;--foco:rgba(110,168,254,.38);--sombra-alta:0 24px 60px rgba(0,0,0,.6);color-scheme:dark}
+/* Acento alternativo (vermelho): <html data-accent="rubi">. O azul é o padrão; o vermelho fica para comparar. */
+:root[data-accent="rubi"]{--acc:#c81e3a;--on:#fff;--foco:rgba(200,30,58,.28)}
+@media (prefers-color-scheme:dark){:root[data-accent="rubi"]:not([data-theme="light"]){--acc:#ff6b7d;--on:#2b0509;--foco:rgba(255,107,125,.38)}}
+:root[data-theme="dark"][data-accent="rubi"]{--acc:#ff6b7d;--on:#2b0509;--foco:rgba(255,107,125,.38)}
 :root{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:inherit;margin:0}
@@ -741,8 +745,9 @@ dialog{border-radius:var(--r-g) 0 0 var(--r-g)}
 
 /* ===== v7: "Noturno" =====
    Sans-serif limpa (Inter), grafite com toque frio em vez de preto puro, superfícies em degraus com borda translúcida,
-   acento menta (--acc) e cantos consistentes (capas 12px, cartões 16px). Esta camada vem por último e vence as anteriores.
-   Para trocar o acento, mude só --acc / --on / --foco nos três blocos de tokens lá em cima (o teste de contraste confere). */
+   acento azul (--acc) e cantos consistentes (capas 12px, cartões 16px). Esta camada vem por último e vence as anteriores.
+   Para trocar o acento, mude só --acc / --on / --foco nos três blocos de tokens lá em cima (o teste de contraste confere).
+   Para testar o vermelho sem editar nada: <html data-accent="rubi">. */
 body{background:var(--bg);font-feature-settings:"cv11","ss03";font-optical-sizing:auto}
 body::before{display:none}
 
@@ -848,7 +853,7 @@ input[type=text],input[type=number],input[type=password],input[type=search],text
 
 /* --- estatísticas: grade simétrica em um bloco só, divisórias quase invisíveis --- */
 .stat b{font-size:1.6rem;font-weight:700;letter-spacing:-.03em}
-@media (max-width:899px){.graf-caixa{padding:22px 18px 10px}
+@media (max-width:899px){.graf-caixa{padding:22px 18px 10px}}
 .graf rect{rx:4px}
 .graf line{stroke:var(--line2);stroke-width:1}
 
@@ -862,3 +867,79 @@ input[type=text],input[type=number],input[type=password],input[type=search],text
 .auth-form h1{font-size:1.5rem}
 .deslogado .marca{visibility:hidden}
 @media (max-width:899px){.auth-form{padding:26px 20px}}
+
+/* ===== v8: "Safira" =====
+   Refinamento sobre o v7: azul como identidade (verde fica só para "concluído"), grafite frio, um único raio para controles (12px),
+   foco na cor de destaque, destaque do "continuar assistindo" sem vazio, navegação com indicador, botão primário com profundidade discreta. */
+:root{--ease:cubic-bezier(.2,.7,.2,1);--fundo-luz:color-mix(in srgb,var(--acc) 9%,transparent)}
+body{background:radial-gradient(1100px 520px at 90% -14%,var(--fundo-luz),transparent 70%) no-repeat,var(--bg)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:var(--r-s)}
+::selection{background:color-mix(in srgb,var(--acc) 40%,transparent);color:var(--tx)}
+
+/* controles: um raio só; pílula fica para filtros (chips) */
+.btn,.icone,.icone.conta,.mais,select,.busca input[type=search],.nova-top input,.add input,.obs-in,.abas{border-radius:var(--r-m)}
+.abas .chip{border-radius:var(--r-s)}
+.btn{padding:10px 20px;transition:transform .12s var(--ease),filter .15s,background-color .15s,border-color .15s,box-shadow .15s}
+.btn:not(.sec):not(.perigo):not(:disabled),.card.cc-hero .mais.mais-grande{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 86%,#fff),var(--acc));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px -10px color-mix(in srgb,var(--acc) 70%,transparent)}
+.btn.sec{border-color:var(--line2);background:color-mix(in srgb,var(--tx) 3%,transparent)}
+.btn.sec:hover{border-color:var(--ctl)}
+.icone{border-color:var(--line2)}
+.icone:hover{border-color:var(--ctl)}
+.icone.conta{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 86%,#fff),var(--acc));border-color:transparent}
+.chip{border-color:var(--line2);font-size:.88rem}
+.chip:hover{border-color:var(--ctl)}
+.chip[aria-pressed=true]{background:color-mix(in srgb,var(--acc) 16%,transparent);border-color:color-mix(in srgb,var(--acc) 70%,transparent)}
+input[type=text],input[type=number],input[type=password],input[type=search],textarea,select{border-color:var(--line2);transition:border-color .15s,box-shadow .15s,background-color .15s}
+input:hover,textarea:hover,select:hover{border-color:var(--ctl)}
+input:focus,textarea:focus,select:focus{background:var(--card)}
+
+/* barra lateral: indicador na borda e item ativo em azul suave */
+.marca i{box-shadow:0 0 0 1px var(--line2)}
+@media (min-width:900px){
+  body:not(.deslogado) .menu a[aria-current=page]::before{content:"";position:absolute;left:-14px;top:22%;bottom:22%;width:3px;border-radius:0 3px 3px 0;background:var(--acc)}
+  body:not(.deslogado) .menu a[aria-current=page]{background:color-mix(in srgb,var(--acc) 12%,transparent)}
+  body:not(.deslogado) .menu a{transition:background-color .15s,color .15s}
+}
+
+/* cabeça da página e números */
+.cabeca{margin-bottom:18px}
+.stats{gap:6px 34px;margin-bottom:30px}
+.stat b{color:var(--tx)}
+.sec-tit{display:flex;align-items:center;gap:10px}
+.sec-tit::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* "continuar assistindo": o conteúdo do destaque fica centralizado, sem vazio no meio */
+.card.cc-hero{align-content:center;align-items:center;row-gap:20px}
+.card.cc-hero .capa{align-self:center;width:clamp(112px,16vw,176px)}
+.card.cc-hero .cc-info{align-self:center}
+.card.cc-hero .mais-grande{align-self:center}
+@media (min-width:900px){
+  .card.cc-hero{grid-template-areas:"capa info" "capa botao";grid-template-rows:auto auto;column-gap:28px;row-gap:22px;padding:30px}
+  .card.cc-hero .cc-info{align-self:end}
+  .card.cc-hero .mais-grande{align-self:start}
+}
+.cc-fundo{background:linear-gradient(150deg,color-mix(in srgb,var(--acc) 16%,var(--card)),var(--card))}
+.hero{background:linear-gradient(150deg,color-mix(in srgb,var(--acc) 16%,var(--card)),var(--card))}
+.cc-fundo::after{background:linear-gradient(135deg,color-mix(in srgb,var(--card) 74%,transparent),color-mix(in srgb,var(--card) 90%,transparent))}
+.card.cc{transition:border-color .15s,background-color .15s}
+.card.cc:hover{border-color:var(--line2)}
+
+/* estante */
+.card .capa{transition:transform .2s var(--ease),box-shadow .2s var(--ease)}
+.linha,.barra{background:color-mix(in srgb,var(--tx) 10%,transparent)}
+.card small{color:var(--mut)}
+.lanc{border-radius:var(--pilula)}
+
+/* entrar / criar conta no computador: o nome grande saía do cartão (regras antes presas ao celular) */
+.auth-form h1{font-size:1.45rem}
+@media (min-width:860px){
+  .auth{grid-template-columns:minmax(0,1fr);max-width:420px;gap:18px}
+  .auth-marca{gap:12px}
+  .auth-logo{width:36px;height:36px;border-radius:10px}
+  .auth-nome{font-size:1.15rem}
+}
+.auth-form{box-shadow:0 30px 80px -40px rgba(0,0,0,.55)}
+/* episódios vistos: tom suave em vez de bloco sólido; o próximo continua com anel de foco */
+.ep[aria-pressed=true]{background:color-mix(in srgb,var(--acc) 22%,transparent);border-color:color-mix(in srgb,var(--acc) 55%,transparent);color:var(--tx)}
