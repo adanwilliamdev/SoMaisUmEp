@@ -944,3 +944,11 @@ input:focus,textarea:focus,select:focus{background:var(--card)}
 .auth-form{box-shadow:0 30px 80px -40px rgba(0,0,0,.55)}
 /* episódios vistos: tom suave em vez de bloco sólido; o próximo continua com anel de foco */
 .ep[aria-pressed=true]{background:color-mix(in srgb,var(--acc) 22%,transparent);border-color:color-mix(in srgb,var(--acc) 55%,transparent);color:var(--tx)}
+
+/* correção: espaçamento entre a capa e o texto no cartão "Continuar assistindo" */
+.card.cc-hero{column-gap:24px}
+.card.cc-hero .cc-info{padding-left:8px}
+@media (max-width:480px){
+  .card.cc-hero{column-gap:20px}
+  .card.cc-hero .cc-info{padding-left:6px}
+}
