@@ -3,7 +3,8 @@ const { db, rota, erro, igual } = require('./_lib');
 const DIA = 864e5;
 
 // Faxina e avisos diários (Vercel Cron, veja "crons" no vercel.json). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
-//  - avisos de episódios que saem hoje, por notificação push (_notificar.js);
+//  - próximo lançamento de cada título, consultado no TMDb pelo servidor (_atualizar.js), para os avisos não dependerem de o app ter sido aberto;
+//  - avisos de episódios que saem hoje, por notificação push (_notificar.js), sempre DEPOIS da etapa anterior;
 //  - tentativas de login antigas e já desbloqueadas;
 //  - links de redefinição de senha vencidos;
 //  - capas do Blob que nenhum título usa mais (órfãs, com mais de 24 h para não pegar envio em andamento).
@@ -47,11 +48,18 @@ module.exports = rota(
       sql`with d as (delete from tentativas where ate < ${agora} and ultima < ${agora - 2 * DIA} returning 1) select count(*)::int as n from d`,
     );
     const links = await apagados(sql`with d as (delete from reset_senha where expira < ${agora} returning 1) select count(*)::int as n from d`);
-    const capasBlob = await varrerCapas(sql);
     const capasRegistro = await apagados(
       sql`with d as (delete from capas c where c.criado < ${agora - DIA} and not exists (select 1 from titulos t where t.capa = c.url) returning 1) select count(*)::int as n from d`,
     );
-    // Avisos de lançamento por push (só se as chaves VAPID estiverem configuradas). Falha aqui não impede o resto da faxina.
+    // 1) Datas de lançamento: consulta o TMDb (deduplicado entre contas, em lotes e com limite de tempo). Falha aqui não impede os avisos.
+    let proximos = { ativo: false };
+    try {
+      proximos = await require('./_atualizar').atualizarProximos(sql, { agora });
+    } catch (e) {
+      console.error('cron proximos:', e.message);
+      proximos = { ativo: true, erro: true };
+    }
+    // 2) Avisos de lançamento por push (só se as chaves VAPID estiverem configuradas). Falha aqui não impede o resto da faxina.
     let push = { ativo: false };
     try {
       push = await require('./_notificar').enviarLancamentos(sql, { agora });
@@ -59,7 +67,9 @@ module.exports = rota(
       console.error('cron push:', e.message);
       push = { ativo: true, erro: true };
     }
-    res.json({ ok: true, tentativas, links, capasBlob, capasRegistro, push });
+    // Por último, a etapa mais lenta (lista o Blob): se ela estourar o tempo, as datas e os avisos já foram feitos.
+    const capasBlob = await varrerCapas(sql);
+    res.json({ ok: true, tentativas, links, capasBlob, capasRegistro, proximos, push });
   },
   true,
 );

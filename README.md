@@ -141,7 +141,7 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 
 - Busca de séries e filmes.
 - Atualização automática de informações.
-- Verificação diária de novas temporadas e episódios.
+- Verificação diária de novas temporadas e episódios, feita pelo servidor (cron) e também pelo app quando é aberto.
 - Sinopses, capas e datas de lançamento.
 - Informações sobre onde assistir no Brasil.
 - Radar de afinidade: diretores/criadores, elenco e gêneros que se repetem nos títulos que você concluiu ou avaliou com nota 7+ (`/api/tmdb?acao=afinidade`). Cada sugestão explica o porquê e traz o atalho de onde assistir.
@@ -252,6 +252,7 @@ Para respeitar o limite de 12 arquivos públicos de API do plano Hobby, funciona
 - `api/_consultas.js`
 - `api/_importar.js`
 - `api/_pagina.js`
+- `api/_atualizar.js`
 - `api/_compartilhar.js`
 
 ### Banco de dados e migrações
@@ -366,7 +367,7 @@ neon/migracoes/
 Exemplo:
 
 ```text
-neon/migracoes/006_descricao.sql
+neon/migracoes/007_descricao.sql
 ```
 
 Depois, regenere o schema consolidado utilizando:
@@ -447,7 +448,7 @@ npm run vapid
 ```
 
 2. Configure as variáveis VAPID na Vercel.
-3. Aplique a migração 005.
+3. Aplique as migrações 005 e 006 (`npm run migrar`).
 4. Realize um novo deploy.
 5. Ative os avisos em **Minha conta → Avisos de episódios novos**.
 

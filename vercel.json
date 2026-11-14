@@ -3,7 +3,7 @@
   "buildCommand": "node scripts/build.js",
   "outputDirectory": "dist",
   "crons": [{ "path": "/api/cron", "schedule": "0 11 * * *" }],
-  "functions": { "api/cron.js": { "maxDuration": 30 } },
+  "functions": { "api/cron.js": { "maxDuration": 60 } },
   "rewrites": [{ "source": "/t/:codigo", "destination": "/api/t?c=:codigo" }],
   "cleanUrls": true,
   "headers": [

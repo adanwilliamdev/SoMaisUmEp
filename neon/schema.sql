@@ -135,6 +135,15 @@ create index if not exists push_assinaturas_user_idx on push_assinaturas (user_i
 -- Os avisos procuram títulos pela data do próximo lançamento (titulos.proximo->>'d').
 create index if not exists titulos_proximo_idx on titulos ((proximo->>'d')) where proximo is not null;
 
+-- ===== 006_verificacao_proximo.sql =====
+-- 006: verificação diária do próximo lançamento feita pelo servidor (api/_atualizar.js, chamado pelo cron).
+-- "tmdb_verificado" (ms) guarda quando o servidor consultou o TMDb pela última vez para aquele título. Serve de cursor da fila:
+-- a cada execução vão primeiro os títulos verificados há mais tempo (ou nunca). Seguro rodar de novo.
+alter table titulos add column if not exists tmdb_verificado bigint;
+
+-- A fila agrupa os títulos de todas as contas pelo id do TMDb.
+create index if not exists titulos_tmdb_idx on titulos (tmdb) where tmdb is not null;
+
 -- ===== controle de migrações =====
 create table if not exists migracoes (id text primary key, aplicada bigint not null);
 insert into migracoes (id, aplicada) values ('001_inicial', (extract(epoch from now()) * 1000)::bigint) on conflict (id) do nothing;
@@ -142,3 +151,4 @@ insert into migracoes (id, aplicada) values ('002_restricoes_contas_capas', (ext
 insert into migracoes (id, aplicada) values ('003_lancamentos_e_compartilhar', (extract(epoch from now()) * 1000)::bigint) on conflict (id) do nothing;
 insert into migracoes (id, aplicada) values ('004_chave_por_usuario', (extract(epoch from now()) * 1000)::bigint) on conflict (id) do nothing;
 insert into migracoes (id, aplicada) values ('005_avisos_push', (extract(epoch from now()) * 1000)::bigint) on conflict (id) do nothing;
+insert into migracoes (id, aplicada) values ('006_verificacao_proximo', (extract(epoch from now()) * 1000)::bigint) on conflict (id) do nothing;

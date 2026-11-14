@@ -1,6 +1,7 @@
 // Avisos de lançamento por push: uma vez por dia (api/cron.js) procura os títulos de cada pessoa cujo próximo episódio
 // (ou estreia) é HOJE e manda uma notificação para cada aparelho que ela ativou. A data vem de titulos.proximo, que o app
-// atualiza com o TMDb quando é aberto: se o app ficar muito tempo sem abrir, um lançamento anunciado depois não é visto aqui.
+// atualiza com o TMDb quando é aberto E, todo dia, o próprio cron (_atualizar.js), que roda ANTES deste envio: um lançamento
+// anunciado depois da última abertura do app também é visto aqui.
 const W = require('./_webpush');
 
 // "Hoje" é a data no fuso do público (padrão Brasília, UTC-3 o ano todo). FUSO_AVISOS muda isso (ex.: America/Manaus).

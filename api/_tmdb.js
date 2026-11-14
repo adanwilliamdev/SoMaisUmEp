@@ -21,6 +21,8 @@ function credencial() {
   return null;
 }
 
+const configurado = () => !!credencial();
+
 async function chamar(path, params = {}) {
   const cred = credencial();
   if (!cred) throw erro('TMDb não configurado no servidor (defina TMDB_READ_TOKEN ou TMDB_API_KEY).', 500);
@@ -82,4 +84,4 @@ function detalheDe(d, tipo) {
 }
 const detalhe = async (tipo, id) => detalheDe(await chamar('/' + tipo + '/' + id), tipo);
 
-module.exports = { poster, ano, chamar, resumo, proximoDe, detalheDe, detalhe };
+module.exports = { poster, ano, chamar, configurado, resumo, proximoDe, detalheDe, detalhe };
