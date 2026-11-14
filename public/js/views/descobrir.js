@@ -34,13 +34,18 @@ function itemRadar(x, tipo, sementes) {
 
 function blocoDna(dna, sementes, tipo) {
   const rotulos = rotulosDna(dna);
-  const rot = s => esc(s.nome + (s.nota_pessoal != null ? ` (${String(s.nota_pessoal).replace('.', ',')})` : estado(s) === 'assistindo' ? ' (assistindo)' : ''));
+  const marca = s => (s.nota_pessoal != null ? ` (${String(s.nota_pessoal).replace('.', ',')})` : estado(s) === 'assistindo' ? ' (assistindo)' : '');
+  const rot = s => esc(s.nome + marca(s));
   const base = sementes.map(rot).join(', ');
   const chips = rotulos.length
     ? `<ul class="dna" aria-label="Padrões nos seus ${nomeTipo(tipo)} favoritos">${rotulos.map(r => `<li><small>${esc(r.rot)}</small> ${esc(r.nome)}${r.n > 1 ? ` <span class="mut-leve">×${esc(r.n)}</span>` : ''}</li>`).join('')}</ul>`
     : `<p class="mut-peq">Ainda não há padrões repetidos entre os seus favoritos. Quanto mais você avalia, mais o radar aprende.</p>`;
   return `<section class="desc-sec" aria-labelledby="t-dna"><h2 class="sec-tit" id="t-dna">Seu DNA em ${nomeTipo(tipo)}</h2>${chips}
     <p class="mut-peq">Baseado no que você está assistindo, concluiu ou avaliou com nota 7 ou mais: ${base}.</p></section>`;
+}
+
+function secao(id, titulo, itens, tipo, sementes) {
+  return `<section class="desc-sec" aria-labelledby="${id}"><h2 class="sec-tit" id="${id}">${titulo}</h2><div class="radar-lista">${itens.map(x => itemRadar(x, tipo, sementes)).join('')}</div></section>`;
 }
 
 export function htmlDescobrir(tipo, d) {
@@ -59,9 +64,10 @@ export function htmlDescobrir(tipo, d) {
   const lista = (r.resultados || []).filter(x => !naEstante(L.series, tipo, x.id) && !nao.has(String(x.id)));
   const lanc = lista.filter(x => x.novo).slice(0, 6),
     resto = lista.filter(x => !lanc.includes(x));
-  const secao = (id, titulo, itens) => `<section class="desc-sec" aria-labelledby="${id}"><h2 class="sec-tit" id="${id}">${titulo}</h2><div class="radar-lista">${itens.map(x => itemRadar(x, tipo, sementes)).join('')}</div></section>`;
+  const novidades = lanc.length ? secao('t-nov', 'Novidades na sua vibe', lanc, tipo, sementes) : '';
+  const demais = resto.length ? secao('t-rad', lanc.length ? 'Também combina com você' : 'Talvez você curta', resto, tipo, sementes) : '';
   const corpo = lista.length
-    ? (lanc.length ? secao('t-nov', 'Novidades na sua vibe', lanc) : '') + (resto.length ? secao('t-rad', lanc.length ? 'Também combina com você' : 'Talvez você curta', resto) : '')
+    ? novidades + demais
     : '<section class="desc-sec"><p class="aviso">Nada novo por aqui: tudo o que combina com o seu gosto já está na sua estante ou foi dispensado.</p></section>';
   return `${atualizado(d.quando)}${blocoDna(r.dna, sementes, tipo)}${corpo}`;
 }

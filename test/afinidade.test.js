@@ -154,7 +154,11 @@ test('pontuar: palavras-chave em comum viram "vibe" e lançamento recente sobe n
   const c = (id, ano, extra) => ({ resumo: { id, nome: 'N' + id, ano }, recomendadoPor: [], onde: [], perfil: A.perfilDe(extra) });
   const r = A.pontuar(
     sem,
-    [c(10, '2015', { genres: gen('Drama'), ...kw('luto', 'cidade pequena') }), c(11, '2026', { genres: gen('Drama'), ...kw('luto', 'cidade pequena') }), c(12, '2026', kw('luto'))],
+    [
+      c(10, '2015', { genres: gen('Drama'), ...kw('luto', 'cidade pequena') }),
+      c(11, '2026', { genres: gen('Drama'), ...kw('luto', 'cidade pequena') }),
+      c(12, '2026', kw('luto')),
+    ],
     2026,
   );
   assert.deepEqual(
@@ -167,8 +171,19 @@ test('pontuar: palavras-chave em comum viram "vibe" e lançamento recente sobe n
 });
 
 test('/api/tmdb afinidade: busca lançamentos por gênero (discover) e segue sem eles se o TMDb falhar', async () => {
-  const dets = { genres: gen('Drama', 'Crime'), credits: {}, recommendations: { results: [] }, similar: { results: [{ id: 50, name: 'Parecida', first_air_date: '2020-01-01' }] }, keywords: { results: [] } };
-  tmdb.rotas = { '/tv/1': dets, '/tv/50': { genres: gen('Drama', 'Crime'), credits: {} }, '/discover/tv': { results: [{ id: 60, name: 'Nova', first_air_date: '2026-03-01' }] }, '/tv/60': { genres: gen('Drama', 'Crime'), credits: {} } };
+  const dets = {
+    genres: gen('Drama', 'Crime'),
+    credits: {},
+    recommendations: { results: [] },
+    similar: { results: [{ id: 50, name: 'Parecida', first_air_date: '2020-01-01' }] },
+    keywords: { results: [] },
+  };
+  tmdb.rotas = {
+    '/tv/1': dets,
+    '/tv/50': { genres: gen('Drama', 'Crime'), credits: {} },
+    '/discover/tv': { results: [{ id: 60, name: 'Nova', first_air_date: '2026-03-01' }] },
+    '/tv/60': { genres: gen('Drama', 'Crime'), credits: {} },
+  };
   tmdb.chamadas = [];
   const { consultas } = require('../api/_consultas');
   const res = novoRes();
@@ -179,5 +194,8 @@ test('/api/tmdb afinidade: busca lançamentos por gênero (discover) e segue sem
   delete tmdb.rotas['/discover/tv']; // discover fora do ar: o radar continua com as indicações
   const res2 = novoRes();
   await consultas.afinidade({ query: { ids: '1:9' } }, res2, 'tv');
-  assert.deepEqual(res2.body.resultados.map(x => x.id), [50]);
+  assert.deepEqual(
+    res2.body.resultados.map(x => x.id),
+    [50],
+  );
 });

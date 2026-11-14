@@ -87,7 +87,9 @@ const consultas = {
     });
     if (!sementes.length) throw erro('Informe títulos do TMDb');
     const anoAtual = new Date().getFullYear();
-    const dets = await Promise.allSettled(sementes.map(s => chamar('/' + tipo + '/' + s.id, { append_to_response: 'credits,recommendations,similar,keywords' })));
+    const dets = await Promise.allSettled(
+      sementes.map(s => chamar('/' + tipo + '/' + s.id, { append_to_response: 'credits,recommendations,similar,keywords' })),
+    );
     if (dets.every(r => r.status === 'rejected')) throw erro('Não foi possível falar com o TMDb.', 502);
     const boas = [],
       cands = new Map();
@@ -107,7 +109,10 @@ const consultas = {
     // Lançamentos recentes nos dois gêneros mais frequentes das sementes (se falhar, o radar segue só com as indicações).
     const porGenero = new Map();
     for (const s of boas) for (const [id] of s.perfil.generos) porGenero.set(id, (porGenero.get(id) || 0) + s.peso);
-    const topoGen = [...porGenero.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([id]) => id);
+    const topoGen = [...porGenero.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([id]) => id);
     let novos = [];
     if (topoGen.length) {
       const desde = `${anoAtual - 1}-01-01`;
@@ -141,7 +146,9 @@ const consultas = {
         .sort(ordena)
         .slice(0, 6),
     ];
-    const ext = await Promise.allSettled(finalistas.map(c => chamar('/' + tipo + '/' + c.resumo.id, { append_to_response: 'credits,keywords,watch/providers' })));
+    const ext = await Promise.allSettled(
+      finalistas.map(c => chamar('/' + tipo + '/' + c.resumo.id, { append_to_response: 'credits,keywords,watch/providers' })),
+    );
     const completos = finalistas.map((c, i) => {
       const d = ext[i].status === 'fulfilled' ? ext[i].value : {};
       return { ...c, perfil: perfilDe(d), onde: ondeCurto(d) };
