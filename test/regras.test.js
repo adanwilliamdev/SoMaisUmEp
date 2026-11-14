@@ -396,3 +396,15 @@ test('radar: o que você está assistindo agora sobe; frase e bônus de momento'
   assert.equal(bonusMomento(l[0], agora), 0);
   assert.match(frasePorque({ tipo: 'vibe' }, l[1]), /^Como você está assistindo .+: mesma vibe, com temas parecidos\.$/);
 });
+
+test('ehBackupDoApp: reconhece o backup do próprio app (novo e antigo) e recusa o que não é', async () => {
+  const { ehBackupDoApp } = await R();
+  const t = { id: 'a', nome: 'X', eps: [1], vis: [0] };
+  assert.equal(ehBackupDoApp({ app: 'somaisumep', versao: 4, series: [t], tops: [] }), true);
+  assert.equal(ehBackupDoApp({ app: 'somaisumep', series: [] }), true); // backup do app, só sem títulos
+  assert.equal(ehBackupDoApp({ series: [t] }), true); // versão antiga, sem o campo `app`
+  assert.equal(ehBackupDoApp({ series: [{ nome: 'sem eps' }] }), false);
+  assert.equal(ehBackupDoApp([t]), false); // lista solta (ex.: Trakt)
+  assert.equal(ehBackupDoApp({ watched: [] }), false);
+  assert.equal(ehBackupDoApp(null), false);
+});

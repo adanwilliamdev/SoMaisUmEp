@@ -27,6 +27,7 @@ export function htmlImportar(fase = {}) {
       <li><b>Letterboxd</b> (filmes): Settings › Data › Export your data. Envie o .zip inteiro, ou os CSV (watched, ratings, watchlist).</li>
       <li><b>IMDb</b>: na sua lista de avaliações ou na watchlist, menu ⋯ › Export. Envie o .csv.</li>
       <li><b>Trakt</b>: envie os arquivos .json do export (assistidos, avaliações, watchlist).</li>
+      <li><b>Backup do SóMaisUmEp</b>: envie o arquivo .json baixado em Backup; ele é restaurado direto.</li>
     </ul>
     <p class="aviso" id="imp-msg" role="alert"></p>
     <div class="rodape-dlg esq"><label class="btn arq">Escolher arquivos…<input type="file" id="imparq" accept=".zip,.csv,.json,application/zip,application/json,text/csv" multiple class="sr-input"></label></div>

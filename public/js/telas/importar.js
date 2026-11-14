@@ -2,10 +2,11 @@
 import { $, uid, aviso } from '../util.js';
 import { api } from '../api.js';
 import { L, save } from '../loja.js';
-import { acharDuplicado } from '../regras.js';
+import { acharDuplicado, ehBackupDoApp } from '../regras.js';
 import * as V from '../views.js';
 import { lerZip, lerArquivo, consolidar, resumoImportacao, montarTitulo, limitarImportacao, MAX_IMPORTACAO } from '../importacao.js';
 import { dlg, ctx, gancho } from './ctx.js';
+import { importarBackup } from './backup.js';
 
 let imp = null; // { entradas, fontes, parar, ids, rodando }
 
@@ -26,6 +27,22 @@ dlg.addEventListener('change', e => {
 async function lerArquivosImportacao(arquivos) {
   const msg = $('#imp-msg');
   msg.textContent = 'Lendo os arquivos…';
+  // Um backup do próprio app (.json) escolhido aqui é restaurado direto, em vez de cair no "Não encontrei títulos".
+  const backups = [];
+  for (const f of arquivos) {
+    if (!/\.json$/i.test(f.name) || f.size > 60e6) continue;
+    try {
+      const texto = await f.text();
+      if (ehBackupDoApp(JSON.parse(texto.replace(/^\uFEFF/, '')))) backups.push(texto);
+    } catch {
+      // não é JSON legível: segue o fluxo normal (Trakt)
+    }
+  }
+  if (backups.length) {
+    backups.forEach(importarBackup);
+    if (arquivos.length > backups.length) aviso('Os outros arquivos não foram lidos: importe o backup e as listas de outros apps separadamente.', 8000);
+    return;
+  }
   const todas = [],
     fontes = new Set();
   try {
@@ -52,7 +69,7 @@ async function lerArquivosImportacao(arquivos) {
       12000,
     );
   if (!entradas.length) {
-    msg.textContent = 'Não encontrei títulos nesses arquivos. Confira se são exports do Letterboxd, IMDb ou Trakt (veja as dicas acima).';
+    msg.textContent = 'Não encontrei títulos nesses arquivos. Confira se são exports do Letterboxd, IMDb, Trakt ou um backup do app (.json).';
     return;
   }
   imp = { entradas, fontes: [...fontes], parar: false, ids: [], rodando: false };

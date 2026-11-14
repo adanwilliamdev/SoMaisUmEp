@@ -362,6 +362,14 @@ const CAPAS_OK = [
 ];
 export const capaSegura = c => (typeof c === 'string' && c.length <= 120000 && CAPAS_OK.some(r => r.test(c)) ? c : null);
 
+// O arquivo é um backup do próprio app? Backups novos trazem `app: 'somaisumep'`; os antigos são reconhecidos pelo formato dos títulos.
+export const ehBackupDoApp = j =>
+  !!j &&
+  typeof j === 'object' &&
+  !Array.isArray(j) &&
+  Array.isArray(j.series) &&
+  (j.app === 'somaisumep' || j.series.some(x => x && Array.isArray(x.eps) && Array.isArray(x.vis)));
+
 export function limparTituloBackup(x, criadoPadrao = Date.now()) {
   if (!x || typeof x !== 'object' || typeof x.id !== 'string' || !ID_OK.test(x.id)) return null;
   if (!txt(x.nome, 80) || !Array.isArray(x.eps) || !Array.isArray(x.vis)) return null;
