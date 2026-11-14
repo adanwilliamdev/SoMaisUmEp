@@ -63,20 +63,22 @@ test('atualizarProximos: a fila é agrupada por (tipo, tmdb) entre contas, vai d
 
 test('atualizarProximos: uma consulta ao TMDb e um update por título, valendo para todas as contas', async () => {
   limpar();
-  banco.resposta = t => {
-    if (/group by tipo, tmdb/.test(t)) return [
-      { tipo: 'tv', tmdb: 100 },
-      { tipo: 'movie', tmdb: 200 },
-    ];
-    return /^update titulos set/.test(t) ? [{ mudou: true }, { mudou: true }, { mudou: false }] : [];
-  };
+  const fila = [
+    { tipo: 'tv', tmdb: 100 },
+    { tipo: 'movie', tmdb: 200 },
+  ];
+  const linhas = [{ mudou: true }, { mudou: true }, { mudou: false }];
+  banco.resposta = t => (/group by tipo, tmdb/.test(t) ? fila : /^update titulos set/.test(t) ? linhas : []);
   const chamadas = [];
   const buscar = async (tipo, id) => {
     chamadas.push([tipo, id]);
     return { proximo: tipo === 'tv' ? { d: '2026-11-20', t: 2, e: 3 } : null };
   };
   const r = await atualizarProximos(sql, { agora: AGORA, hoje: HOJE, buscar });
-  assert.deepEqual(chamadas, [['tv', 100], ['movie', 200]]);
+  assert.deepEqual(chamadas, [
+    ['tv', 100],
+    ['movie', 200],
+  ]);
   assert.equal(updates().length, 2); // um por título, não um por conta
   assert.deepEqual(r, { ativo: true, hoje: HOJE, candidatos: 2, consultados: 2, atualizados: 4, falhas: 0, interrompido: false });
   const u = updates()[0];
@@ -96,7 +98,11 @@ test('atualizarProximos: não troca a data de quem sai HOJE (o aviso ainda não 
 
 test('atualizarProximos: título que falha é marcado como verificado sem mexer na data, e os outros seguem', async () => {
   limpar();
-  banco.resposta = t => (/group by tipo, tmdb/.test(t) ? [{ tipo: 'tv', tmdb: 1 }, { tipo: 'tv', tmdb: 2 }] : [{ mudou: true }]);
+  const fila = [
+    { tipo: 'tv', tmdb: 1 },
+    { tipo: 'tv', tmdb: 2 },
+  ];
+  banco.resposta = t => (/group by tipo, tmdb/.test(t) ? fila : [{ mudou: true }]);
   const buscar = async (tipo, id) => {
     if (id === 1) throw new Error('404');
     return { proximo: { d: '2026-12-01' } };
