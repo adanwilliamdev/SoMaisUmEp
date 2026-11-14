@@ -1,9 +1,10 @@
 // Descobrir: radar de afinidade pessoal (cruza só com o seu histórico), detalhe de um título do TMDb e adicionar à estante.
 import { $, uid, aviso, avisoDesfazer, guardar, lerJSON } from '../util.js';
 import { L, save } from '../loja.js';
-import { acharDuplicado, sementesRadar, idsRadar } from '../regras.js';
+import { acharDuplicado, sementesRadar, idsRadar, precisaLigar, normaliza, tp, vis } from '../regras.js';
 import * as V from '../views.js';
 import { ondeAssistir, radar, detalheTmdb } from '../tmdbsync.js';
+import { tmdb } from '../api.js';
 import { dlg, ctx, gancho, onde, aba, revela } from './ctx.js';
 
 const desc = { tv: null, movie: null }; // por tipo: { chave, radar, quando } (radar: dados, 'carregando', 'erro' ou null); guardado só durante a sessão
@@ -17,15 +18,55 @@ export const limparDescobrir = () => {
   desc.tv = desc.movie = null;
 };
 
+// Títulos sem o id do TMDb (adicionados à mão): o app procura cada um pelo nome e guarda o resultado só neste aparelho
+// ({ idDoTitulo: { t: idDoTMDb ou 0 se não achou, q: quando } }). Assim o radar parte também do que você está assistindo e nunca foi ligado.
+const CHAVE_LIG = 'smue:descTmdb',
+  SEMANA = 7 * 864e5;
+const ligando = { tv: false, movie: false };
+const tentados = () => Object.fromEntries(Object.entries(lerJSON(CHAVE_LIG, {})).filter(([, v]) => v && (v.t || Date.now() - v.q < SEMANA)));
+const ligados = () =>
+  Object.fromEntries(
+    Object.entries(lerJSON(CHAVE_LIG, {}))
+      .filter(([, v]) => v && v.t)
+      .map(([id, v]) => [id, v.t]),
+  );
+const sementesDe = tipo => sementesRadar(L.series, tipo, 6, Date.now(), ligados());
+const faltaLigar = tipo => precisaLigar(L.series, tipo, tentados());
+
+async function ligarSementes(tipo, lista) {
+  const todos = lerJSON(CHAVE_LIG, {});
+  await Promise.all(
+    lista.map(async s => {
+      try {
+        const r = (await tmdb({ acao: 'busca', tipo, q: s.nome })).resultados || [];
+        const alvo = normaliza(s.nome);
+        // Nome igual (e ano igual, se os dois têm); sem nome igual, vale o 1º resultado só se o ano bate (o TMDb também acha por título alternativo).
+        const mesmoAno = x => !s.ano || !x.ano || String(s.ano) === String(x.ano);
+        const ach = r.find(x => normaliza(x.nome) === alvo && mesmoAno(x)) || (s.ano && r[0] && String(r[0].ano) === String(s.ano) ? r[0] : null);
+        todos[s.id] = { t: ach ? ach.id : 0, q: Date.now() };
+      } catch (e) {
+        if (e.auth) throw e; // outros erros (sem rede...): tenta de novo na próxima vez
+      }
+    }),
+  );
+  guardar(CHAVE_LIG, todos);
+}
+
 // A chave muda quando as sementes mudam (você concluiu ou avaliou algo): aí o radar é refeito.
-const chaveRadar = tipo => idsRadar(sementesRadar(L.series, tipo)).join(',');
+const chaveRadar = tipo => idsRadar(sementesDe(tipo)).join(',');
 
 export const descDados = () => {
   const tipo = V.UI.descTipo,
     d = desc[tipo],
-    nao = dispensados(tipo);
-  if (d && d.chave === chaveRadar(tipo)) return { ...d, dispensados: nao };
-  return { radar: chaveRadar(tipo) ? 'carregando' : null, dispensados: nao };
+    nao = dispensados(tipo),
+    sementes = sementesDe(tipo);
+  const lig = ligados(),
+    tent = tentados();
+  const semLigacao = L.series.filter(s => tp(s) === tipo && !s.tmdb && s.id in tent && !lig[s.id] && vis(s) > 0).map(s => s.nome);
+  const base = { dispensados: nao, sementes, semLigacao };
+  if (d && (d.radar === 'erro' || d.chave === chaveRadar(tipo))) return { ...d, ...base };
+  const procurando = faltaLigar(tipo).length > 0;
+  return { ...base, radar: procurando || chaveRadar(tipo) ? 'carregando' : null, procurando };
 };
 
 const descItem = (tipo, tid) => {
@@ -41,19 +82,40 @@ export function pintaDesc() {
 }
 
 export async function carregaDescobrir(tipo) {
-  const chave = chaveRadar(tipo);
-  const atual = desc[tipo];
-  if (atual && atual.chave === chave && Date.now() - (atual.quando || 0) < VALIDADE && atual.radar !== 'erro') return;
+  if (ligando[tipo]) return;
+  const falta = faltaLigar(tipo).slice(0, 8);
+  if (falta.length) {
+    ligando[tipo] = true;
+    try {
+      await ligarSementes(tipo, falta);
+    } catch (e) {
+      if (e.auth) gancho.telaAuth('entrar');
+    }
+    ligando[tipo] = false;
+    if (V.UI.descTipo !== tipo) return;
+  }
+  const chave = chaveRadar(tipo),
+    atual = desc[tipo];
+  if (atual && atual.chave === chave) {
+    const velho = Date.now() - (atual.quando || 0) > VALIDADE;
+    if (atual.radar === 'carregando' || (!velho && atual.radar !== 'erro')) {
+      if (falta.length) pintaDesc();
+      return;
+    }
+  }
   if (!chave) {
     desc[tipo] = { chave, radar: null };
+    pintaDesc();
     return;
   }
   const d = (desc[tipo] = { chave, radar: 'carregando' });
+  if (falta.length) pintaDesc();
   try {
     d.radar = await radar(tipo, chave.split(','), forcar[tipo]);
     d.quando = Date.now();
   } catch (e) {
     d.radar = 'erro';
+    d.erro = e.auth ? '' : e.message || '';
     if (e.auth) gancho.telaAuth('entrar');
   }
   forcar[tipo] = false;

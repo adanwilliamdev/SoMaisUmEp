@@ -408,3 +408,32 @@ test('ehBackupDoApp: reconhece o backup do próprio app (novo e antigo) e recusa
   assert.equal(ehBackupDoApp({ watched: [] }), false);
   assert.equal(ehBackupDoApp(null), false);
 });
+
+test('radar: títulos sem id do TMDb entram pelo nome ligado; precisaLigar e jaNaEstante', async () => {
+  const { sementesRadar, precisaLigar, jaNaEstante } = await R();
+  const l = [
+    serie({ id: 'x', nome: 'Dark', tmdb: null, vis: [3, 0] }), // em andamento, sem id do TMDb
+    serie({ id: 'y', nome: 'Lost', tmdb: null, vis: [0, 0] }), // nunca começou: não serve
+    serie({ id: 'z', nome: 'Ruim', tmdb: null, vis: [3, 0], nota_pessoal: 3 }), // nota baixa: não serve
+    serie({ id: 'w', nome: 'Ruptura', tmdb: 7, vis: [3, 0] }),
+  ];
+  assert.deepEqual(
+    precisaLigar(l, 'tv').map(s => s.id),
+    ['x'],
+  );
+  assert.deepEqual(precisaLigar(l, 'tv', { x: { t: 0 } }), []); // já procurado
+  assert.deepEqual(
+    sementesRadar(l, 'tv').map(s => s.id),
+    ['w'],
+  );
+  const com = sementesRadar(l, 'tv', 6, Date.now(), { x: 1002 });
+  assert.deepEqual(com.map(s => [s.id, s.tmdb]).sort(), [
+    ['w', 7],
+    ['x', 1002],
+  ]);
+  // Sugestão que você já tem sem id do TMDb não volta a aparecer; com ano diferente (outra obra) aparece.
+  const est = [serie({ id: 'k', nome: 'Dark', ano: '2017', tmdb: null })];
+  assert.equal(jaNaEstante(est, 'tv', { id: 1002, nome: 'Dark', ano: '2017' }), true);
+  assert.equal(jaNaEstante(est, 'tv', { id: 9, nome: 'Dark', ano: '1999' }), false);
+  assert.equal(jaNaEstante(est, 'movie', { id: 1002, nome: 'Dark', ano: '2017' }), false);
+});

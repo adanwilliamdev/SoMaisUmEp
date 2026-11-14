@@ -1,7 +1,7 @@
 // Aba Descobrir: radar de afinidade pessoal (só cruza com o seu histórico) e o painel de um título do TMDb.
 import { esc } from '../util.js';
 import { L } from '../loja.js';
-import { naEstante, sementesRadar, frasePorque, rotulosDna, estado } from '../regras.js';
+import { jaNaEstante, sementesRadar, frasePorque, rotulosDna, estado } from '../regras.js';
 import { UI, capa, ICO_MAIS } from './comum.js';
 import { htmlOnde } from './detalhe.js';
 
@@ -10,7 +10,7 @@ import { htmlOnde } from './detalhe.js';
 const nomeTipo = tipo => (tipo === 'movie' ? 'filmes' : 'séries');
 
 function itemRadar(x, tipo, sementes) {
-  const tem = naEstante(L.series, tipo, x.id);
+  const tem = jaNaEstante(L.series, tipo, x);
   // Um motivo por semente; a frase usa o que você realmente fez com aquele título (concluiu, nota).
   const frases = [];
   for (const m of x.porque || []) {
@@ -49,19 +49,25 @@ function secao(id, titulo, itens, tipo, sementes) {
 }
 
 export function htmlDescobrir(tipo, d) {
-  const sementes = sementesRadar(L.series, tipo);
+  const sementes = (d && d.sementes) || sementesRadar(L.series, tipo);
   const r = d && d.radar;
-  if (!r || !sementes.length) {
-    return `<div class="vazio">O radar ainda não tem de onde partir.<br><small>Comece a assistir, conclua ou avalie com nota 7 ou mais ao menos um ${tipo === 'movie' ? 'filme' : 'título'} ligado ao TMDb e as sugestões aparecem aqui, sempre dizendo por quê.</small></div>`;
-  }
   if (r === 'carregando') {
-    return `<div class="radar-lista" aria-busy="true">${Array.from({ length: 4 }, () => '<div class="radar-item"><div class="sk sk-capa"></div><div class="radar-info"><div class="sk sk-l1"></div><div class="sk sk-l1"></div></div></div>').join('')}</div>`;
+    const aviso = d.procurando ? '<p class="mut-peq" role="status">Procurando no TMDb os títulos que você está assistindo…</p>' : '';
+    return `${aviso}<div class="radar-lista" aria-busy="true">${Array.from({ length: 4 }, () => '<div class="radar-item"><div class="sk sk-capa"></div><div class="radar-info"><div class="sk sk-l1"></div><div class="sk sk-l1"></div></div></div>').join('')}</div>`;
   }
   if (r === 'erro') {
-    return '<p class="aviso">Não foi possível montar o radar agora. <button class="btn sec mini" data-act="desc-recarregar">Tentar de novo</button></p>';
+    const motivo = d.erro ? ` <small>(${esc(d.erro)})</small>` : '';
+    return `<p class="aviso">Não foi possível montar o radar agora.${motivo} <button class="btn sec mini" data-act="desc-recarregar">Tentar de novo</button></p>`;
+  }
+  if (!r || !sementes.length) {
+    const sem = (d && d.semLigacao) || [];
+    const dica = sem.length
+      ? `<br><small>Não achei no TMDb: ${esc(sem.slice(0, 3).join(', '))}${sem.length > 3 ? '…' : ''}. Abra o título, toque em Editar › Buscar no TMDb e ligue-o para entrar no radar.</small>`
+      : '';
+    return `<div class="vazio">O radar ainda não tem de onde partir.<br><small>Comece a assistir, conclua ou avalie com nota 7 ou mais ao menos um ${tipo === 'movie' ? 'filme' : 'título'} e as sugestões aparecem aqui, sempre dizendo por quê.</small>${dica}</div>`;
   }
   const nao = new Set((d.dispensados || []).map(String));
-  const lista = (r.resultados || []).filter(x => !naEstante(L.series, tipo, x.id) && !nao.has(String(x.id)));
+  const lista = (r.resultados || []).filter(x => !jaNaEstante(L.series, tipo, x) && !nao.has(String(x.id)));
   const lanc = lista.filter(x => x.novo).slice(0, 6),
     resto = lista.filter(x => !lanc.includes(x));
   const novidades = lanc.length ? secao('t-nov', 'Novidades na sua vibe', lanc, tipo, sementes) : '';
@@ -88,7 +94,7 @@ export function viewDescobrir(d) {
     <div id="desc">${htmlDescobrir(tipo, d)}</div>`;
 }
 export function htmlDescDetalhe(x, tipo, onde) {
-  const tem = naEstante(L.series, tipo, x.id);
+  const tem = jaNaEstante(L.series, tipo, x);
   const pilulas = [tipo === 'movie' ? 'Filme' : 'Série', x.ano, x.nota ? '★ ' + x.nota : '']
     .filter(Boolean)
     .map(p => `<span class="pilula">${esc(p)}</span>`)

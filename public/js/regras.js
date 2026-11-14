@@ -256,12 +256,21 @@ export function bonusMomento(s, agora = Date.now()) {
   return dias <= 60 ? 0.5 : 0;
 }
 const ponto = (s, agora) => pesoRadar(s) + bonusMomento(s, agora);
-export function sementesRadar(series, tipo, max = 6, agora = Date.now()) {
+// Pode servir de ponto de partida: já começou e não tem nota baixa.
+const elegivelRadar = s => vis(s) > 0 && (s.nota_pessoal != null ? s.nota_pessoal >= NOTA_ALTA : true);
+// `ligados` = { idDoTitulo: idDoTMDb } para os títulos que não trazem o id do TMDb (o app os procura pelo nome; veja telas/descobrir.js).
+export function sementesRadar(series, tipo, max = 6, agora = Date.now(), ligados = {}) {
   return series
-    .filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal != null ? s.nota_pessoal >= NOTA_ALTA : true))
+    .map(s => (s.tmdb || !ligados[s.id] ? s : { ...s, tmdb: ligados[s.id] }))
+    .filter(s => tp(s) === tipo && s.tmdb && elegivelRadar(s))
     .sort((a, b) => ponto(b, agora) - ponto(a, agora) || recente(b) - recente(a))
     .slice(0, max);
 }
+// Quem serviria de ponto de partida, mas não tem o id do TMDb e ainda não foi procurado (`tentados` = { idDoTitulo: ... }).
+export const precisaLigar = (series, tipo, tentados = {}) => series.filter(s => tp(s) === tipo && !s.tmdb && !(s.id in tentados) && elegivelRadar(s));
+// Já está na estante? Compara pelo id do TMDb e, para títulos sem esse id, pelo nome (e ano, quando os dois têm).
+export const jaNaEstante = (series, tipo, x) =>
+  naEstante(series, tipo, x.id) || !!acharDuplicado(series, { tipo, nome: x.nome, ano: x.ano || null, tmdb: x.id });
 // Parâmetro `ids` de /api/tmdb?acao=afinidade: "id" ou "id:nota".
 export const idsRadar = sementes => sementes.map(s => (s.nota_pessoal != null ? `${s.tmdb}:${s.nota_pessoal}` : String(s.tmdb)));
 
