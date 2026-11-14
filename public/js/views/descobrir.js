@@ -1,7 +1,7 @@
 // Aba Descobrir: radar de afinidade pessoal (só cruza com o seu histórico) e o painel de um título do TMDb.
 import { esc } from '../util.js';
 import { L } from '../loja.js';
-import { naEstante, sementesRadar, frasePorque, rotulosDna } from '../regras.js';
+import { naEstante, sementesRadar, frasePorque, rotulosDna, estado } from '../regras.js';
 import { UI, capa, ICO_MAIS } from './comum.js';
 import { htmlOnde } from './detalhe.js';
 
@@ -28,26 +28,26 @@ function itemRadar(x, tipo, sementes) {
       <h3>${esc(x.nome)}</h3>
       <small>${esc([x.ano, x.nota ? '★ ' + x.nota + ' no TMDb' : ''].filter(Boolean).join(' · '))}</small>
       ${frases.map(f => `<p class="porque">${esc(f)}</p>`).join('')}
-      <div class="radar-acoes">${onde}${tem ? '' : `<button class="btn mini" data-act="desc-add" aria-label="Adicionar ${esc(x.nome)} à estante">${ICO_MAIS} Estante</button>`}</div>
+      <div class="radar-acoes">${onde}${tem ? '' : `<button class="btn mini" data-act="desc-add" aria-label="Adicionar ${esc(x.nome)} à estante">${ICO_MAIS} Estante</button>`}${tem ? '' : `<button class="btn sec mini" data-act="desc-dispensar" aria-label="Não tenho interesse em ${esc(x.nome)}">Dispensar</button>`}</div>
     </div></article>`;
 }
 
 function blocoDna(dna, sementes, tipo) {
   const rotulos = rotulosDna(dna);
-  const rot = s => esc(s.nome + (s.nota_pessoal != null ? ` (${String(s.nota_pessoal).replace('.', ',')})` : ''));
+  const rot = s => esc(s.nome + (s.nota_pessoal != null ? ` (${String(s.nota_pessoal).replace('.', ',')})` : estado(s) === 'assistindo' ? ' (assistindo)' : ''));
   const base = sementes.map(rot).join(', ');
   const chips = rotulos.length
     ? `<ul class="dna" aria-label="Padrões nos seus ${nomeTipo(tipo)} favoritos">${rotulos.map(r => `<li><small>${esc(r.rot)}</small> ${esc(r.nome)}${r.n > 1 ? ` <span class="mut-leve">×${esc(r.n)}</span>` : ''}</li>`).join('')}</ul>`
     : `<p class="mut-peq">Ainda não há padrões repetidos entre os seus favoritos. Quanto mais você avalia, mais o radar aprende.</p>`;
   return `<section class="desc-sec" aria-labelledby="t-dna"><h2 class="sec-tit" id="t-dna">Seu DNA em ${nomeTipo(tipo)}</h2>${chips}
-    <p class="mut-peq">Baseado no que você concluiu ou avaliou com nota 7 ou mais: ${base}.</p></section>`;
+    <p class="mut-peq">Baseado no que você está assistindo, concluiu ou avaliou com nota 7 ou mais: ${base}.</p></section>`;
 }
 
 export function htmlDescobrir(tipo, d) {
   const sementes = sementesRadar(L.series, tipo);
   const r = d && d.radar;
   if (!r || !sementes.length) {
-    return `<div class="vazio">O radar ainda não tem de onde partir.<br><small>Conclua ou avalie com nota 7 ou mais ao menos um ${tipo === 'movie' ? 'filme' : 'título'} ligado ao TMDb e as sugestões aparecem aqui, sempre dizendo por quê.</small></div>`;
+    return `<div class="vazio">O radar ainda não tem de onde partir.<br><small>Comece a assistir, conclua ou avalie com nota 7 ou mais ao menos um ${tipo === 'movie' ? 'filme' : 'título'} ligado ao TMDb e as sugestões aparecem aqui, sempre dizendo por quê.</small></div>`;
   }
   if (r === 'carregando') {
     return `<div class="radar-lista" aria-busy="true">${Array.from({ length: 4 }, () => '<div class="radar-item"><div class="sk sk-capa"></div><div class="radar-info"><div class="sk sk-l1"></div><div class="sk sk-l1"></div></div></div>').join('')}</div>`;
@@ -55,11 +55,21 @@ export function htmlDescobrir(tipo, d) {
   if (r === 'erro') {
     return '<p class="aviso">Não foi possível montar o radar agora. <button class="btn sec mini" data-act="desc-recarregar">Tentar de novo</button></p>';
   }
-  const lista = (r.resultados || []).filter(x => !naEstante(L.series, tipo, x.id));
+  const nao = new Set((d.dispensados || []).map(String));
+  const lista = (r.resultados || []).filter(x => !naEstante(L.series, tipo, x.id) && !nao.has(String(x.id)));
+  const lanc = lista.filter(x => x.novo).slice(0, 6),
+    resto = lista.filter(x => !lanc.includes(x));
+  const secao = (id, titulo, itens) => `<section class="desc-sec" aria-labelledby="${id}"><h2 class="sec-tit" id="${id}">${titulo}</h2><div class="radar-lista">${itens.map(x => itemRadar(x, tipo, sementes)).join('')}</div></section>`;
   const corpo = lista.length
-    ? `<div class="radar-lista">${lista.map(x => itemRadar(x, tipo, sementes)).join('')}</div>`
-    : '<p class="aviso">Nada novo por aqui: tudo o que combina com o seu gosto já está na sua estante.</p>';
-  return `${blocoDna(r.dna, sementes, tipo)}<section class="desc-sec" aria-labelledby="t-rad"><h2 class="sec-tit" id="t-rad">Talvez você curta</h2>${corpo}</section>`;
+    ? (lanc.length ? secao('t-nov', 'Novidades na sua vibe', lanc) : '') + (resto.length ? secao('t-rad', lanc.length ? 'Também combina com você' : 'Talvez você curta', resto) : '')
+    : '<section class="desc-sec"><p class="aviso">Nada novo por aqui: tudo o que combina com o seu gosto já está na sua estante ou foi dispensado.</p></section>';
+  return `${atualizado(d.quando)}${blocoDna(r.dna, sementes, tipo)}${corpo}`;
+}
+// "Atualizado há 5 min" + botão para refazer o radar agora.
+function atualizado(quando) {
+  const min = quando ? Math.max(0, Math.round((Date.now() - quando) / 6e4)) : 0;
+  const txt = min < 1 ? 'agora' : min < 60 ? `há ${min} min` : `há ${Math.round(min / 60)} h`;
+  return `<p class="desc-quando mut-peq">Atualizado ${txt} <button class="btn sec mini" data-act="desc-recarregar">Atualizar</button></p>`;
 }
 export function viewDescobrir(d) {
   const tipo = UI.descTipo,
@@ -67,7 +77,7 @@ export function viewDescobrir(d) {
       ['tv', 'Séries'],
       ['movie', 'Filmes'],
     ];
-  return `<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">Seu radar de afinidade: sugestões tiradas só do que você já viu e avaliou, com o motivo de cada uma.</p></div></div>
+  return `<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">Seu radar: séries e filmes na mesma vibe do que você está assistindo e curtiu, sempre com novidades e com o motivo de cada sugestão.</p></div></div>
     <div class="ferramentas centro"><div class="barra-acoes" role="group" aria-label="Tipo">${fs.map(([k, r]) => `<button class="chip" data-act="desc-tipo" data-k="${k}" aria-pressed="${tipo === k}">${r}</button>`).join('')}</div></div>
     <div id="desc">${htmlDescobrir(tipo, d)}</div>`;
 }

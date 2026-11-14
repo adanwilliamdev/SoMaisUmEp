@@ -316,12 +316,12 @@ test('backup: ids, números, capas e textos passam pelo saneamento (nada de aspa
 });
 
 /* ---------- radar de afinidade e retrato do espectador ---------- */
-test('sementesRadar: só nota 7+ ou concluído sem nota; melhor nota primeiro; idsRadar leva a nota', async () => {
+test('sementesRadar: nota 7+, concluído ou em andamento sem nota; melhor nota primeiro; idsRadar leva a nota', async () => {
   const { sementesRadar, idsRadar, frasePorque } = await R();
   const l = [
     serie({ id: '1', tmdb: 1, vis: [10, 8], nota_pessoal: 10, nome: 'Alfa' }),
     serie({ id: '2', tmdb: 2, vis: [10, 8] }), // concluída sem nota: vale
-    serie({ id: '3', tmdb: 3, vis: [1, 0] }), // só começou, sem nota: fora
+    serie({ id: '3', tmdb: 3, vis: [1, 0] }), // em andamento, sem nota: vale (você está assistindo)
     serie({ id: '4', tmdb: 4, vis: [10, 8], nota_pessoal: 4 }), // nota baixa: fora
     serie({ id: '5', vis: [10, 8], nota_pessoal: 9 }), // sem TMDb: fora
     serie({ id: '6', tmdb: 6, vis: [1, 0], nota_pessoal: 8 }), // começada mas com nota alta: vale
@@ -329,9 +329,9 @@ test('sementesRadar: só nota 7+ ou concluído sem nota; melhor nota primeiro; i
   const sem = sementesRadar(l, 'tv');
   assert.deepEqual(
     sem.map(s => s.id),
-    ['1', '6', '2'],
+    ['1', '6', '3', '2'],
   );
-  assert.deepEqual(idsRadar(sem), ['1:10', '6:8', '2']);
+  assert.deepEqual(idsRadar(sem), ['1:10', '6:8', '3', '2']);
   assert.equal(frasePorque({ tipo: 'dir', nome: 'Nolan' }, sem[0]), 'Como você concluiu Alfa e deu nota 10: mesma criação (Nolan).');
   assert.match(frasePorque({ tipo: 'rec' }, sem[1]), /^Como você viu Série e deu nota 8: /);
   assert.equal(frasePorque({ tipo: 'x' }, sem[0]), '');
@@ -377,4 +377,22 @@ test('backup: a nota de rodapé do top é limpa e limitada', async () => {
   assert.equal(t.itens[0].obs, 'Assisti em 2024');
   assert.equal(t.itens[1].obs.length, OBS_MAX);
   assert.equal(t.itens[2].obs, undefined);
+});
+
+test('radar: o que você está assistindo agora sobe; frase e bônus de momento', async () => {
+  const { sementesRadar, frasePorque, bonusMomento } = await R();
+  const agora = Date.parse('2026-11-14T12:00:00');
+  const dia = 864e5;
+  const l = [
+    serie({ id: 'a', tmdb: 1, vis: [10, 8], nota_pessoal: 8, visto_em: agora - 200 * dia }), // concluída há muito tempo
+    serie({ id: 'b', tmdb: 2, vis: [2, 0], visto_em: agora - 2 * dia }), // em andamento, sem nota, vista esta semana
+    serie({ id: 'c', tmdb: 3, vis: [2, 0], nota_pessoal: 3, visto_em: agora - dia }), // nota baixa: fora mesmo em andamento
+  ];
+  assert.deepEqual(
+    sementesRadar(l, 'tv', 6, agora).map(s => s.id),
+    ['b', 'a'],
+  );
+  assert.equal(bonusMomento(l[1], agora), 1.5);
+  assert.equal(bonusMomento(l[0], agora), 0);
+  assert.match(frasePorque({ tipo: 'vibe' }, l[1]), /^Como você está assistindo .+: mesma vibe, com temas parecidos\.$/);
 });

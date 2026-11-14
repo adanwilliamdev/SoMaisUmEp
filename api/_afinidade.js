@@ -2,7 +2,9 @@
 // Sem rede nem banco: recebe dados já buscados e devolve o DNA (o que se repete nas sementes) e os candidatos
 // ordenados, cada um com os motivos ("mesmo diretor", "com o ator X", "mesmo gênero"...). Fácil de testar.
 
-const PAPEL_PESO = { dir: 4, ator: 2, rec: 3, genero: 0.6 };
+const PAPEL_PESO = { dir: 4, ator: 2, rec: 3, genero: 0.6, vibe: 0.9 };
+const BONUS_NOVO = 1.2; // lançamento recente (ano atual ou o anterior): o radar não vive só de clássicos
+const BONUS_ONDE = 0.4; // dá para assistir agora em algum serviço do Brasil
 
 // Pessoas e gêneros de um título do TMDb já com `credits` anexado.
 // Séries: criadores (created_by) fazem o papel de diretor; filmes: diretores da equipe.
@@ -15,7 +17,10 @@ function perfilDe(d) {
   for (const p of credits.crew || []) if (p.job === 'Director') add(dirs, p);
   for (const p of (credits.cast || []).slice(0, 5)) add(atores, p);
   const generos = new Map((d.genres || []).map(g => [g.id, g.name]));
-  return { dirs, atores, generos };
+  // Palavras-chave do TMDb ("time travel", "small town"...): é o que mais se aproxima da "vibe". Séries: keywords.results; filmes: keywords.keywords.
+  const kw = d.keywords || {};
+  const palavras = new Map((kw.results || kw.keywords || []).filter(k => k && k.id).map(k => [k.id, k.name]));
+  return { dirs, atores, generos, palavras };
 }
 
 // sementes: [{ id, nome, peso, perfil }]; devolve o que se repete entre elas.
@@ -39,7 +44,7 @@ function dnaDe(sementes) {
 }
 
 // candidatos: [{ resumo, perfil, recomendadoPor: [idSemente] }]
-function pontuar(sementes, candidatos) {
+function pontuar(sementes, candidatos, anoAtual = new Date().getFullYear()) {
   return candidatos
     .map(c => {
       const porque = [];
@@ -57,6 +62,11 @@ function pontuar(sementes, candidatos) {
           pontos += PAPEL_PESO.ator * base;
           porque.push({ tipo: 'ator', seed: s.id, nome: ator[1] });
         }
+        const temas = [...c.perfil.palavras].filter(([id]) => s.perfil.palavras.has(id)).length;
+        if (temas >= 2) {
+          pontos += PAPEL_PESO.vibe * Math.min(temas, 5) * base;
+          porque.push({ tipo: 'vibe', seed: s.id, n: temas });
+        }
         if (c.recomendadoPor.includes(s.id)) {
           pontos += PAPEL_PESO.rec * base;
           porque.push({ tipo: 'rec', seed: s.id });
@@ -67,7 +77,7 @@ function pontuar(sementes, candidatos) {
         }
       }
       // Um motivo por semente (o mais forte), no máximo 2 motivos no total: o app mostra uma frase só.
-      const ordem = ['dir', 'ator', 'rec', 'genero'];
+      const ordem = ['dir', 'ator', 'vibe', 'rec', 'genero'];
       porque.sort((a, b) => ordem.indexOf(a.tipo) - ordem.indexOf(b.tipo));
       const vistas = new Set(),
         unicos = [];
@@ -76,7 +86,9 @@ function pontuar(sementes, candidatos) {
         vistas.add(p.seed);
         unicos.push(p);
       }
-      return { ...c.resumo, onde: c.onde || [], porque: unicos.slice(0, 2), pontos };
+      const novo = Number(c.resumo.ano) >= anoAtual - 1;
+      if (unicos.length) pontos += (novo ? BONUS_NOVO : 0) + ((c.onde || []).length ? BONUS_ONDE : 0);
+      return { ...c.resumo, onde: c.onde || [], novo, porque: unicos.slice(0, 2), pontos };
     })
     .filter(c => c.porque.length)
     .sort((a, b) => b.pontos - a.pontos)

@@ -1,12 +1,16 @@
 // Descobrir: radar de afinidade pessoal (cruza só com o seu histórico), detalhe de um título do TMDb e adicionar à estante.
-import { $, uid, aviso, avisoDesfazer } from '../util.js';
+import { $, uid, aviso, avisoDesfazer, guardar, lerJSON } from '../util.js';
 import { L, save } from '../loja.js';
 import { acharDuplicado, sementesRadar, idsRadar } from '../regras.js';
 import * as V from '../views.js';
 import { ondeAssistir, radar, detalheTmdb } from '../tmdbsync.js';
 import { dlg, ctx, gancho, onde, aba, revela } from './ctx.js';
 
-const desc = { tv: null, movie: null }; // por tipo: { chave, radar } (radar: dados, 'carregando', 'erro' ou null); guardado só durante a sessão
+const desc = { tv: null, movie: null }; // por tipo: { chave, radar, quando } (radar: dados, 'carregando', 'erro' ou null); guardado só durante a sessão
+const VALIDADE = 6 * 36e5; // depois de 6 h o radar é refeito sozinho quando você volta para a aba
+const forcar = { tv: false, movie: false }; // "Atualizar": ignora o cache
+const CHAVE_NAO = 'smue:descNao'; // títulos dispensados ("não tenho interesse"), por tipo, neste aparelho
+const dispensados = tipo => (lerJSON(CHAVE_NAO, {})[tipo] || []).map(String);
 let descAberto = null; // { x, tipo }: título do TMDb aberto no painel
 
 export const limparDescobrir = () => {
@@ -18,9 +22,10 @@ const chaveRadar = tipo => idsRadar(sementesRadar(L.series, tipo)).join(',');
 
 export const descDados = () => {
   const tipo = V.UI.descTipo,
-    d = desc[tipo];
-  if (d && d.chave === chaveRadar(tipo)) return d;
-  return { radar: chaveRadar(tipo) ? 'carregando' : null };
+    d = desc[tipo],
+    nao = dispensados(tipo);
+  if (d && d.chave === chaveRadar(tipo)) return { ...d, dispensados: nao };
+  return { radar: chaveRadar(tipo) ? 'carregando' : null, dispensados: nao };
 };
 
 const descItem = (tipo, tid) => {
@@ -37,18 +42,21 @@ export function pintaDesc() {
 
 export async function carregaDescobrir(tipo) {
   const chave = chaveRadar(tipo);
-  if (desc[tipo] && desc[tipo].chave === chave) return;
+  const atual = desc[tipo];
+  if (atual && atual.chave === chave && Date.now() - (atual.quando || 0) < VALIDADE && atual.radar !== 'erro') return;
   if (!chave) {
     desc[tipo] = { chave, radar: null };
     return;
   }
   const d = (desc[tipo] = { chave, radar: 'carregando' });
   try {
-    d.radar = await radar(tipo, chave.split(','));
+    d.radar = await radar(tipo, chave.split(','), forcar[tipo]);
+    d.quando = Date.now();
   } catch (e) {
     d.radar = 'erro';
     if (e.auth) gancho.telaAuth('entrar');
   }
+  forcar[tipo] = false;
   if (desc[tipo] === d) pintaDesc();
 }
 
@@ -133,8 +141,24 @@ export const acoes = {
     gancho.render();
   },
   'desc-recarregar': () => {
+    forcar[V.UI.descTipo] = true;
     desc[V.UI.descTipo] = null;
     gancho.render();
+  },
+  'desc-dispensar': ({ b }) => {
+    const tipo = V.UI.descTipo,
+      tid = String(b.closest('[data-tid]').dataset.tid),
+      x = descItem(tipo, tid);
+    const todos = lerJSON(CHAVE_NAO, {});
+    todos[tipo] = [...new Set([...(todos[tipo] || []).map(String), tid])].slice(-300);
+    guardar(CHAVE_NAO, todos);
+    pintaDesc();
+    avisoDesfazer(`${x ? x.nome : 'Título'} não vai mais aparecer`, () => {
+      const t = lerJSON(CHAVE_NAO, {});
+      t[tipo] = (t[tipo] || []).map(String).filter(i => i !== tid);
+      guardar(CHAVE_NAO, t);
+      pintaDesc();
+    });
   },
   'desc-abrir': ({ b }) => {
     const tipo = V.UI.descTipo,

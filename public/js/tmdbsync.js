@@ -86,5 +86,6 @@ export async function ondeAssistir(s) {
 
 /* ---------- descobrir ---------- */
 // Radar de afinidade: `ids` vem de idsRadar() ("id" ou "id:nota"). Devolve { dna, resultados }.
-export const radar = (tipo, ids) => tmdb({ acao: 'afinidade', tipo, ids: ids.join(',') });
+// `fresco` = pedido manual ("Atualizar"): o carimbo `r` muda a URL e fura o cache do navegador e da borda.
+export const radar = (tipo, ids, fresco = false) => tmdb({ acao: 'afinidade', tipo, ids: ids.join(','), ...(fresco ? { r: Date.now() } : {}) });
 export const detalheTmdb = (tipo, id) => tmdb({ acao: 'detalhe', tipo, id });

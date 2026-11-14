@@ -243,16 +243,23 @@ export function sementes(series, tipo, max = 5) {
 export const naEstante = (series, tipo, tmdb) => series.some(s => tp(s) === tipo && s.tmdb === tmdb);
 
 /* ---------- radar de afinidade (aba Descobrir) ---------- */
-// Pontos de partida do radar: só o que você de fato viu e curtiu. Entra quem tem nota sua >= 7 ou quem você concluiu sem avaliar
-// (nesse caso vale como 7). Quem tem nota mais alta vem antes; no empate, o concluído e depois o visto mais recentemente.
+// Pontos de partida do radar: o que você está assistindo agora, concluiu ou avaliou bem. Entra quem tem nota sua >= 7, quem você concluiu
+// sem avaliar e quem está em andamento sem avaliar (nesses dois casos vale como 7). Nota baixa (< 7) fica de fora.
+// A ordem favorece o que está vivo: o que você viu nas últimas semanas ganha um bônus, então o radar acompanha o seu momento.
 export const NOTA_ALTA = 7;
+const DIA_MS = 864e5;
 const pesoRadar = s => (s.nota_pessoal != null ? s.nota_pessoal : NOTA_ALTA);
-const concluido = s => (estado(s) === 'fim' ? 1 : 0);
 const recente = s => s.visto_em || s.criado || 0;
-export function sementesRadar(series, tipo, max = 6) {
+export function bonusMomento(s, agora = Date.now()) {
+  const dias = s.visto_em ? (agora - s.visto_em) / DIA_MS : Infinity;
+  if (estado(s) === 'assistindo') return dias <= 14 ? 1.5 : dias <= 45 ? 1 : 0.5;
+  return dias <= 60 ? 0.5 : 0;
+}
+const ponto = (s, agora) => pesoRadar(s) + bonusMomento(s, agora);
+export function sementesRadar(series, tipo, max = 6, agora = Date.now()) {
   return series
-    .filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal != null ? s.nota_pessoal >= NOTA_ALTA : estado(s) === 'fim'))
-    .sort((a, b) => pesoRadar(b) - pesoRadar(a) || concluido(b) - concluido(a) || recente(b) - recente(a))
+    .filter(s => tp(s) === tipo && s.tmdb && vis(s) > 0 && (s.nota_pessoal != null ? s.nota_pessoal >= NOTA_ALTA : true))
+    .sort((a, b) => ponto(b, agora) - ponto(a, agora) || recente(b) - recente(a))
     .slice(0, max);
 }
 // Parâmetro `ids` de /api/tmdb?acao=afinidade: "id" ou "id:nota".
@@ -264,12 +271,13 @@ export function frasePorque(motivo, semente) {
   if (!motivo || !semente) return '';
   const filme = tp(semente) === 'movie',
     fim = estado(semente) === 'fim';
-  const verbo = !fim ? 'viu' : filme ? 'assistiu' : 'concluiu';
+  const verbo = !fim ? (filme || semente.nota_pessoal != null ? 'viu' : 'está assistindo') : filme ? 'assistiu' : 'concluiu';
   const nota = semente.nota_pessoal != null ? ` e deu nota ${notaTxt(semente.nota_pessoal)}` : '';
   const alvo = {
     dir: `${filme ? 'mesma direção' : 'mesma criação'} (${motivo.nome})`,
     ator: `com ${motivo.nome}, que também está lá`,
     genero: `mesmo clima: ${motivo.nome}`,
+    vibe: 'mesma vibe, com temas parecidos',
     rec: 'quem gosta de um costuma gostar do outro',
   }[motivo.tipo];
   return alvo ? `Como você ${verbo} ${semente.nome}${nota}: ${alvo}.` : '';
