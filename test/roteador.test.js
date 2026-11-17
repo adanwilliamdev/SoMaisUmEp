@@ -117,7 +117,12 @@ test('plano Hobby: no máximo 12 arquivos públicos em api/ (os que não começa
 
 test('vercel.json: cada endereço antigo de api/ é reescrito para o arquivo que o atende', () => {
   const v = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
-  const publicos = new Set(fs.readdirSync(path.join(__dirname, '..', 'api')).filter(f => f.endsWith('.js') && !f.startsWith('_')).map(f => f.slice(0, -3)));
+  const publicos = new Set(
+    fs
+      .readdirSync(path.join(__dirname, '..', 'api'))
+      .filter(f => f.endsWith('.js') && !f.startsWith('_'))
+      .map(f => f.slice(0, -3)),
+  );
   const esperado = {
     '/api/login': '/api/auth?a=login',
     '/api/logout': '/api/auth?a=logout',
