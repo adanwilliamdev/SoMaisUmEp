@@ -41,9 +41,7 @@ const dados = rota('GET', async (req, res, u) => {
     const [a, b] = await Promise.all([sql`select id from titulos where user_id = ${u.id}`, sql`select id from tops where user_id = ${u.id}`]);
     ids = { series: a.map(r => r.id), tops: b.map(r => r.id) };
   }
-  const links = desde
-    ? await sql`select id, publico from tops where user_id = ${u.id} and publico is not null`
-    : p.filter(r => r.publico);
+  const links = desde ? await sql`select id, publico from tops where user_id = ${u.id} and publico is not null` : p.filter(r => r.publico);
   res.json({
     usuario: { id: u.id, nome: u.nome, email: u.email },
     blob, // se true, as capas enviadas vão para o Vercel Blob

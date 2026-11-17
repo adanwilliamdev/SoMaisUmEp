@@ -1,7 +1,23 @@
 // Estante de séries e filmes: cards, "Continuar assistindo", próximos lançamentos, filtros e lista.
 import { esc, hue } from '../util.js';
 import { L } from '../loja.js';
-import { tp, tot, vis, estado, estadoLista, situacao, prox, pct, rotulo, filtrar, ordenar, continuar, ORDENS, lancamento, proximosLancamentos } from '../regras.js';
+import {
+  tp,
+  tot,
+  vis,
+  estado,
+  estadoLista,
+  situacao,
+  prox,
+  pct,
+  rotulo,
+  filtrar,
+  ordenar,
+  continuar,
+  ORDENS,
+  lancamento,
+  proximosLancamentos,
+} from '../regras.js';
 import { UI, capa, ICO_MAIS, ICO_MENOS, ICO_OK } from './comum.js';
 
 // Segmentos da faixa de episódios: um por episódio, no máximo 40.
@@ -29,9 +45,7 @@ export function cardHtml(s, n = 0) {
           ? '<span class="sel fila">Na fila</span>'
           : '';
   const menos =
-    !mv && vis(s) > 0
-      ? `<button class="menos" data-act="menos" aria-label="−1 episódio de ${esc(s.nome)}" title="−1 episódio">${ICO_MENOS}</button>`
-      : '';
+    !mv && vis(s) > 0 ? `<button class="menos" data-act="menos" aria-label="−1 episódio de ${esc(s.nome)}" title="−1 episódio">${ICO_MENOS}</button>` : '';
   const prog = !mv && est === 'assistindo' ? ` · ${vis(s)}/${tot(s)} eps` : '';
   return `<article class="card" data-id="${esc(s.id)}" data-est="${estadoLista(s)}" data-i="${Math.min(n, 14)}">
       <div class="poster">

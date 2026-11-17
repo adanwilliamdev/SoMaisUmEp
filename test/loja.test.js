@@ -427,10 +427,7 @@ ambiente('recarregarSuave incremental: pede só o que mudou (?desde), aplica edi
   assert.ok(M.achar('d'), 'item novo entra');
   assert.equal(M.achar('b'), undefined, 'item apagado em outro aparelho sai');
   assert.ok(M.achar('c'), 'o que não mudou continua');
-  assert.deepEqual(
-    M.L.series.map(s => s.id).sort(),
-    ['a', 'c', 'd'],
-  );
+  assert.deepEqual(M.L.series.map(s => s.id).sort(), ['a', 'c', 'd']);
 });
 
 ambiente('recarregarSuave: traz o que mudou em outro aparelho e não mexe enquanto há envio pendente', async srv => {
