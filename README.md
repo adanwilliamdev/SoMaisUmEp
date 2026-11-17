@@ -82,14 +82,15 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 │       ├── views/
 │       └── telas/
 │
-├── api/
-│   ├── login.js
-│   ├── cadastro.js
-│   ├── logout.js
-│   ├── dados.js
-│   ├── sync.js
-│   ├── capa.js
-│   └── ...
+├── api/                  (6 funções públicas; o resto começa com _ e não conta no limite da Vercel)
+│   ├── auth.js           (login, logout, cadastro, esqueci, redefinir, conta)
+│   ├── sync.js           (sincronização + envio de capa)
+│   ├── dados.js          (biblioteca, health check e push)
+│   ├── tmdb.js           (consultas TMDb + importação)
+│   ├── t.js              (página pública dos tops + link de compartilhar)
+│   ├── cron.js           (faxina e avisos diários)
+│   ├── _h/               (handlers das ações de auth.js e sync.js)
+│   └── _*.js             (módulos compartilhados)
 │
 ├── neon/
 │   ├── migracoes/

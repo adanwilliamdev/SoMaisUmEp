@@ -114,3 +114,33 @@ test('plano Hobby: no máximo 12 arquivos públicos em api/ (os que não começa
   const publicos = fs.readdirSync(path.join(__dirname, '..', 'api')).filter(f => f.endsWith('.js') && !f.startsWith('_'));
   assert.ok(publicos.length <= 12, `api/ tem ${publicos.length} funções: ${publicos.join(', ')}`);
 });
+
+test('vercel.json: cada endereço antigo de api/ é reescrito para o arquivo que o atende', () => {
+  const v = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
+  const publicos = new Set(fs.readdirSync(path.join(__dirname, '..', 'api')).filter(f => f.endsWith('.js') && !f.startsWith('_')).map(f => f.slice(0, -3)));
+  const esperado = {
+    '/api/login': '/api/auth?a=login',
+    '/api/logout': '/api/auth?a=logout',
+    '/api/cadastro': '/api/auth?a=cadastro',
+    '/api/esqueci': '/api/auth?a=esqueci',
+    '/api/redefinir': '/api/auth?a=redefinir',
+    '/api/conta': '/api/auth?a=conta',
+    '/api/capa': '/api/sync?r=capa',
+  };
+  for (const [de, para] of Object.entries(esperado)) {
+    const r = v.rewrites.find(x => x.source === de);
+    assert.ok(r, `falta o rewrite de ${de}`);
+    assert.equal(r.destination, para);
+    assert.ok(publicos.has(para.split('?')[0].replace('/api/', '')), `${para} precisa existir como arquivo público`);
+    assert.ok(!publicos.has(de.replace('/api/', '')), `${de} não pode mais ser um arquivo público (o rewrite só vale sem arquivo)`);
+  }
+});
+
+test('api/auth.js: só despacha ações conhecidas (nomes herdados do Object e caminhos viram 404)', () => {
+  const auth = require('../api/auth');
+  for (const a of ['constructor', '__proto__', '../_lib', 'sync', undefined, ['login']]) {
+    const res = { h: {}, code: 0, setHeader() {}, status(c) { this.code = c; return this; }, json(b) { this.body = b; return this; } };
+    auth({ query: { a }, method: 'POST', headers: {} }, res);
+    assert.equal(res.code, 404, String(a));
+  }
+});

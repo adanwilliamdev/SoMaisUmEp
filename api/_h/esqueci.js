@@ -1,8 +1,8 @@
-const { db, rota, erro } = require('./_lib');
-const V = require('./_validar');
-const L = require('./_limite');
-const T = require('./_token');
-const E = require('./_email');
+const { db, rota, erro } = require('../_lib');
+const V = require('../_validar');
+const L = require('../_limite');
+const T = require('../_token');
+const E = require('../_email');
 
 // Pede o link de redefinição de senha. A resposta é SEMPRE a mesma (exista o e-mail ou não),
 // para não revelar quem tem conta por aqui.

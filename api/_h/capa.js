@@ -1,4 +1,4 @@
-const { db, rota, erro } = require('./_lib');
+const { db, rota, erro } = require('../_lib');
 
 // Cotas por usuário (o Blob é pago por armazenamento e os envios são feitos pelo navegador).
 const POR_HORA = 30,

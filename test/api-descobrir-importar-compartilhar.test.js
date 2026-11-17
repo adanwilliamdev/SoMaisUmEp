@@ -312,7 +312,7 @@ test('/api/dados: devolve o próximo lançamento e os links públicos; o ETag mu
 test('/api/sync: grava o próximo lançamento junto com o título', async () => {
   banco.resposta = base(t => (/insert into titulos/.test(t) ? [{ id: 's1', atualizado: 1 }] : []));
   banco.consultas = [];
-  await chamar('sync', { metodo: 'POST', body: { titulos: [{ id: 's1', nome: 'S', eps: [3], vis: [0], proximo: { d: '2026-11-06', t: 1, e: 2 } }] } });
+  await chamar('_h/sync', { metodo: 'POST', body: { titulos: [{ id: 's1', nome: 'S', eps: [3], vis: [0], proximo: { d: '2026-11-06', t: 1, e: 2 } }] } });
   const q = banco.consultas.find(c => /insert into titulos/.test(c.texto));
   assert.ok(q.vals.includes(JSON.stringify({ d: '2026-11-06', t: 1, e: 2 })));
   assert.match(q.texto, /proximo = excluded\.proximo/);
@@ -373,5 +373,5 @@ test('/t/<código>: código inexistente ou malformado dá 404 sem cache; erro de
 
 test('vercel.json: /t/:codigo é reescrito para a página pública', () => {
   const v = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'vercel.json'), 'utf8'));
-  assert.deepEqual(v.rewrites, [{ source: '/t/:codigo', destination: '/api/t?c=:codigo' }]);
+  assert.deepEqual(v.rewrites[0], { source: '/t/:codigo', destination: '/api/t?c=:codigo' });
 });

@@ -1,6 +1,6 @@
-const { db, rota, erro, confereSenha, hashSenha, criarSessao, encerrarSessao } = require('./_lib');
-const V = require('./_validar');
-const L = require('./_limite');
+const { db, rota, erro, confereSenha, hashSenha, criarSessao, encerrarSessao } = require('../_lib');
+const V = require('../_validar');
+const L = require('../_limite');
 
 // Ações da conta (exigem estar logado e confirmar a senha atual): { acao: 'senha' | 'email' | 'excluir', senha, ... }
 // Atenção: senha errada responde 403, nunca 401 (o 401 faria o app achar que a sessão caiu).

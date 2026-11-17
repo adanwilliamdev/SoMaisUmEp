@@ -1,4 +1,4 @@
-const { db, rota, encerrarSessao, logado } = require('./_lib');
+const { db, rota, encerrarSessao, logado } = require('../_lib');
 
 // { todos: true } encerra as sessões de todos os aparelhos (e exige estar logado).
 module.exports = rota(

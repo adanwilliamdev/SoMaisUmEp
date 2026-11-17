@@ -1,7 +1,7 @@
-const { db, rota, erro, hashSenha } = require('./_lib');
-const V = require('./_validar');
-const L = require('./_limite');
-const T = require('./_token');
+const { db, rota, erro, hashSenha } = require('../_lib');
+const V = require('../_validar');
+const L = require('../_limite');
+const T = require('../_token');
 
 // Troca a senha com o token recebido por e-mail. O token é consumido na mesma instrução que altera a senha
 // (um único comando SQL: ou tudo, ou nada) e todas as sessões abertas são encerradas (versao + 1).

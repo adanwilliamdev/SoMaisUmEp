@@ -1,6 +1,6 @@
-const { db, rota, erro, confereSenha, criarSessao } = require('./_lib');
-const V = require('./_validar');
-const L = require('./_limite');
+const { db, rota, erro, confereSenha, criarSessao } = require('../_lib');
+const V = require('../_validar');
+const L = require('../_limite');
 
 const FALSO = 'scrypt$00000000000000000000000000000000$' + '0'.repeat(128); // para gastar o mesmo tempo quando o e-mail não existe
 

@@ -107,7 +107,7 @@ test('origemOk: POST de outro site, Origin inválido ou sec-fetch-site cross-sit
 test('endpoint de escrita responde 403 para Origin de outro site, sem tocar no banco', async () => {
   banco.consultas = [];
   banco.resposta = sessao();
-  const r = await chamar('sync', {
+  const r = await chamar('_h/sync', {
     body: { titulos: [] },
     headers: { host: 'app.com', origin: 'https://mau.com' },
   });
@@ -116,7 +116,7 @@ test('endpoint de escrita responde 403 para Origin de outro site, sem tocar no b
 });
 test('endpoint de escrita aceita o mesmo Origin', async () => {
   banco.resposta = sessao();
-  const r = await chamar('sync', {
+  const r = await chamar('_h/sync', {
     body: {},
     headers: { host: 'app.com', origin: 'https://app.com' },
   });
@@ -127,17 +127,17 @@ test('endpoint de escrita aceita o mesmo Origin', async () => {
 const titulo = id => ({ id, nome: 'X', tipo: 'tv', eps: [3], vis: [0] });
 test('sync: recusa título novo acima da cota (413), mas aceita atualizar os já existentes', async () => {
   banco.resposta = sessao(t => (/from titulos where user_id = \? *$/.test(t) && /count\(\*\)::int as n/.test(t) ? [{ n: 5000, ja: 0 }] : []));
-  const cheio = await chamar('sync', { body: { titulos: [titulo('novo')] } });
+  const cheio = await chamar('_h/sync', { body: { titulos: [titulo('novo')] } });
   assert.equal(cheio.code, 413);
   assert.match(cheio.body.erro, /5000/);
 
   banco.resposta = sessao(t => (/count\(\*\)::int as n/.test(t) ? [{ n: 5000, ja: 1 }] : [{ id: 'velho', atualizado: 1 }]));
-  const ok = await chamar('sync', { body: { titulos: [titulo('velho')] } });
+  const ok = await chamar('_h/sync', { body: { titulos: [titulo('velho')] } });
   assert.equal(ok.code, 200);
 });
 test('sync: recusa Top novo acima da cota', async () => {
   banco.resposta = sessao(t => (/from tops where user_id/.test(t) && /count\(\*\)::int as n/.test(t) ? [{ n: 200, ja: 0 }] : []));
-  const r = await chamar('sync', { body: { tops: [{ id: 'p1', nome: 'T', itens: [] }] } });
+  const r = await chamar('_h/sync', { body: { tops: [{ id: 'p1', nome: 'T', itens: [] }] } });
   assert.equal(r.code, 413);
 });
 

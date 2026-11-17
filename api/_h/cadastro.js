@@ -1,7 +1,7 @@
 const crypto = require('crypto');
-const { db, rota, erro, hashSenha, criarSessao } = require('./_lib');
-const V = require('./_validar');
-const L = require('./_limite');
+const { db, rota, erro, hashSenha, criarSessao } = require('../_lib');
+const V = require('../_validar');
+const L = require('../_limite');
 
 module.exports = rota(
   'POST',

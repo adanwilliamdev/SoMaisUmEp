@@ -178,14 +178,14 @@ test('esqueci: responde igual para e-mail existente e inexistente; só o existen
   try {
     limpar();
     banco.resposta = base(t => (/select id, nome from usuarios where email/.test(t) ? [] : []));
-    const a = await chamar('esqueci', { body: { email: 'ninguem@exemplo.com' } });
+    const a = await chamar('_h/esqueci', { body: { email: 'ninguem@exemplo.com' } });
     assert.deepEqual(a.body, { ok: true });
     assert.equal(enviados.length, 0);
     assert.ok(!banco.consultas.some(c => /insert into reset_senha/.test(c.texto)));
 
     limpar();
     banco.resposta = base(t => (/select id, nome from usuarios where email/.test(t) ? [{ id: 'u1', nome: 'Ana' }] : []));
-    const b = await chamar('esqueci', { body: { email: 'ANA@exemplo.com ' } });
+    const b = await chamar('_h/esqueci', { body: { email: 'ANA@exemplo.com ' } });
     assert.deepEqual(b.body, { ok: true });
     assert.equal(enviados.length, 1);
     assert.equal(enviados[0].url, 'https://api.resend.com/emails');
@@ -200,30 +200,30 @@ test('esqueci: responde igual para e-mail existente e inexistente; só o existen
 test('esqueci: sem e-mail configurado avisa (501) e e-mail inválido é recusado', async () => {
   envEmail();
   banco.resposta = base();
-  assert.equal((await chamar('esqueci', { body: { email: 'sem-arroba' } })).code, 400);
+  assert.equal((await chamar('_h/esqueci', { body: { email: 'sem-arroba' } })).code, 400);
   delete process.env.RESEND_API_KEY;
-  assert.equal((await chamar('esqueci', { body: { email: 'ana@exemplo.com' } })).code, 501);
+  assert.equal((await chamar('_h/esqueci', { body: { email: 'ana@exemplo.com' } })).code, 501);
 });
 test('esqueci: bloqueia depois de muitos pedidos para o mesmo e-mail', async () => {
   envEmail();
   const padrao = base();
   banco.resposta = (t, v) => (/select ate from tentativas/.test(t) ? [{ ate: Date.now() + 6e5 }] : padrao(t, v));
-  const r = await chamar('esqueci', { body: { email: 'ana@exemplo.com' } });
+  const r = await chamar('_h/esqueci', { body: { email: 'ana@exemplo.com' } });
   assert.equal(r.code, 429);
 });
 
 /* ---------- redefinir ---------- */
 test('redefinir: token malformado, desconhecido e senha curta são recusados', async () => {
   banco.resposta = base();
-  assert.equal((await chamar('redefinir', { body: { token: 'xyz', senha: 'senha-boa-123' } })).code, 400);
-  assert.equal((await chamar('redefinir', { body: { token: 'a'.repeat(64), senha: 'senha-boa-123' } })).code, 400); // não achou no banco
-  assert.equal((await chamar('redefinir', { body: { token: 'a'.repeat(64), senha: '123' } })).code, 400);
+  assert.equal((await chamar('_h/redefinir', { body: { token: 'xyz', senha: 'senha-boa-123' } })).code, 400);
+  assert.equal((await chamar('_h/redefinir', { body: { token: 'a'.repeat(64), senha: 'senha-boa-123' } })).code, 400); // não achou no banco
+  assert.equal((await chamar('_h/redefinir', { body: { token: 'a'.repeat(64), senha: '123' } })).code, 400);
 });
 test('redefinir: troca a senha, encerra as sessões (versao + 1) e consome o token', async () => {
   const token = 'b'.repeat(64);
   limpar();
   banco.resposta = base(t => (/with t as \(delete from reset_senha/.test(t) ? [{ id: 'u1', email: 'ana@exemplo.com' }] : []));
-  const r = await chamar('redefinir', { body: { token, senha: 'senha-boa-123' } });
+  const r = await chamar('_h/redefinir', { body: { token, senha: 'senha-boa-123' } });
   assert.deepEqual(r.body, { ok: true });
   const q = banco.consultas.find(c => /with t as \(delete from reset_senha/.test(c.texto));
   assert.match(q.texto, /versao = versao \+ 1/);
@@ -238,32 +238,32 @@ test('redefinir: troca a senha, encerra as sessões (versao + 1) e consome o tok
 test('conta: senha errada dá 403 (nunca 401, que derrubaria a sessão no app)', async () => {
   const senha_hash = await hashSenha('senha-certa-1');
   banco.resposta = base(t => (/select senha_hash from usuarios/.test(t) ? [{ senha_hash }] : []));
-  const r = await chamar('conta', { logado: true, body: { acao: 'excluir', senha: 'errada' } });
+  const r = await chamar('_h/conta', { logado: true, body: { acao: 'excluir', senha: 'errada' } });
   assert.equal(r.code, 403);
-  assert.equal((await chamar('conta', { body: { acao: 'excluir', senha: 'x' } })).code, 401); // sem sessão
-  assert.equal((await chamar('conta', { logado: true, body: { acao: 'hackear', senha: 'x' } })).code, 400); // ação inexistente
+  assert.equal((await chamar('_h/conta', { body: { acao: 'excluir', senha: 'x' } })).code, 401); // sem sessão
+  assert.equal((await chamar('_h/conta', { logado: true, body: { acao: 'hackear', senha: 'x' } })).code, 400); // ação inexistente
 });
 test('conta: trocar senha mantém este aparelho logado com a nova versão da sessão', async () => {
   const senha_hash = await hashSenha('senha-certa-1');
   limpar();
   banco.resposta = base(t => (/select senha_hash from usuarios/.test(t) ? [{ senha_hash }] : /update usuarios set senha_hash/.test(t) ? [{ versao: 2 }] : []));
-  const r = await chamar('conta', { logado: true, body: { acao: 'senha', senha: 'senha-certa-1', nova: 'outra-senha-2' } });
+  const r = await chamar('_h/conta', { logado: true, body: { acao: 'senha', senha: 'senha-certa-1', nova: 'outra-senha-2' } });
   assert.deepEqual(r.body, { ok: true });
   assert.match(r.h['set-cookie'], /^sessao=u1\.2\./);
-  assert.equal((await chamar('conta', { logado: true, body: { acao: 'senha', senha: 'senha-certa-1', nova: 'curta' } })).code, 400);
+  assert.equal((await chamar('_h/conta', { logado: true, body: { acao: 'senha', senha: 'senha-certa-1', nova: 'curta' } })).code, 400);
 });
 test('conta: trocar e-mail normaliza e avisa quando já está em uso (409)', async () => {
   const senha_hash = await hashSenha('senha-certa-1');
   limpar();
   banco.resposta = base(t => (/select senha_hash from usuarios/.test(t) ? [{ senha_hash }] : []));
-  const ok = await chamar('conta', { logado: true, body: { acao: 'email', senha: 'senha-certa-1', email: ' NOVO@Exemplo.com' } });
+  const ok = await chamar('_h/conta', { logado: true, body: { acao: 'email', senha: 'senha-certa-1', email: ' NOVO@Exemplo.com' } });
   assert.deepEqual(ok.body, { ok: true, email: 'novo@exemplo.com' });
   banco.resposta = base(t => {
     if (/select senha_hash from usuarios/.test(t)) return [{ senha_hash }];
     if (/update usuarios set email/.test(t)) throw Object.assign(new Error('duplicate key'), { code: '23505' });
     return [];
   });
-  assert.equal((await chamar('conta', { logado: true, body: { acao: 'email', senha: 'senha-certa-1', email: 'outro@exemplo.com' } })).code, 409);
+  assert.equal((await chamar('_h/conta', { logado: true, body: { acao: 'email', senha: 'senha-certa-1', email: 'outro@exemplo.com' } })).code, 409);
 });
 test('conta: excluir apaga o usuário, as capas do Blob (só as dele) e encerra a sessão', async () => {
   process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_teste';
@@ -279,7 +279,7 @@ test('conta: excluir apaga o usuário, as capas do Blob (só as dele) e encerra 
           ? [{ url: meu }]
           : [],
   );
-  const r = await chamar('conta', { logado: true, body: { acao: 'excluir', senha: 'senha-certa-1' } });
+  const r = await chamar('_h/conta', { logado: true, body: { acao: 'excluir', senha: 'senha-certa-1' } });
   assert.deepEqual(r.body, { ok: true });
   assert.match(r.h['set-cookie'], /Max-Age=0/);
   assert.ok(banco.consultas.some(c => /delete from usuarios where id/.test(c.texto)));
@@ -292,16 +292,16 @@ test('capa: respeita a cota por hora e por total, e registra o envio', async () 
   process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_teste';
   const imagem = 'data:image/jpeg;base64,/9j/4AAQ';
   banco.resposta = base(t => (/from capas where user_id/.test(t) ? [{ hora: 30, total: 30 }] : []));
-  assert.equal((await chamar('capa', { logado: true, body: { imagem } })).code, 429);
+  assert.equal((await chamar('_h/capa', { logado: true, body: { imagem } })).code, 429);
   banco.resposta = base(t => (/from capas where user_id/.test(t) ? [{ hora: 0, total: 1000 }] : []));
-  assert.equal((await chamar('capa', { logado: true, body: { imagem } })).code, 429);
+  assert.equal((await chamar('_h/capa', { logado: true, body: { imagem } })).code, 429);
   limpar();
   banco.resposta = base(t => (/from capas where user_id/.test(t) ? [{ hora: 1, total: 5 }] : []));
-  const r = await chamar('capa', { logado: true, body: { imagem } });
+  const r = await chamar('_h/capa', { logado: true, body: { imagem } });
   assert.equal(r.code, 200);
   assert.match(r.body.url, /capas\/u1\/capa\.jpg$/);
   assert.ok(banco.consultas.some(c => /insert into capas/.test(c.texto) && c.vals.includes(r.body.url)));
-  assert.equal((await chamar('capa', { logado: true, body: { imagem: 'data:text/html;base64,AAAA' } })).code, 400);
+  assert.equal((await chamar('_h/capa', { logado: true, body: { imagem: 'data:text/html;base64,AAAA' } })).code, 400);
   delete process.env.BLOB_READ_WRITE_TOKEN;
 });
 
@@ -322,7 +322,7 @@ test('cron: exige o CRON_SECRET e devolve o que limpou', async () => {
 test('sync: o upsert usa a chave (user_id, id), então o mesmo id em outra conta não vira conflito', async () => {
   limpar();
   banco.resposta = base(t => (/insert into (titulos|tops)/.test(t) ? [{ id: 'x', atualizado: 1 }] : []));
-  const r = await chamar('sync', { logado: true, body: { titulos: [{ id: 'a1', nome: 'Teste', eps: [3], vis: [1] }], tops: [{ id: 'p1', nome: 'Top' }] } });
+  const r = await chamar('_h/sync', { logado: true, body: { titulos: [{ id: 'a1', nome: 'Teste', eps: [3], vis: [1] }], tops: [{ id: 'p1', nome: 'Top' }] } });
   assert.equal(r.code, 200);
   const ups = banco.consultas.filter(c => /insert into (titulos|tops)/.test(c.texto));
   assert.equal(ups.length, 2);
@@ -346,7 +346,7 @@ test('cadastro: primeira conta só adota dados sem dono com ADOTAR_DADOS_ANTIGOS
     if (adotar) process.env.ADOTAR_DADOS_ANTIGOS = 'true';
     else delete process.env.ADOTAR_DADOS_ANTIGOS;
     banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 0 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
-    const r = await chamar('cadastro', { body: { nome: 'Ana', email: 'ana@exemplo.com', senha: 'senha-bem-longa' } });
+    const r = await chamar('_h/cadastro', { body: { nome: 'Ana', email: 'ana@exemplo.com', senha: 'senha-bem-longa' } });
     assert.equal(r.code, 200);
     return banco.consultas.filter(c => /set user_id = \?\s+where user_id is null/.test(c.texto)).length;
   };
@@ -402,7 +402,7 @@ test('janela fixa: chave muda a cada janela e o bloqueio vai até o fim dela', a
 test('cadastro: contador diário próprio por IP, separado das falhas de login', async () => {
   limpar();
   banco.resposta = base(t => (/count\(\*\)::int as n from usuarios/.test(t) ? [{ n: 1 }] : /insert into usuarios/.test(t) ? [{ id: 'novo' }] : []));
-  const r = await chamar('cadastro', {
+  const r = await chamar('_h/cadastro', {
     body: { nome: 'Ana', email: 'nova@exemplo.com', senha: 'senha-bem-longa' },
     headers: { 'x-forwarded-for': '10.9.9.9' },
   });
@@ -416,7 +416,7 @@ test('cadastro: contador diário próprio por IP, separado das falhas de login',
 test('sync: exclusão leva a versão (base) e só apaga se ninguém alterou depois', async () => {
   limpar();
   banco.resposta = base(t => (/delete from titulos/.test(t) ? [{ id: 'a1' }] : []));
-  const r = await chamar('sync', { logado: true, body: { del: { titulos: [{ id: 'a1', base: 123 }, 'b2'], tops: [] } } });
+  const r = await chamar('_h/sync', { logado: true, body: { del: { titulos: [{ id: 'a1', base: 123 }, 'b2'], tops: [] } } });
   assert.equal(r.code, 200);
   const d = banco.consultas.find(c => /delete from titulos t using unnest/.test(c.texto));
   assert.ok(d, 'usa unnest com as versões');
@@ -443,7 +443,7 @@ test('sync: exclusão recusada porque outro aparelho editou vira conflito e pres
     return [];
   });
   try {
-    const r = await chamar('sync', { logado: true, body: { del: { titulos: [{ id: 'a1', base: 1 }] } } });
+    const r = await chamar('_h/sync', { logado: true, body: { del: { titulos: [{ id: 'a1', base: 1 }] } } });
     assert.equal(r.code, 200);
     assert.deepEqual(r.body.conflitos, ['a1']);
     assert.deepEqual(blob.apagados, [], 'a capa não pode ser apagada se o título não foi');
@@ -455,7 +455,7 @@ test('sync: exclusão recusada porque outro aparelho editou vira conflito e pres
 test('sync: excluir algo que já não existe não é conflito (resultado é o mesmo)', async () => {
   limpar();
   banco.resposta = base(() => []);
-  const r = await chamar('sync', { logado: true, body: { del: { titulos: [{ id: 'sumiu', base: 5 }], tops: [{ id: 'top-sumiu', base: 7 }] } } });
+  const r = await chamar('_h/sync', { logado: true, body: { del: { titulos: [{ id: 'sumiu', base: 5 }], tops: [{ id: 'top-sumiu', base: 7 }] } } });
   assert.equal(r.code, 200);
   assert.deepEqual(r.body.conflitos, []);
 });

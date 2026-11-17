@@ -4,7 +4,16 @@
   "outputDirectory": "dist",
   "crons": [{ "path": "/api/cron", "schedule": "0 11 * * *" }],
   "functions": { "api/cron.js": { "maxDuration": 60 } },
-  "rewrites": [{ "source": "/t/:codigo", "destination": "/api/t?c=:codigo" }],
+  "rewrites": [
+    { "source": "/t/:codigo", "destination": "/api/t?c=:codigo" },
+    { "source": "/api/login", "destination": "/api/auth?a=login" },
+    { "source": "/api/logout", "destination": "/api/auth?a=logout" },
+    { "source": "/api/cadastro", "destination": "/api/auth?a=cadastro" },
+    { "source": "/api/esqueci", "destination": "/api/auth?a=esqueci" },
+    { "source": "/api/redefinir", "destination": "/api/auth?a=redefinir" },
+    { "source": "/api/conta", "destination": "/api/auth?a=conta" },
+    { "source": "/api/capa", "destination": "/api/sync?r=capa" }
+  ],
   "cleanUrls": true,
   "headers": [
     {
