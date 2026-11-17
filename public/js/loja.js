@@ -303,10 +303,21 @@ export async function recarregarSuave({ ocupado = () => false } = {}) {
   if (sujo || emVoo || ocupado() || Date.now() - ultimaRecarga < 15000 || !navigator.onLine || !L.usuario) return;
   ultimaRecarga = Date.now();
   try {
-    const d = await api('/api/dados');
+    // Incremental: só o que mudou desde a maior versão conhecida (com folga de 5 s por relógios de servidores diferentes).
+    const vs = Object.values(ver).filter(Number.isFinite);
+    const desde = vs.length ? Math.max(...vs) - 5000 : 0;
+    const d = await api('/api/dados' + (desde > 0 ? '?desde=' + desde : ''));
     if (sujo || emVoo || ocupado()) return; // algo mudou enquanto buscava
     const antes = remoto;
-    const novo = { series: d.series.map(tira), tops: d.tops.map(tira) };
+    const junta = (atual, mudou, ids) => {
+      const m = new Map(atual.map(x => [x.id, x]));
+      for (const r of mudou) m.set(r.id, tira(r));
+      const manter = new Set(ids);
+      return [...m.values()].filter(x => manter.has(x.id)).sort((a, b) => b.criado - a.criado);
+    };
+    const novo = d.parcial
+      ? { series: junta(L.series, d.series, d.ids.series), tops: junta(L.tops, d.tops, d.ids.tops) }
+      : { series: d.series.map(tira), tops: d.tops.map(tira) };
     const L0 = { series: L.series, tops: L.tops };
     L.series = novo.series;
     L.tops = novo.tops;

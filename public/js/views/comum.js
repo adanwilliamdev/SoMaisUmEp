@@ -1,7 +1,7 @@
 // Peças de HTML usadas por mais de uma tela: estado da interface (UI), capa/placeholder, esqueleto de carregamento e ícones.
-import { esc, hue, ler } from '../util.js';
+import { esc, hue, ler, lerJSON } from '../util.js';
 
-export const UI = { filtro: 'todas', busca: '', ordem: ler('smue:ordem', 'recente'), descTipo: 'tv' };
+export const UI = { filtro: 'todas', busca: '', ordem: ler('smue:ordem', 'recente'), descTipo: 'tv', fechados: new Set(lerJSON('smue:grupos', [])) }; // fechados: grupos recolhidos da estante
 
 export const capa = (nome, img, urgente) =>
   img
@@ -19,4 +19,5 @@ export function esqueleto(hash) {
 }
 
 export const ICO_MAIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+export const ICO_MENOS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>';
 export const ICO_OK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';

@@ -13,11 +13,22 @@ export const prox = s => {
 };
 export const pct = s => Math.round((vis(s) / tot(s)) * 100);
 
+// Situação escolhida pela pessoa para o que ainda não terminou: 'pausada' ou 'abandonada' (null = normal).
+// Concluído sempre vence: quem terminou não está mais pausado nem abandonado.
+export const SITUACOES = ['pausada', 'abandonada'];
+export const situacao = s => (SITUACOES.includes(s.situacao) && estado(s) !== 'fim' ? s.situacao : null);
+// Estado usado nos filtros e nos grupos da estante: a situação, quando existe, senão o estado de progresso.
+export const estadoLista = s => situacao(s) || estado(s);
+
 export function rotulo(s) {
   const p = prox(s),
-    e = estado(s);
-  if (tp(s) === 'movie') return e === 'fim' ? 'Assistido ✓' : 'Na fila';
-  return e === 'fim' ? 'Concluída ✓' : e === 'quero' ? 'Na fila' : `Próximo: T${p[0]} · E${p[1]}`;
+    e = estado(s),
+    sit = situacao(s);
+  if (tp(s) === 'movie') return e === 'fim' ? 'Assistido ✓' : sit === 'pausada' ? 'Pausado' : sit === 'abandonada' ? 'Abandonado' : 'Na fila';
+  if (e === 'fim') return 'Concluída ✓';
+  const cab = sit === 'pausada' ? 'Pausada' : sit === 'abandonada' ? 'Abandonada' : null;
+  if (e === 'quero') return cab || 'Na fila';
+  return cab ? `${cab} · T${p[0]} E${p[1]}` : `Próximo: T${p[0]} · E${p[1]}`;
 }
 
 /* ---------- busca, filtro e ordenação ---------- */
@@ -30,7 +41,7 @@ export const normaliza = t =>
 
 export function filtrar(lista, { estado: est = 'todas', busca = '' } = {}) {
   const q = normaliza(busca);
-  return lista.filter(s => (est === 'todas' || estado(s) === est) && (!q || normaliza(s.nome).includes(q)));
+  return lista.filter(s => (est === 'todas' || estadoLista(s) === est) && (!q || normaliza(s.nome).includes(q)));
 }
 
 export const ORDENS = [
@@ -56,7 +67,7 @@ export function ordenar(lista, modo = 'recente') {
 // "Continuar assistindo": séries em andamento, a mais recente primeiro.
 export function continuar(series, max = 12) {
   return ordenar(
-    series.filter(s => tp(s) === 'tv' && estado(s) === 'assistindo'),
+    series.filter(s => tp(s) === 'tv' && estado(s) === 'assistindo' && !situacao(s)),
     'visto',
   ).slice(0, max);
 }
@@ -97,15 +108,32 @@ export const mesDe = t => {
 };
 
 // Chame depois de mudar `vis`; 'antes' é o total de episódios vistos antes da mudança.
-export function registrarProgresso(s, antes, agora = Date.now()) {
+//  - Ao desmarcar, o histórico perde os episódios do mês mais recente primeiro e, se faltar, dos meses anteriores
+//    (marcou em outubro e desmarcou em novembro: sai de outubro, onde o episódio foi contado).
+//  - `retroativo: true` (ao marcar o que você viu antes de usar o app) atualiza o progresso sem contar como atividade
+//    de hoje: não mexe no histórico, em `visto_em` nem na situação.
+//  - Marcar um episódio de verdade tira a pausa/abandono: você voltou a assistir.
+export function registrarProgresso(s, antes, agora = Date.now(), { retroativo = false } = {}) {
   const d = vis(s) - antes;
   if (!d) return s;
-  const m = mesDe(agora),
-    hist = { ...(s.hist || {}) };
-  hist[m] = Math.max(0, (hist[m] || 0) + d);
-  if (!hist[m]) delete hist[m];
+  if (d > 0 && retroativo) return s;
+  const hist = { ...(s.hist || {}) };
+  if (d > 0) {
+    const m = mesDe(agora);
+    hist[m] = (hist[m] || 0) + d;
+    s.visto_em = agora;
+    if (s.situacao) s.situacao = null;
+  } else {
+    let resta = -d;
+    for (const k of Object.keys(hist).sort().reverse()) {
+      if (!resta) break;
+      const tira = Math.min(hist[k], resta);
+      hist[k] -= tira;
+      resta -= tira;
+      if (!hist[k]) delete hist[k];
+    }
+  }
   s.hist = hist;
-  if (d > 0) s.visto_em = agora;
   return s;
 }
 
@@ -129,8 +157,9 @@ export function aplicarEps(s, novosEps) {
 export function mesclarTitulo(loc, srv) {
   if (!srv) return loc;
   const m = { ...srv };
-  const mesmo = loc.eps.length === srv.eps.length && loc.eps.every((n, i) => n === srv.eps[i]);
-  if (mesmo) m.vis = srv.vis.map((v, i) => Math.max(v, loc.vis[i] || 0));
+  // Progresso nunca regride: máximo por temporada, limitado ao que o servidor diz que a temporada tem
+  // (vale também quando um aparelho já recebeu temporadas novas do TMDb e o outro ainda não).
+  m.vis = srv.eps.map((n, i) => Math.min(n, Math.max(srv.vis[i] || 0, loc.vis[i] || 0)));
   m.visto_em = Math.max(srv.visto_em || 0, loc.visto_em || 0) || null;
   const h = { ...(srv.hist || {}) };
   for (const [k, v] of Object.entries(loc.hist || {})) h[k] = Math.max(h[k] || 0, v);
@@ -420,6 +449,7 @@ export function limparTituloBackup(x, criadoPadrao = Date.now()) {
     visto_em: num(x.visto_em, 0, 8.64e15),
     hist,
     proximo,
+    situacao: SITUACOES.includes(x.situacao) ? x.situacao : null,
   };
 }
 

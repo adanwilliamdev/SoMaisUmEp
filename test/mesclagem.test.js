@@ -16,11 +16,17 @@ test('mesclar: mesmas temporadas: o maior progresso de cada temporada vence', as
   assert.deepEqual(m.vis, [3, 3]);
 });
 
-test('mesclar: temporadas diferentes (o título mudou no TMDb ou foi editado): vale o servidor, sem misturar', async () => {
+test('mesclar: temporadas diferentes (o título mudou no TMDb ou foi editado): as temporadas são as do servidor e o progresso local não se perde', async () => {
   const mesclar = await M();
   const m = mesclar(base({ eps: [3, 3], vis: [3, 3] }), base({ eps: [3, 3, 8], vis: [1, 0, 0] }));
   assert.deepEqual(m.eps, [3, 3, 8]);
-  assert.deepEqual(m.vis, [1, 0, 0]);
+  assert.deepEqual(m.vis, [3, 3, 0]);
+});
+
+test('mesclar: progresso local nunca passa do tamanho da temporada do servidor', async () => {
+  const mesclar = await M();
+  const m = mesclar(base({ eps: [10], vis: [10] }), base({ eps: [8], vis: [2] }));
+  assert.deepEqual(m.vis, [8]);
 });
 
 test('mesclar: progresso local curto demais (undefined) conta como zero', async () => {

@@ -1,8 +1,8 @@
 // Estante de séries e filmes: cards, "Continuar assistindo", próximos lançamentos, filtros e lista.
 import { esc, hue } from '../util.js';
 import { L } from '../loja.js';
-import { tp, tot, vis, estado, prox, pct, rotulo, filtrar, ordenar, continuar, ORDENS, lancamento, proximosLancamentos } from '../regras.js';
-import { UI, capa, ICO_MAIS, ICO_OK } from './comum.js';
+import { tp, tot, vis, estado, estadoLista, situacao, prox, pct, rotulo, filtrar, ordenar, continuar, ORDENS, lancamento, proximosLancamentos } from '../regras.js';
+import { UI, capa, ICO_MAIS, ICO_MENOS, ICO_OK } from './comum.js';
 
 // Segmentos da faixa de episódios: um por episódio, no máximo 40.
 const segs = s => Math.max(1, Math.min(tot(s), 40));
@@ -18,14 +18,29 @@ export function cardHtml(s, n = 0) {
     p = pct(s),
     prx = prox(s),
     est = estado(s);
-  const chip = est === 'fim' ? '<span class="sel ok">Concluído</span>' : '';
-  return `<article class="card" data-id="${esc(s.id)}" data-est="${est}" data-i="${Math.min(n, 14)}">
+  const sit = situacao(s);
+  // Selo de estado em todo card: assim a estante inteira se lê sem abrir nada.
+  const chip =
+    est === 'fim'
+      ? '<span class="sel ok">Concluído</span>'
+      : sit
+        ? `<span class="sel pausa">${sit === 'pausada' ? 'Pausada' : 'Abandonada'}</span>`
+        : est === 'quero'
+          ? '<span class="sel fila">Na fila</span>'
+          : '';
+  const menos =
+    !mv && vis(s) > 0
+      ? `<button class="menos" data-act="menos" aria-label="−1 episódio de ${esc(s.nome)}" title="−1 episódio">${ICO_MENOS}</button>`
+      : '';
+  const prog = !mv && est === 'assistindo' ? ` · ${vis(s)}/${tot(s)} eps` : '';
+  return `<article class="card" data-id="${esc(s.id)}" data-est="${estadoLista(s)}" data-i="${Math.min(n, 14)}">
       <div class="poster">
         <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
+        ${menos}
         ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
       </div>
       ${mv ? '' : `<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>`}
-      <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>${chipLanc(s)}
+      <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${prog}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>${chipLanc(s)}
     </article>`;
 }
 
@@ -111,11 +126,45 @@ export function htmlContinuar(tipo) {
 
 const VAZIO_ICO =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>';
+// Grupos da aba "Todas": cada estado vira uma seção recolhível, com o contador no título.
+const GRUPOS = {
+  tv: [
+    ['assistindo', 'Assistindo'],
+    ['quero', 'Na fila'],
+    ['pausada', 'Pausadas'],
+    ['abandonada', 'Abandonadas'],
+    ['fim', 'Concluídas'],
+  ],
+  movie: [
+    ['quero', 'Na fila'],
+    ['pausada', 'Pausados'],
+    ['abandonada', 'Abandonados'],
+    ['fim', 'Assistidos'],
+  ],
+};
+
+function htmlGrupos(lista, tipo) {
+  let n = 0;
+  return GRUPOS[tipo]
+    .map(([k, rot]) => {
+      const g = lista.filter(s => estadoLista(s) === k);
+      if (!g.length) return '';
+      const aberto = !UI.fechados.has(k);
+      return `<details class="grupo" data-grupo="${k}"${aberto ? ' open' : ''}><summary><h2 class="sec-tit">${rot} <span class="grupo-n">${g.length}</span></h2></summary>
+        <div class="grade">${g.map(s => cardHtml(s, n++)).join('')}</div></details>`;
+    })
+    .join('');
+}
+
 export function htmlLista(tipo) {
   const mv = tipo === 'movie',
     lista = listaDe(tipo),
     total = L.series.filter(s => tp(s) === tipo).length;
-  if (lista.length) return `<div class="grade">${lista.map((s, n) => cardHtml(s, n)).join('')}</div>`;
+  if (lista.length) {
+    // Sem busca e em "Todas", agrupa por estado. Com busca ou filtro específico, é uma grade só.
+    if (UI.filtro === 'todas' && !UI.busca) return htmlGrupos(lista, tipo);
+    return `<div class="grade">${lista.map((s, n) => cardHtml(s, n)).join('')}</div>`;
+  }
   if (UI.busca) return `<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${esc(UI.busca)}”.</p></div>`;
   if (total) return `<div class="vazio">${VAZIO_ICO}<p>Nada neste filtro.</p></div>`;
   return `<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série e marque o episódio de hoje.'}</p>
@@ -126,18 +175,32 @@ export function htmlLista(tipo) {
 const LUPA = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
 export function viewLista(tipo) {
   const mv = tipo === 'movie';
-  const fs = mv
+  const fs = (
+    mv
+      ? [
+          ['todas', 'Todos'],
+          ['quero', 'Na fila'],
+          ['fim', 'Assistidos'],
+        ]
+      : [
+          ['todas', 'Todas'],
+          ['assistindo', 'Assistindo'],
+          ['quero', 'Na fila'],
+          ['fim', 'Concluídas'],
+        ]
+  ).slice();
+  // Pausadas e abandonadas só aparecem como filtro quando existe algo nessa situação (ou o filtro está ativo).
+  for (const [k, rot] of mv
     ? [
-        ['todas', 'Todos'],
-        ['quero', 'Na fila'],
-        ['fim', 'Assistidos'],
+        ['pausada', 'Pausados'],
+        ['abandonada', 'Abandonados'],
       ]
     : [
-        ['todas', 'Todas'],
-        ['assistindo', 'Assistindo'],
-        ['quero', 'Na fila'],
-        ['fim', 'Concluídas'],
-      ];
+        ['pausada', 'Pausadas'],
+        ['abandonada', 'Abandonadas'],
+      ]) {
+    if (UI.filtro === k || L.series.some(s => tp(s) === tipo && situacao(s) === k)) fs.splice(fs.length - 1, 0, [k, rot]);
+  }
   if (!fs.some(([k]) => k === UI.filtro)) UI.filtro = 'todas';
   const chips = fs.map(([k, r]) => `<button class="chip" data-act="filtro" data-k="${k}" aria-pressed="${UI.filtro === k}">${r}</button>`).join('');
   return `<div class="cabeca"><div><h1>${mv ? 'Meus filmes' : 'Minhas séries'}</h1>

@@ -59,6 +59,14 @@ export function salvaAvaliacao() {
 
 dlg.addEventListener('change', e => {
   if (e.target.id === 'mnota' || e.target.id === 'mres') salvaAvaliacao();
+  if (e.target.id === 'msit') {
+    const s = achar(ctx.aberta);
+    if (!s) return;
+    s.situacao = e.target.value === 'pausada' || e.target.value === 'abandonada' ? e.target.value : null;
+    save();
+    gancho.render(); // a estante muda de grupo (e os filtros podem mudar)
+    pintaDetalhe();
+  }
 });
 dlg.addEventListener('close', () => {
   salvaAvaliacao();

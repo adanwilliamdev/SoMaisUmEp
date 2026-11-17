@@ -1,7 +1,7 @@
 // Estante (séries e filmes): atualização parcial da tela, marcação de progresso e eventos da lista.
 import { $, avisoDesfazer, guardar } from '../util.js';
 import { achar, save } from '../loja.js';
-import { tp, vis, estado, prox, registrarProgresso } from '../regras.js';
+import { tp, vis, estadoLista, prox, registrarProgresso } from '../regras.js';
 import * as V from '../views.js';
 import { app, dlg, ctx, gancho, tipoAtual, naLista, revela } from './ctx.js';
 
@@ -58,27 +58,27 @@ export function patchCard(id, mudouEstado) {
 
 // Marca progresso: registra histórico, salva e atualiza só o que mudou na tela.
 // `rotuloDesfazer`: texto do aviso com botão "Desfazer" (só fora do painel de detalhes, onde o aviso ficaria atrás dele).
-function mexer(s, fn, rotuloDesfazer) {
+function mexer(s, fn, rotuloDesfazer, opcoes) {
   const antes = vis(s),
-    est = estado(s),
-    ant = { vis: [...s.vis], visto_em: s.visto_em, hist: s.hist };
+    est = estadoLista(s),
+    ant = { vis: [...s.vis], visto_em: s.visto_em, hist: s.hist, situacao: s.situacao };
   fn();
-  registrarProgresso(s, antes);
+  registrarProgresso(s, antes, Date.now(), opcoes);
   save();
-  patchCard(s.id, est !== estado(s));
+  patchCard(s.id, est !== estadoLista(s));
   if (ctx.aberta === s.id) gancho.pintaDetalhe();
   if (rotuloDesfazer && !dlg.open)
     avisoDesfazer(rotuloDesfazer, () => {
       const x = achar(s.id);
       if (!x) return; // foi excluído nesse meio tempo
-      const e0 = estado(x);
+      const e0 = estadoLista(x);
       x.vis = ant.vis;
-      for (const k of ['visto_em', 'hist']) {
+      for (const k of ['visto_em', 'hist', 'situacao']) {
         if (ant[k] === undefined) delete x[k];
         else x[k] = ant[k];
       }
       save();
-      patchCard(x.id, e0 !== estado(x));
+      patchCard(x.id, e0 !== estadoLista(x));
     });
 }
 
@@ -101,6 +101,20 @@ export const acoes = {
       tp(s) === 'movie' ? `${s.nome} marcado como visto` : `${s.nome}: T${p[0]} E${p[1]} marcado`,
     );
   },
+  // −1 episódio direto no card: desfaz o último episódio marcado (da última temporada com progresso).
+  menos: ({ s }) => {
+    if (!s || tp(s) === 'movie') return;
+    let k = s.vis.length - 1;
+    while (k >= 0 && !s.vis[k]) k--;
+    if (k < 0) return;
+    mexer(
+      s,
+      () => {
+        s.vis[k]--;
+      },
+      `${s.nome}: T${k + 1} E${s.vis[k] + 1} desmarcado`,
+    );
+  },
   ep: ({ b, s }) => {
     if (!s) return;
     const k = +b.dataset.s,
@@ -114,6 +128,18 @@ export const acoes = {
       mexer(s, () => {
         s.vis[+b.dataset.s] = s.eps[+b.dataset.s];
       });
+  },
+  // "Já vi antes": marca a temporada sem contar como atividade de hoje (não mexe no histórico nem no "último visto").
+  'temp-antes': ({ b, s }) => {
+    if (s)
+      mexer(
+        s,
+        () => {
+          s.vis[+b.dataset.s] = s.eps[+b.dataset.s];
+        },
+        null,
+        { retroativo: true },
+      );
   },
   'temp-zero': ({ b, s }) => {
     if (s)
@@ -129,12 +155,27 @@ export const acoes = {
   },
 };
 
+// Busca com atraso curto: não refaz a grade a cada tecla.
+let tBusca = null;
 document.addEventListener('input', e => {
   if (e.target.id === 'busca') {
     V.UI.busca = e.target.value;
-    renderLista();
+    clearTimeout(tBusca);
+    tBusca = setTimeout(renderLista, 150);
   }
 });
+// Grupos recolhíveis da estante: lembra quais ficaram fechados (o evento "toggle" não borbulha, por isso a captura).
+document.addEventListener(
+  'toggle',
+  e => {
+    const g = e.target.dataset && e.target.dataset.grupo;
+    if (!g) return;
+    if (e.target.open) V.UI.fechados.delete(g);
+    else V.UI.fechados.add(g);
+    guardar('smue:grupos', [...V.UI.fechados]);
+  },
+  true,
+);
 document.addEventListener('change', e => {
   if (e.target.id === 'ordem') {
     V.UI.ordem = e.target.value;

@@ -6,27 +6,48 @@ const n = v => (v == null ? null : Number(v));
 
 // O navegador revalida a cada chamada (If-None-Match); se nada mudou, a resposta é 304 e a biblioteca
 // nem chega a ser lida do banco: só duas consultas de contagem/última alteração.
+// Sincronização incremental: com ?desde=<versão>, só voltam os títulos/tops alterados desde então (campo `atualizado`),
+// mais a lista de todos os ids que existem (o navegador remove o que sumiu). Sem ?desde, vem a biblioteca inteira.
+const desdeDe = req => {
+  const n = Number(req.query && req.query.desde);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+};
+
 const dados = rota('GET', async (req, res, u) => {
   const sql = db(),
-    blob = !!process.env.BLOB_READ_WRITE_TOKEN;
+    blob = !!process.env.BLOB_READ_WRITE_TOKEN,
+    desde = desdeDe(req);
   const [[a], [b]] = await Promise.all([
     sql`select count(*)::int as n, coalesce(max(atualizado), 0) as m from titulos where user_id = ${u.id}`,
     sql`select count(*)::int as n, coalesce(max(atualizado), 0) as m, count(publico)::int as p, coalesce(max(publico_em), 0) as pm from tops where user_id = ${u.id}`,
   ]);
-  const tag = etagDe('v1', u.id, u.nome, u.email, blob, a.n, a.m, b.n, b.m, b.p, b.pm);
+  const tag = etagDe('v1', u.id, u.nome, u.email, blob, a.n, a.m, b.n, b.m, b.p, b.pm, desde || '');
   renovarSessao(res, u); // resposta privada (no-cache + Vary: Cookie): pode renovar o cookie
   res.setHeader('Cache-Control', 'private, no-cache');
   res.setHeader('Vary', 'Cookie');
   res.setHeader('ETag', tag);
   if (confere(req, tag)) return res.status(304).end();
 
-  const [t, p] = await Promise.all([
-    sql`select * from titulos where user_id = ${u.id} order by criado desc`,
-    sql`select * from tops where user_id = ${u.id} order by criado desc`,
-  ]);
+  const [t, p] = await Promise.all(
+    desde
+      ? [
+          sql`select * from titulos where user_id = ${u.id} and atualizado >= ${desde} order by criado desc`,
+          sql`select * from tops where user_id = ${u.id} and atualizado >= ${desde} order by criado desc`,
+        ]
+      : [sql`select * from titulos where user_id = ${u.id} order by criado desc`, sql`select * from tops where user_id = ${u.id} order by criado desc`],
+  );
+  let ids = null;
+  if (desde) {
+    const [a, b] = await Promise.all([sql`select id from titulos where user_id = ${u.id}`, sql`select id from tops where user_id = ${u.id}`]);
+    ids = { series: a.map(r => r.id), tops: b.map(r => r.id) };
+  }
+  const links = desde
+    ? await sql`select id, publico from tops where user_id = ${u.id} and publico is not null`
+    : p.filter(r => r.publico);
   res.json({
     usuario: { id: u.id, nome: u.nome, email: u.email },
     blob, // se true, as capas enviadas vão para o Vercel Blob
+    ...(desde ? { parcial: true, ids } : {}),
     series: t.map(r => ({
       id: r.id,
       tipo: r.tipo,
@@ -46,9 +67,10 @@ const dados = rota('GET', async (req, res, u) => {
       visto_em: n(r.visto_em),
       hist: r.hist || {},
       proximo: r.proximo || null,
+      situacao: r.situacao || null,
     })),
     tops: p.map(r => ({ id: r.id, nome: r.nome, itens: r.itens, criado: Number(r.criado), atualizado: Number(r.atualizado) })),
-    links: Object.fromEntries(p.filter(r => r.publico).map(r => [r.id, r.publico])), // id do top -> código do link público
+    links: Object.fromEntries(links.map(r => [r.id, r.publico])), // id do top -> código do link público
   });
 });
 

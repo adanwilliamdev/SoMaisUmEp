@@ -1,6 +1,6 @@
 // Painel de detalhes de um título (temporadas, onde assistir, avaliação).
 import { esc, hue } from '../util.js';
-import { tp, tot, vis, pct, rotulo, lancamento } from '../regras.js';
+import { tp, tot, vis, estado, situacao, pct, rotulo, lancamento } from '../regras.js';
 import { capa } from './comum.js';
 
 /* ---------- detalhe ---------- */
@@ -30,6 +30,7 @@ export function htmlDetalhe(s, onde) {
             c += `<button class="ep" data-act="ep" data-s="${i}" data-e="${e}" aria-pressed="${s.vis[i] >= e}" aria-label="Temporada ${i + 1}, episódio ${e}">${e}</button>`;
           return `<div class="temp"><div class="temp-cab"><b>Temporada ${i + 1} <span class="mut-leve">· ${s.vis[i]}/${n}</span></b>
       <button class="btn sec mini" data-act="temp-tudo" data-s="${i}" aria-label="Marcar toda a temporada ${i + 1}">Marcar toda</button>
+      <button class="btn sec mini" data-act="temp-antes" data-s="${i}" title="Marca sem contar nas estatísticas de hoje" aria-label="Já vi a temporada ${i + 1} antes de usar o app">Já vi antes</button>
       <button class="btn sec mini" data-act="temp-zero" data-s="${i}" aria-label="Zerar temporada ${i + 1}">Zerar</button></div><div class="eps">${c}</div></div>`;
         })
         .join('');
@@ -52,6 +53,16 @@ export function htmlDetalhe(s, onde) {
       <small>${mv ? rotulo(s) : vis(s) + ' de ' + tot(s) + ' episódios · ' + rotulo(s)}</small></div></div>
     ${s.sinopse ? `<p class="sin">${esc(s.sinopse)}</p>` : ''}
     ${temps}
+    ${
+      estado(s) === 'fim'
+        ? ''
+        : `<section class="bloco"><h3>Situação</h3>
+      <label>Como está este ${mv ? 'filme' : 'título'}?<select id="msit" aria-label="Situação">
+        <option value=""${situacao(s) ? '' : ' selected'}>${mv ? 'Normal' : 'Acompanhando'}</option>
+        <option value="pausada"${situacao(s) === 'pausada' ? ' selected' : ''}>Pausada</option>
+        <option value="abandonada"${situacao(s) === 'abandonada' ? ' selected' : ''}>Abandonada</option></select></label>
+      <p class="aviso">Pausadas e abandonadas saem de “Continuar assistindo”. Marcar um episódio volta ao normal.</p></section>`
+    }
     <section class="bloco"><h3>Onde assistir</h3><div id="onde">${htmlOnde(onde)}</div></section>
     <section class="bloco"><h3>Minha avaliação</h3>
       <label>Minha nota (0 a 10)<input type="number" id="mnota" min="0" max="10" step="0.5" inputmode="decimal" value="${s.nota_pessoal == null ? '' : s.nota_pessoal}" placeholder="Sem nota"></label>

@@ -134,10 +134,31 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 .busca svg{position:absolute;left:16px;top:50%;width:18px;height:18px;transform:translateY(-50%);fill:none;stroke:var(--mut);stroke-width:2;stroke-linecap:round;pointer-events:none}
 .busca input[type=search]{padding-left:44px;border-radius:var(--pilula)}
 .ordem{margin:0}
+/* Busca e filtros ficam à vista ao rolar a estante */
+.ferramentas:not(.centro){position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:20;background:var(--bg);padding:10px 0;margin:6px 0 18px}
+@media (min-width:900px){.ferramentas:not(.centro){top:0}}
 
 /* ----- estante ----- */
 .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:34px 22px}
 .card{min-width:0}
+/* Bibliotecas grandes: o navegador pula o desenho dos cards fora da tela */
+.grade>.card{content-visibility:auto;contain-intrinsic-size:auto 300px}
+.grupo{margin:0 0 30px}
+.grupo>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;margin:0 0 14px}
+.grupo>summary::-webkit-details-marker{display:none}
+.grupo>summary::before{content:'';width:8px;height:8px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:rotate(-45deg);transition:transform .15s}
+.grupo[open]>summary::before{transform:rotate(45deg)}
+.grupo>summary .sec-tit{margin:0}
+.grupo-n{color:var(--mut);font-weight:600;font-size:.9em;margin-left:4px}
+.grupo>summary:focus-visible{outline:2px solid var(--acc);outline-offset:4px;border-radius:var(--r-s)}
+.sel.pausa{background:#c98a1b;color:#1d1405}
+.sel.fila{background:rgba(18,15,30,.82)}
+/* −1 episódio */
+.menos{position:absolute;left:10px;bottom:10px;height:34px;min-width:34px;padding:0;border-radius:var(--pilula);border:0;background:rgba(18,15,30,.82);color:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.35);transition:transform .12s,opacity .15s}
+.menos svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.8;stroke-linecap:round}
+.menos:active{transform:scale(.9)}
+@media (hover:hover){.grade .menos{opacity:0;transform:translateY(6px)}.grade .poster:hover .menos,.grade .menos:focus-visible{opacity:1;transform:none}}
+@media (pointer:coarse){.menos{height:44px;min-width:44px}}
 .poster{position:relative}
 .card .capa{display:block;width:100%;padding:0;border:0;position:relative;aspect-ratio:2/3;border-radius:var(--r-m);overflow:hidden;background:var(--card);transition:transform .18s ease,box-shadow .18s ease}
 .card .capa:hover{transform:translateY(-4px);box-shadow:var(--sombra-alta)}

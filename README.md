@@ -36,6 +36,7 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 - Notificações de novos episódios.
 - Importação de bibliotecas de outras plataformas.
 - Backup e exportação de dados.
+- Sincronização incremental entre aparelhos (`/api/dados?desde=`): só o que mudou volta do servidor.
 - Sincronização entre dispositivos.
 - Instalação como aplicativo (PWA).
 - Suporte a funcionamento offline.
@@ -135,6 +136,9 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 - Pesquisa por nome.
 - Filtros e ordenação por recentes, nome, nota e último episódio assistido.
 - Seção para continuar assistindo.
+- Grupos por estado na aba "Todas" (Assistindo, Na fila, Pausadas, Abandonadas, Concluídas), recolhíveis, com busca e filtros sempre à vista.
+- Situação "pausada" ou "abandonada" (saem de "Continuar assistindo" até você marcar um episódio).
+- −1 episódio direto no card e "Já vi antes" por temporada (marca sem contar como atividade de hoje).
 - Acompanhamento individual do progresso de cada temporada.
 - Identificação do próximo episódio.
 

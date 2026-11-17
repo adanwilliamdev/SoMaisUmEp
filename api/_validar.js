@@ -73,6 +73,7 @@ function titulo(x, userId) {
     visto_em: num(x.visto_em, 0, 8.64e15),
     hist: historico(x.hist),
     proximo: proximo(x.proximo),
+    situacao: x.situacao === 'pausada' || x.situacao === 'abandonada' ? x.situacao : null,
     base: num(x.base, 0, 8.64e15), // versão que o navegador conhecia (controle de edição simultânea)
   };
 }

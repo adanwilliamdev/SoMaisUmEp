@@ -78,9 +78,9 @@ const novoRes = () => {
     },
   };
 };
-async function chamar(arquivo, { metodo = 'POST', body, headers = {}, logado = false } = {}) {
+async function chamar(arquivo, { metodo = 'POST', body, headers = {}, logado = false, query = {} } = {}) {
   const res = novoRes();
-  await require('../api/' + arquivo)({ method: metodo, body, query: {}, headers: { ...(logado ? { cookie: cookie() } : {}), ...headers } }, res);
+  await require('../api/' + arquivo)({ method: metodo, body, query, headers: { ...(logado ? { cookie: cookie() } : {}), ...headers } }, res);
   return res;
 }
 const limpar = () => {
@@ -497,4 +497,30 @@ test('sessão: rotas com cache público (TMDb) nunca emitem Set-Cookie', async (
     global.fetch = antes;
     delete process.env.TMDB_READ_TOKEN;
   }
+});
+
+test('/api/dados?desde: devolve só o que mudou, todos os ids que existem e marca parcial', async () => {
+  limpar();
+  banco.resposta = base(t => {
+    if (/count\(\*\)::int as n/.test(t)) return [{ n: 2, m: '300', p: 0, pm: '0' }];
+    if (/select id from titulos/.test(t)) return [{ id: 'a' }, { id: 'b' }];
+    if (/select id from tops/.test(t)) return [{ id: 'p1' }];
+    if (/from titulos where user_id = \? and atualizado >= \?/.test(t))
+      return [{ id: 'b', tipo: 'tv', nome: 'B', eps: [1], vis: [0], criado: '2', atualizado: '300', situacao: 'pausada' }];
+    return [];
+  });
+  const r = await chamar('dados', { metodo: 'GET', logado: true, query: { desde: '250' } });
+  assert.equal(r.code, 200);
+  assert.equal(r.body.parcial, true);
+  assert.deepEqual(r.body.ids, { series: ['a', 'b'], tops: ['p1'] });
+  assert.deepEqual(
+    r.body.series.map(s => [s.id, s.situacao]),
+    [['b', 'pausada']],
+  );
+  assert.ok(banco.consultas.some(c => /atualizado >= \?/.test(c.texto) && c.vals.includes(250)));
+  assert.ok(!banco.consultas.some(c => /select \* from titulos where user_id = \? order by/.test(c.texto)), 'não lê a biblioteca inteira');
+  // ?desde inválido é ignorado: volta a biblioteca completa
+  limpar();
+  const c = await chamar('dados', { metodo: 'GET', logado: true, query: { desde: 'abc' } });
+  assert.equal(c.body.parcial, undefined);
 });

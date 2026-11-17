@@ -124,8 +124,8 @@ test('mesclar: progresso não regride e o servidor vence nos metadados', async (
   assert.equal(m.nome, 'Servidor');
   assert.equal(m.visto_em, 30);
   assert.deepEqual(m.hist, { '2026-11': 5, '2026-10': 4 });
-  const srv2 = serie({ eps: [10, 8, 4], vis: [1, 1, 1] }); // temporadas diferentes: servidor vence
-  assert.deepEqual(mesclarTitulo(loc, srv2).vis, [1, 1, 1]);
+  const srv2 = serie({ eps: [10, 8, 4], vis: [1, 1, 1] }); // temporadas diferentes: eps do servidor, progresso local preservado
+  assert.deepEqual(mesclarTitulo(loc, srv2).vis, [5, 1, 1]);
   assert.equal(mesclarTitulo(loc, null), loc);
 });
 

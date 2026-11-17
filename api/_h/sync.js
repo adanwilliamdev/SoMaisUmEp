@@ -44,12 +44,12 @@ module.exports = rota('POST', async (req, res, u) => {
   const q = [];
   for (const t of T)
     q.push(sql`
-    insert into titulos (id, user_id, tipo, nome, capa, sinopse, ano, nota, duracao, tmdb, eps, vis, criado, nota_pessoal, resenha, visto_em, hist, proximo, atualizado)
+    insert into titulos (id, user_id, tipo, nome, capa, sinopse, ano, nota, duracao, tmdb, eps, vis, criado, nota_pessoal, resenha, visto_em, hist, proximo, situacao, atualizado)
     values (${t.id}, ${u.id}, ${t.tipo}, ${t.nome}, ${t.capa}, ${t.sinopse}, ${t.ano}, ${t.nota}, ${t.duracao}, ${t.tmdb}, ${t.eps}, ${t.vis}, ${t.criado},
-            ${t.nota_pessoal}, ${t.resenha}, ${t.visto_em}, ${JSON.stringify(t.hist)}::jsonb, ${t.proximo ? JSON.stringify(t.proximo) : null}::jsonb, ${agora})
+            ${t.nota_pessoal}, ${t.resenha}, ${t.visto_em}, ${JSON.stringify(t.hist)}::jsonb, ${t.proximo ? JSON.stringify(t.proximo) : null}::jsonb, ${t.situacao}, ${agora})
     on conflict (user_id, id) do update set tipo = excluded.tipo, nome = excluded.nome, capa = excluded.capa, sinopse = excluded.sinopse,
       ano = excluded.ano, nota = excluded.nota, duracao = excluded.duracao, tmdb = excluded.tmdb, eps = excluded.eps, vis = excluded.vis,
-      nota_pessoal = excluded.nota_pessoal, resenha = excluded.resenha, visto_em = excluded.visto_em, hist = excluded.hist, proximo = excluded.proximo, atualizado = excluded.atualizado
+      nota_pessoal = excluded.nota_pessoal, resenha = excluded.resenha, visto_em = excluded.visto_em, hist = excluded.hist, proximo = excluded.proximo, situacao = excluded.situacao, atualizado = excluded.atualizado
     where titulos.user_id = ${u.id} and (titulos.atualizado = ${t.base}::bigint or ${t.base}::bigint is null)
     returning id, atualizado`);
   for (const t of P)

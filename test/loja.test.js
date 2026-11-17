@@ -17,7 +17,7 @@ let relogioAtivo = null;
 
 /* ---------- servidor falso ---------- */
 function criarServidor() {
-  const srv = { t: new Map(), p: new Map(), relogio: 100, chamadas: 0, posts: [], falhas: 0, status: 0, usuario: USUARIO };
+  const srv = { t: new Map(), p: new Map(), relogio: 100, chamadas: 0, posts: [], desdes: [], falhas: 0, status: 0, usuario: USUARIO };
   const resp = (status, j) => ({ status, ok: status < 400, json: async () => j });
   srv.semear = (...series) => series.forEach(s => srv.t.set(s.id, { ...s, atualizado: ++srv.relogio }));
   srv.semearTop = (...tops) => tops.forEach(p => srv.p.set(p.id, { ...p, atualizado: ++srv.relogio }));
@@ -35,7 +35,22 @@ function criarServidor() {
     }
     if (srv.status) return resp(srv.status, { erro: 'erro de teste' });
     const caminho = new URL(url, 'http://x').pathname;
-    if (caminho === '/api/dados') return resp(200, { usuario: srv.usuario, blob: false, series: lista(srv.t), tops: lista(srv.p), links: {} });
+    if (caminho === '/api/dados') {
+      const desde = Number(new URL(url, 'http://x').searchParams.get('desde')) || 0;
+      srv.desdes.push(desde);
+      const novos = m => lista(m).filter(x => x.atualizado >= desde);
+      if (desde)
+        return resp(200, {
+          usuario: srv.usuario,
+          blob: false,
+          parcial: true,
+          series: novos(srv.t),
+          tops: novos(srv.p),
+          ids: { series: [...srv.t.keys()], tops: [...srv.p.keys()] },
+          links: {},
+        });
+      return resp(200, { usuario: srv.usuario, blob: false, series: lista(srv.t), tops: lista(srv.p), links: {} });
+    }
     if (caminho === '/api/sync') {
       const corpo = JSON.parse(opt.body);
       srv.posts.push(corpo);
@@ -397,6 +412,27 @@ ambiente('carregar sem rede e sem cópia local: o erro sobe para a tela', async 
 });
 
 /* ---------- recarregar ao voltar para a aba ---------- */
+ambiente('recarregarSuave incremental: pede só o que mudou (?desde), aplica edições, itens novos e exclusões de outro aparelho', async srv => {
+  srv.relogio = Date.now(); // versões em milissegundos, como no servidor de verdade
+  srv.semear(serie('a', [0]), serie('b', [0]), serie('c', [0]));
+  const M = await sessao();
+  await M.carregar();
+  assert.deepEqual(srv.desdes, [0], 'a primeira carga é completa');
+  srv.editar('a', { vis: [2] });
+  srv.semear(serie('d', [0]));
+  srv.apagar('b');
+  await M.recarregarSuave();
+  assert.ok(srv.desdes[1] > 0, 'a recarga usa ?desde');
+  assert.deepEqual(M.achar('a').vis, [2]);
+  assert.ok(M.achar('d'), 'item novo entra');
+  assert.equal(M.achar('b'), undefined, 'item apagado em outro aparelho sai');
+  assert.ok(M.achar('c'), 'o que não mudou continua');
+  assert.deepEqual(
+    M.L.series.map(s => s.id).sort(),
+    ['a', 'c', 'd'],
+  );
+});
+
 ambiente('recarregarSuave: traz o que mudou em outro aparelho e não mexe enquanto há envio pendente', async srv => {
   srv.semear(serie('a', [0]));
   const M = await sessao();

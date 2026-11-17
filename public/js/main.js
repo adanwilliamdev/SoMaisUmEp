@@ -23,6 +23,13 @@ observarEstilos(); // aplica os estilos vindos de data-* (o CSP não aceita styl
 /* ---------- renderização ---------- */
 const TITULOS = { '#series': 'Séries', '#filmes': 'Filmes', '#descobrir': 'Descobrir', '#tops': 'Tops', '#stats': 'Estatísticas' };
 
+// Cada aba que não é a estante tem a sua view; séries e filmes usam viewLista.
+const VIEWS = {
+  '#tops': () => V.viewTops(),
+  '#stats': () => V.viewStats(),
+  '#descobrir': () => V.viewDescobrir(descobrir.descDados()),
+};
+
 function render() {
   if (!ctx.logado) return;
   const a = aba(),
@@ -35,8 +42,7 @@ function render() {
   });
   app.classList.toggle('entra', ctx.animar);
   ctx.animar = false; // anima só ao trocar de aba, não a cada +1 episódio
-  app.innerHTML =
-    a === '#tops' ? V.viewTops() : a === '#stats' ? V.viewStats() : a === '#descobrir' ? V.viewDescobrir(descobrir.descDados()) : V.viewLista(tipoAtual());
+  app.innerHTML = VIEWS[a] ? VIEWS[a]() : V.viewLista(tipoAtual());
   revela();
   if (a === '#descobrir') descobrir.carregaDescobrir(V.UI.descTipo);
   if (manter) scrollTo({ top: y, behavior: 'instant' });
