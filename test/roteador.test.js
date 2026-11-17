@@ -139,7 +139,18 @@ test('vercel.json: cada endereço antigo de api/ é reescrito para o arquivo que
 test('api/auth.js: só despacha ações conhecidas (nomes herdados do Object e caminhos viram 404)', () => {
   const auth = require('../api/auth');
   for (const a of ['constructor', '__proto__', '../_lib', 'sync', undefined, ['login']]) {
-    const res = { h: {}, code: 0, setHeader() {}, status(c) { this.code = c; return this; }, json(b) { this.body = b; return this; } };
+    const res = {
+      code: 0,
+      setHeader() {},
+      status(c) {
+        this.code = c;
+        return this;
+      },
+      json(b) {
+        this.body = b;
+        return this;
+      },
+    };
     auth({ query: { a }, method: 'POST', headers: {} }, res);
     assert.equal(res.code, 404, String(a));
   }
