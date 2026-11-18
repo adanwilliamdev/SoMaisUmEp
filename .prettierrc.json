@@ -3,5 +3,13 @@
   "printWidth": 160,
   "trailingComma": "all",
   "arrowParens": "avoid",
-  "overrides": [{ "files": "*.json", "options": { "printWidth": 100 } }]
+  "embeddedLanguageFormatting": "off",
+  "overrides": [
+    {
+      "files": "*.json",
+      "options": {
+        "printWidth": 100
+      }
+    }
+  ]
 }

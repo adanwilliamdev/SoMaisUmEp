@@ -57,6 +57,6 @@ test('build: falha alto se o sw.js perder os marcadores (em vez de publicar sem 
 
 test('sw.js: o service worker usa MODULOS no cache inicial', () => {
   const sw = fs.readFileSync(path.join(PUBLIC, 'sw.js'), 'utf8');
-  assert.match(sw, /\.\.\.MODULOS\]/);
+  assert.match(sw, /\.\.\.MODULOS,?\s*\]/); // o Prettier pode quebrar o array em várias linhas
   assert.ok(modulos(PUBLIC).length > 20);
 });

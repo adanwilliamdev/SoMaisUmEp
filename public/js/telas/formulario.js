@@ -17,30 +17,18 @@ function formSerie(id, tipoNovo) {
   novaCapa = s ? s.capa : null;
   let meta = s ? { sinopse: s.sinopse, ano: s.ano, duracao: s.duracao, nota: s.nota, tmdb: s.tmdb, proximo: s.proximo || null } : {};
   ctx.aberta = null;
-  dlg.innerHTML = html`<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2>
-    <br />
+  dlg.innerHTML = html`<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2><br>
     <form id="f" data-id="${s ? s.id : ''}">
-      <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? s.nome : ''}" /></label>
-      <label
-        >Buscar no TMDb (opcional)<span class="linha-busca"
-          ><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}" /><button type="button" class="btn mini" id="tb">
-            Buscar
-          </button></span
-        ></label
-      >
+      <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? s.nome : ''}"></label>
+      <label>Buscar no TMDb (opcional)<span class="linha-busca"><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
       <div id="res" class="res"></div>
       <div id="dup"></div>
-      <div id="blocotemp" ${mv ? 'hidden' : ''}>
-        <label>Número de temporadas<input type="number" name="nt" min="1" max="30" value="${s ? s.eps.length : 1}" /></label>
-        <div class="rotulo-eps">Episódios por temporada</div>
-        <div class="eps-inputs" id="temps"></div>
-        <br />
-      </div>
-      <label>Capa (opcional)<input type="file" accept="image/*" name="capa" /></label>
+      <div id="blocotemp" ${mv ? 'hidden' : ''}><label>Número de temporadas<input type="number" name="nt" min="1" max="30" value="${s ? s.eps.length : 1}"></label>
+      <div class="rotulo-eps">Episódios por temporada</div>
+      <div class="eps-inputs" id="temps"></div><br></div>
+      <label>Capa (opcional)<input type="file" accept="image/*" name="capa"></label>
       <div id="previa"></div>
-      <div class="rodape-dlg">
-        <button type="button" class="btn sec" data-act="${s ? 'abrir' : 'fechar'}">Cancelar</button><button class="btn" type="submit">Salvar</button>
-      </div>
+      <div class="rodape-dlg"><button type="button" class="btn sec" data-act="${s ? 'abrir' : 'fechar'}">Cancelar</button><button class="btn" type="submit">Salvar</button></div>
     </form>`;
   const f = $('#f');
   let salvando = false;
@@ -49,10 +37,7 @@ function formSerie(id, tipoNovo) {
   const avisoDup = cand => {
     const d = acharDuplicado(L.series, cand, s && s.id);
     $('#dup').innerHTML = d
-      ? html`<p class="aviso">
-          ⚠️ <b>${d.nome}</b>${d.ano ? ' (' + d.ano + ')' : ''} já está na sua estante.
-          <button type="button" class="btn mini sec" data-act="abrir" data-id="${d.id}">Abrir o existente</button>
-        </p>`
+      ? html`<p class="aviso">⚠️ <b>${d.nome}</b>${d.ano ? ' (' + d.ano + ')' : ''} já está na sua estante. <button type="button" class="btn mini sec" data-act="abrir" data-id="${d.id}">Abrir o existente</button></p>`
       : '';
     return d;
   };
@@ -61,15 +46,12 @@ function formSerie(id, tipoNovo) {
     const atual = [...document.querySelectorAll('#temps input')].map(i => +i.value);
     $('#temps').innerHTML = html`${Array.from(
       { length: n },
-      (_, i) => html`<label>T${i + 1}<input type="number" min="1" max="999" value="${(arr && arr[i]) || atual[i] || (s && s.eps[i]) || 10}" /></label>`,
+      (_, i) => html`<label>T${i + 1}<input type="number" min="1" max="999" value="${(arr && arr[i]) || atual[i] || (s && s.eps[i]) || 10}"></label>`,
     )}`;
   };
   const previa = () => {
     $('#previa').innerHTML = novaCapa
-      ? html`<div class="previa-cab">
-          <div class="previa-img"><img src="${novaCapa}" alt="" /></div>
-          <button type="button" class="btn sec mini" data-act="semcapa">Remover capa</button>
-        </div>`
+      ? html`<div class="previa-cab"><div class="previa-img"><img src="${novaCapa}" alt="" ></div><button type="button" class="btn sec mini" data-act="semcapa">Remover capa</button></div>`
       : '';
   };
   desenha();
@@ -87,10 +69,7 @@ function formSerie(id, tipoNovo) {
       res.innerHTML = R.length
         ? html`${R.map(
             x =>
-              html`<button type="button" class="r" data-tid="${x.id}">
-                <div class="p">${x.poster ? html`<img src="${x.poster}" alt="" />` : ''}</div>
-                <span><b>${x.nome}</b><small>${x.ano}</small></span>
-              </button>`,
+              html`<button type="button" class="r" data-tid="${x.id}"><div class="p">${x.poster ? html`<img src="${x.poster}" alt="">` : ''}</div><span><b>${x.nome}</b><small>${x.ano}</small></span></button>`,
           )}`
         : raw('<p class="aviso">Nada encontrado.</p>');
     } catch (e) {

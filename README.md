@@ -257,6 +257,8 @@ O estado compartilhado fica centralizado em `telas/ctx.js`.
 
 O HTML é montado com a função `html```, em `util.js`: tudo o que entra em `${...}` é escapado automaticamente, e trechos já seguros (outro `html``` ou um ícone SVG fixo marcado com `raw()`) entram sem novo escape. Listas são juntadas sozinhas, sem `.join('')`. O caminho mais curto é o seguro, e `test/html.test.js` falha se alguém voltar a montar `innerHTML` com template comum ou concatenação.
 
+O `.prettierrc.json` usa `embeddedLanguageFormatting: "off"` de propósito: sem isso o Prettier reescreveria o HTML dentro dos templates `html```, mudando espaços e até fechando tags que são fragmentos de propósito.
+
 Os formatos dos dados (`Titulo`, `Top`...) estão descritos em `public/js/tipos.js` (JSDoc), conferidos por `npm run tipos`.
 
 ### Backend serverless

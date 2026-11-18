@@ -20,21 +20,14 @@ test('html: tudo o que entra em ${} é escapado, em texto e em atributo', async 
 test('html: null e undefined somem; booleanos saem como texto (aria-pressed precisa de "false")', async () => {
   const { html } = await import('../public/js/util.js');
   assert.equal(String(html`[${null}][${undefined}]`), '[][]');
-  assert.equal(String(html`<button aria-pressed="${false}"></button>`), '<button aria-pressed="false">');
-  assert.equal(String(html`<button aria-pressed="${true}"></button>`), '<button aria-pressed="true">');
+  assert.equal(String(html`<button aria-pressed="${false}">`), '<button aria-pressed="false">');
+  assert.equal(String(html`<button aria-pressed="${true}">`), '<button aria-pressed="true">');
 });
 
 test('html: trechos html``/raw() entram sem novo escape e listas são juntadas', async () => {
   const { html, raw } = await import('../public/js/util.js');
   const li = ['a<', 'b'].map(x => html`<li>${x}</li>`);
-  assert.equal(
-    String(
-      html`<ul>
-        ${li}
-      </ul>`,
-    ),
-    '<ul><li>a&lt;</li><li>b</li></ul>',
-  );
+  assert.equal(String(html`<ul>${li}</ul>`), '<ul><li>a&lt;</li><li>b</li></ul>');
   assert.equal(String(html`${html`<b>${'&'}</b>`}`), '<b>&amp;</b>');
   assert.equal(String(html`${raw('<i>ok</i>')}`), '<i>ok</i>');
   assert.equal(String(html`${[raw('<b>1</b>'), '<2>']}`), '<b>1</b>&lt;2&gt;');
@@ -58,10 +51,7 @@ test('html: o resultado serve como string (innerHTML, concatenação e length)',
 });
 
 /* ---------- trava: nada de innerHTML montado à mão com ${} ---------- */
-const lista = dir =>
-  fs
-    .readdirSync(dir, { withFileTypes: true })
-    .flatMap(e => (e.isDirectory() ? lista(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
+const lista = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? lista(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
 const ARQUIVOS = lista(path.join(__dirname, '../public/js'));
 
 test('trava: innerHTML/insertAdjacentHTML nunca recebem template com ${} sem html``', () => {
@@ -69,8 +59,7 @@ test('trava: innerHTML/insertAdjacentHTML nunca recebem template com ${} sem htm
   for (const f of ARQUIVOS) {
     const src = fs.readFileSync(f, 'utf8');
     // atribuição (=, +=) ou insertAdjacentHTML(pos, ...) seguidos de um template literal sem o prefixo html
-    for (const m of src.matchAll(/(?:innerHTML\s*\+?=\s*|insertAdjacentHTML\([^,]+,\s*)`([^`]*)`/g))
-      if (m[1].includes('${')) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
+    for (const m of src.matchAll(/(?:innerHTML\s*\+?=\s*|insertAdjacentHTML\([^,]+,\s*)`([^`]*)`/g)) if (m[1].includes('${')) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
   }
   assert.deepEqual(ruins, [], 'use html`...` (escapa sozinho) em vez de template comum');
 });
@@ -79,17 +68,20 @@ test('trava: innerHTML nunca recebe concatenação de strings (+) nem esc() manu
   const ruins = [];
   for (const f of ARQUIVOS) {
     const src = fs.readFileSync(f, 'utf8');
-    for (const m of src.matchAll(/innerHTML\s*\+?=\s*([^;\n]*)/g))
-      if (/['"`]\s*\+|\+\s*['"`]/.test(m[1])) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
-    if (/\besc\(/.test(src.replace(/^export const esc = .*$/m, '')) && !f.endsWith('util.js'))
-      ruins.push(path.relative(process.cwd(), f) + ': esc() manual (use html``)');
+    for (const m of src.matchAll(/innerHTML\s*\+?=\s*([^;\n]*)/g)) if (/['"`]\s*\+|\+\s*['"`]/.test(m[1])) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
+    if (/\besc\(/.test(src.replace(/^export const esc = .*$/m, '')) && !f.endsWith('util.js')) ruins.push(path.relative(process.cwd(), f) + ': esc() manual (use html``)');
   }
   assert.deepEqual(ruins, []);
 });
 
-// Lê um literal de texto ('...' ou "...") em src a partir de i; devolve o índice logo depois dele, ou -1 se não começa por um literal.
+// Lê um literal de texto ('...' ou "...") em src a partir de i (pulando espaços e quebras de linha); devolve o índice logo depois
+// dele, ou -1 se não começa por um literal.
+const pula = (src, i) => {
+  while (/\s/.test(src[i])) i++;
+  return i;
+};
 const fimLiteral = (src, i) => {
-  while (src[i] === ' ') i++;
+  i = pula(src, i);
   const q = src[i];
   if (q !== "'" && q !== '"') return -1;
   for (i++; i < src.length && src[i] !== q; i++) if (src[i] === '\\') i++;
@@ -104,14 +96,17 @@ test('trava: raw() só recebe texto fixo (literal, ou condicional entre dois lit
       if (i < 0) {
         // condicional: raw(condicao ? 'a' : 'b')
         const q = src.indexOf('?', m.index);
-        i = q > 0 && q - m.index < 40 ? fimLiteral(src, q + 1) : -1;
+        i = q > 0 && q - m.index < 80 ? fimLiteral(src, q + 1) : -1;
         if (i > 0) {
-          while (src[i] === ' ') i++;
+          i = pula(src, i);
           i = src[i] === ':' ? fimLiteral(src, i + 1) : -1;
         }
       }
-      while (i > 0 && src[i] === ' ') i++;
-      if (i < 0 || src[i] !== ')') ruins.push(path.relative(process.cwd(), f) + ': ' + src.slice(m.index, m.index + 60).replace(/\n/g, ' '));
+      if (i > 0) {
+        i = pula(src, i);
+        if (src[i] === ',') i = pula(src, i + 1); // vírgula final que o Prettier acrescenta ao quebrar a chamada
+      }
+      if (i < 0 || src[i] !== ')') ruins.push(path.relative(process.cwd(), f) + ': ' + src.slice(m.index, m.index + 60).replace(/\s+/g, ' '));
     }
   }
   assert.deepEqual(ruins, [], 'raw() é só para HTML fixo escrito no código');
