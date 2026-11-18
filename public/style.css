@@ -1,3 +1,9 @@
+/* Inter hospedada aqui (subconjunto latino, licença em /fonts/LICENSE.txt): nada de terceiros e funciona offline. */
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/inter-400.woff) format("woff")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/inter-500.woff) format("woff")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/inter-600.woff) format("woff")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/inter-700.woff) format("woff")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:800;font-display:swap;src:url(/fonts/inter-800.woff) format("woff")}
 /* ===== SóMaisUmEp · v5 · "Madrugada" =====
    O sofá às duas da manhã: roxo-noite, a luz coral do play e a linha do tempo dos players de vídeo.
    Superfícies são arredondadas, o que se toca é pílula, e o botão "Só mais um ep" é o centro de tudo.

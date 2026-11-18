@@ -83,20 +83,21 @@ test('views: botões só com ícone têm nome, episódios dizem a temporada, top
     },
   ];
   L.links = {};
-  const det = V.htmlDetalhe(s, null);
+  // As views devolvem um Html (String estendida); os asserts de regex pedem string primitiva.
+  const det = String(V.htmlDetalhe(s, null));
   assert.match(det, /aria-label="Temporada 2, episódio 1"/);
   assert.match(det, /aria-label="Marcar toda a temporada 2"/);
   assert.match(det, /aria-label="Zerar temporada 1"/);
-  const tops = V.viewTops();
+  const tops = String(V.viewTops());
   assert.match(tops, /data-act="sobe"[^>]*disabled/, 'o primeiro item não sobe');
   assert.match(tops, /data-act="desce"[^>]*aria-label="Descer Série \(posição 1 de 2\)"/);
   assert.match(tops, /aria-keyshortcuts="ArrowUp ArrowDown Home End"/);
-  const g = V.graficoMeses([{ rotulo: 'Jan', ano: 2026, valor: 4, mes: '2026-01' }]);
+  const g = String(V.graficoMeses([{ rotulo: 'Jan', ano: 2026, valor: 4, mes: '2026-01' }]));
   assert.match(g, /<table class="sr"><caption>/);
   assert.match(g, /<th scope="row">Jan\/2026<\/th><td>4<\/td>/);
   // todo <button> renderizado tem texto visível ou aria-label
-  for (const html of [det, tops]) {
-    for (const m of html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
+  for (const doc of [det, tops]) {
+    for (const m of doc.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
       const texto = m[2]
         .replace(/<svg[\s\S]*?<\/svg>/g, '')
         .replace(/<[^>]+>/g, '')

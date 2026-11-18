@@ -95,7 +95,7 @@ module.exports = [
     rules: regras,
   },
   {
-    files: ['test/**/*.js'],
+    files: ['test/**/*.js', 'e2e/**/*.js', 'integracao/**/*.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'commonjs', globals: globais([...node, ...navegador.filter(n => !node.includes(n))]) },
     rules: { ...regras, 'no-unused-vars': 'off' },
   },

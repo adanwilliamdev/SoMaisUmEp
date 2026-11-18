@@ -1,5 +1,5 @@
 // Formulário de série/filme (novo ou editar), com busca no TMDb e capa.
-import { $, esc, uid, aviso } from '../util.js';
+import { $, html, raw, uid, aviso } from '../util.js';
 import { tmdb } from '../api.js';
 import { L, achar, save } from '../loja.js';
 import { tp, vis, registrarProgresso, acharDuplicado } from '../regras.js';
@@ -17,9 +17,9 @@ function formSerie(id, tipoNovo) {
   novaCapa = s ? s.capa : null;
   let meta = s ? { sinopse: s.sinopse, ano: s.ano, duracao: s.duracao, nota: s.nota, tmdb: s.tmdb, proximo: s.proximo || null } : {};
   ctx.aberta = null;
-  dlg.innerHTML = `<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2><br>
-    <form id="f" data-id="${s ? esc(s.id) : ''}">
-      <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? esc(s.nome) : ''}"></label>
+  dlg.innerHTML = html`<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2><br>
+    <form id="f" data-id="${s ? s.id : ''}">
+      <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? s.nome : ''}"></label>
       <label>Buscar no TMDb (opcional)<span class="linha-busca"><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
       <div id="res" class="res"></div>
       <div id="dup"></div>
@@ -37,21 +37,21 @@ function formSerie(id, tipoNovo) {
   const avisoDup = cand => {
     const d = acharDuplicado(L.series, cand, s && s.id);
     $('#dup').innerHTML = d
-      ? `<p class="aviso">⚠️ <b>${esc(d.nome)}</b>${d.ano ? ' (' + esc(d.ano) + ')' : ''} já está na sua estante. <button type="button" class="btn mini sec" data-act="abrir" data-id="${esc(d.id)}">Abrir o existente</button></p>`
+      ? html`<p class="aviso">⚠️ <b>${d.nome}</b>${d.ano ? ' (' + d.ano + ')' : ''} já está na sua estante. <button type="button" class="btn mini sec" data-act="abrir" data-id="${d.id}">Abrir o existente</button></p>`
       : '';
     return d;
   };
   const desenha = arr => {
     const n = Math.max(1, Math.min(30, +f.nt.value || 1));
     const atual = [...document.querySelectorAll('#temps input')].map(i => +i.value);
-    $('#temps').innerHTML = Array.from(
+    $('#temps').innerHTML = html`${Array.from(
       { length: n },
-      (_, i) => `<label>T${i + 1}<input type="number" min="1" max="999" value="${(arr && arr[i]) || atual[i] || (s && s.eps[i]) || 10}"></label>`,
-    ).join('');
+      (_, i) => html`<label>T${i + 1}<input type="number" min="1" max="999" value="${(arr && arr[i]) || atual[i] || (s && s.eps[i]) || 10}"></label>`,
+    )}`;
   };
   const previa = () => {
     $('#previa').innerHTML = novaCapa
-      ? `<div class="previa-cab"><div class="previa-img"><img src="${esc(novaCapa)}" alt="" ></div><button type="button" class="btn sec mini" data-act="semcapa">Remover capa</button></div>`
+      ? html`<div class="previa-cab"><div class="previa-img"><img src="${novaCapa}" alt="" ></div><button type="button" class="btn sec mini" data-act="semcapa">Remover capa</button></div>`
       : '';
   };
   desenha();
@@ -63,17 +63,17 @@ function formSerie(id, tipoNovo) {
     const q = $('#tq').value.trim(),
       res = $('#res');
     if (!q) return;
-    res.innerHTML = '<p class="aviso">Buscando…</p>';
+    res.innerHTML = raw('<p class="aviso">Buscando…</p>');
     try {
       const R = (await tmdb({ acao: 'busca', tipo, q })).resultados;
       res.innerHTML = R.length
-        ? R.map(
+        ? html`${R.map(
             x =>
-              `<button type="button" class="r" data-tid="${esc(x.id)}"><div class="p">${x.poster ? `<img src="${esc(x.poster)}" alt="">` : ''}</div><span><b>${esc(x.nome)}</b><small>${esc(x.ano)}</small></span></button>`,
-          ).join('')
-        : '<p class="aviso">Nada encontrado.</p>';
+              html`<button type="button" class="r" data-tid="${x.id}"><div class="p">${x.poster ? html`<img src="${x.poster}" alt="">` : ''}</div><span><b>${x.nome}</b><small>${x.ano}</small></span></button>`,
+          )}`
+        : raw('<p class="aviso">Nada encontrado.</p>');
     } catch (e) {
-      res.innerHTML = `<p class="aviso">${esc(e.auth ? 'Sessão expirada. Recarregue a página.' : e.message)}</p>`;
+      res.innerHTML = html`<p class="aviso">${e.auth ? 'Sessão expirada. Recarregue a página.' : e.message}</p>`;
     }
   };
   $('#tb').addEventListener('click', busca);
@@ -99,10 +99,10 @@ function formSerie(id, tipoNovo) {
       if (d.poster) novaCapa = d.poster;
       previa();
       meta = { sinopse: d.sinopse, ano: d.ano, duracao: d.duracao, nota: d.nota, tmdb: d.tmdb, proximo: d.proximo || null };
-      $('#res').innerHTML = '<p class="aviso">Dados preenchidos ✓ Confira e salve.</p>';
+      $('#res').innerHTML = raw('<p class="aviso">Dados preenchidos ✓ Confira e salve.</p>');
       avisoDup({ tipo, nome: d.nome, ano: d.ano, tmdb: d.tmdb });
     } catch (e) {
-      $('#res').innerHTML = `<p class="aviso">${esc(e.auth ? 'Sessão expirada. Recarregue a página.' : e.message)}</p>`;
+      $('#res').innerHTML = html`<p class="aviso">${e.auth ? 'Sessão expirada. Recarregue a página.' : e.message}</p>`;
     }
   });
   f.capa.addEventListener('change', () => {

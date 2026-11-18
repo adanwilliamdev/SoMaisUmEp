@@ -1,25 +1,38 @@
 // Regras puras do app (sem DOM nem rede): fáceis de testar em Node.
+// @ts-check
+// Os tipos (Titulo, Top...) estão em tipos.js; `npm run tipos` confere este arquivo.
+/** @typedef {import('./tipos.js').Titulo} Titulo */
+/** @typedef {import('./tipos.js').Proximo} Proximo */
 
+/** @param {Titulo} s @returns {'tv' | 'movie'} */
 export const tp = s => s.tipo || 'tv';
+/** Total de episódios. @param {Titulo} s */
 export const tot = s => s.eps.reduce((a, b) => a + b, 0);
+/** Episódios vistos. @param {Titulo} s */
 export const vis = s => s.vis.reduce((a, b) => a + b, 0);
+/** Progresso. @param {Titulo} s @returns {'quero' | 'assistindo' | 'fim'} */
 export const estado = s => {
   const v = vis(s);
   return v === 0 ? 'quero' : v >= tot(s) ? 'fim' : 'assistindo';
 };
+/** Próximo episódio a ver, como [temporada, episódio] (a partir de 1), ou null se não há mais. @param {Titulo} s @returns {[number, number] | null} */
 export const prox = s => {
   for (let i = 0; i < s.eps.length; i++) if (s.vis[i] < s.eps[i]) return [i + 1, s.vis[i] + 1];
   return null;
 };
+/** Percentual visto (0 a 100). @param {Titulo} s */
 export const pct = s => Math.round((vis(s) / tot(s)) * 100);
 
 // Situação escolhida pela pessoa para o que ainda não terminou: 'pausada' ou 'abandonada' (null = normal).
 // Concluído sempre vence: quem terminou não está mais pausado nem abandonado.
 export const SITUACOES = ['pausada', 'abandonada'];
+/** @param {Titulo} s @returns {import('./tipos.js').Situacao | null} */
 export const situacao = s => (SITUACOES.includes(s.situacao) && estado(s) !== 'fim' ? s.situacao : null);
 // Estado usado nos filtros e nos grupos da estante: a situação, quando existe, senão o estado de progresso.
+/** @param {Titulo} s @returns {string} */
 export const estadoLista = s => situacao(s) || estado(s);
 
+/** Texto curto do estado do título ("Próximo: T1 · E2", "Concluída ✓"...). @param {Titulo} s @returns {string} */
 export function rotulo(s) {
   const p = prox(s),
     e = estado(s),
@@ -39,6 +52,7 @@ export const normaliza = t =>
     .toLowerCase()
     .trim();
 
+/** @param {Titulo[]} lista @param {{ estado?: string, busca?: string }} [filtro] @returns {Titulo[]} */
 export function filtrar(lista, { estado: est = 'todas', busca = '' } = {}) {
   const q = normaliza(busca);
   return lista.filter(s => (est === 'todas' || estadoLista(s) === est) && (!q || normaliza(s.nome).includes(q)));
@@ -54,6 +68,7 @@ export const ORDENS = [
 // Nota usada para ordenar: a sua nota, se existir; senão a do TMDb.
 const notaDe = s => (s.nota_pessoal != null ? s.nota_pessoal : s.nota != null ? s.nota : -1);
 
+/** Cópia ordenada (não altera a lista). @param {Titulo[]} lista @param {string} [modo] 'recente' | 'nome' | 'nota' | 'visto' @returns {Titulo[]} */
 export function ordenar(lista, modo = 'recente') {
   const c = [...lista];
   const porRecente = (a, b) => (b.criado || 0) - (a.criado || 0);
@@ -65,6 +80,7 @@ export function ordenar(lista, modo = 'recente') {
 }
 
 // "Continuar assistindo": séries em andamento, a mais recente primeiro.
+/** @param {Titulo[]} series @param {number} [max] @returns {Titulo[]} */
 export function continuar(series, max = 12) {
   return ordenar(
     series.filter(s => tp(s) === 'tv' && estado(s) === 'assistindo' && !situacao(s)),
@@ -79,6 +95,7 @@ export function continuar(series, max = 12) {
 //    sinal claro de que são obras diferentes (TMDb diferente ou anos diferentes, como em remakes).
 const nomeChave = t => normaliza(t).replace(/\s+/g, ' ');
 
+/** @param {Titulo} a @param {Titulo} b @returns {boolean} */
 export function mesmoTitulo(a, b) {
   if (!a || !b || tp(a) !== tp(b)) return false;
   if (a.tmdb && b.tmdb) return a.tmdb === b.tmdb;
@@ -113,6 +130,7 @@ export const mesDe = t => {
 //  - `retroativo: true` (ao marcar o que você viu antes de usar o app) atualiza o progresso sem contar como atividade
 //    de hoje: não mexe no histórico, em `visto_em` nem na situação.
 //  - Marcar um episódio de verdade tira a pausa/abandono: você voltou a assistir.
+/** Atualiza histórico, visto_em e situação depois de mudar `vis` (altera e devolve `s`). @param {Titulo} s @param {number} antes total visto antes da mudança @param {number} [agora] @param {{ retroativo?: boolean }} [opcoes] @returns {Titulo} */
 export function registrarProgresso(s, antes, agora = Date.now(), { retroativo = false } = {}) {
   const d = vis(s) - antes;
   if (!d) return s;
@@ -154,6 +172,7 @@ export function aplicarEps(s, novosEps) {
 /* ---------- mesclar versões (edição em dois aparelhos) ---------- */
 // srv = versão do servidor, loc = versão deste aparelho. Metadados do servidor vencem
 // se mudaram lá; o progresso nunca regride (máximo por temporada) quando as temporadas coincidem.
+/** Junta a versão deste aparelho com a do servidor sem nunca perder progresso. @param {Titulo} loc @param {Titulo | null | undefined} srv @returns {Titulo} */
 export function mesclarTitulo(loc, srv) {
   if (!srv) return loc;
   const m = { ...srv };
@@ -170,6 +189,7 @@ export function mesclarTitulo(loc, srv) {
 }
 
 /* ---------- estatísticas ---------- */
+/** @param {Titulo[]} series @returns {import('./tipos.js').Estatisticas} */
 export function estatisticas(series) {
   const r = { episodios: 0, filmes: 0, concluidas: 0, minutos: 0, semDuracao: 0, notaMedia: null, nNotas: 0, porMes: {} };
   let soma = 0;
@@ -233,7 +253,7 @@ export const hojeISO = (agora = Date.now()) => {
 function diasAte(iso, agora = Date.now()) {
   const d = dataLocal(iso),
     h = dataLocal(hojeISO(agora));
-  return d ? Math.round((d - h) / 864e5) : null;
+  return d ? Math.round((+d - +h) / 864e5) : null;
 }
 
 // Próximo lançamento de um título, pronto para mostrar. null se não há data ou se ela já passou.
@@ -423,6 +443,7 @@ export function limparTituloBackup(x, criadoPadrao = Date.now()) {
         if (n) hist[k] = n;
       }
   }
+  /** @type {Proximo | null} */
   let proximo = null;
   if (x.proximo && typeof x.proximo === 'object' && DATA_OK.test(String(x.proximo.d || ''))) {
     proximo = { d: x.proximo.d };

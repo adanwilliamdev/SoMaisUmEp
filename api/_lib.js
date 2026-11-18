@@ -16,21 +16,58 @@ const igual = (a, b) => {
 };
 
 /* ---------- senhas (scrypt, nativo do Node) ---------- */
-const scrypt = (senha, salt) =>
+// Formato guardado: "scrypt$N$r$p$salt$hash" (parâmetros dentro do próprio hash, então dá para subir o custo no futuro sem
+// invalidar ninguém: quem entra com um hash de parâmetros antigos tem a senha regravada com os atuais, veja precisaRehash).
+// Formato legado (antes dos parâmetros ficarem no hash): "scrypt$salt$hash", sempre com N=16384, r=8, p=1.
+// Custo atual: o mínimo recomendado pela OWASP para scrypt (N=2^17, r=8, p=1), ~128 MiB de memória por conferência.
+const SCRYPT = { N: 2 ** 17, r: 8, p: 1 };
+const SCRYPT_LEGADO = { N: 2 ** 14, r: 8, p: 1 };
+const TAM_HASH = 64;
+const memoria = ({ N, r }) => 128 * N * r;
+const scrypt = (senha, salt, { N, r, p } = SCRYPT, tam = TAM_HASH) =>
   new Promise((ok, no) =>
-    crypto.scrypt(String(senha).normalize('NFKC'), salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }, (e, k) => (e ? no(e) : ok(k))),
+    crypto.scrypt(String(senha).normalize('NFKC'), salt, tam, { N, r, p, maxmem: memoria({ N, r }) * 2 }, (e, k) => (e ? no(e) : ok(k))),
   );
+
+// Lê um hash guardado. Devolve null se o formato não é reconhecido ou os parâmetros são absurdos (um valor adulterado
+// no banco não pode fazer o servidor gastar memória sem limite).
+function lerHash(guardado) {
+  const partes = String(guardado || '').split('$');
+  let params, salt, h;
+  if (partes[0] !== 'scrypt') return null;
+  if (partes.length === 3) {
+    params = SCRYPT_LEGADO;
+    [, salt, h] = partes;
+  } else if (partes.length === 6) {
+    params = { N: Number(partes[1]), r: Number(partes[2]), p: Number(partes[3]) };
+    [, , , , salt, h] = partes;
+  } else return null;
+  const { N, r, p } = params;
+  const ok =
+    Number.isInteger(Math.log2(N)) && N >= 2 ** 14 && N <= 2 ** 18 && Number.isInteger(r) && r >= 1 && r <= 16 && Number.isInteger(p) && p >= 1 && p <= 4;
+  if (!ok || !/^[a-f0-9]{32}$/.test(salt || '') || !/^[a-f0-9]{64,256}$/.test(h || '') || h.length % 2) return null;
+  return { params, salt: Buffer.from(salt, 'hex'), h };
+}
+const formato = ({ N, r, p }, salt, h) => `scrypt$${N}$${r}$${p}$${salt.toString('hex')}$${h.toString('hex')}`;
+
 async function hashSenha(senha) {
   const salt = crypto.randomBytes(16);
-  return `scrypt$${salt.toString('hex')}$${(await scrypt(senha, salt)).toString('hex')}`;
+  return formato(SCRYPT, salt, await scrypt(senha, salt));
 }
+// Hash de mentira com os parâmetros atuais: gasta o mesmo tempo quando o e-mail não existe ou o hash guardado é inválido.
+const HASH_FALSO = formato(SCRYPT, Buffer.alloc(16), Buffer.alloc(TAM_HASH));
 async function confereSenha(senha, guardado) {
-  const [tipo, salt, h] = String(guardado || '').split('$');
-  if (tipo !== 'scrypt' || !salt || !h) {
+  const l = lerHash(guardado);
+  if (!l) {
     await scrypt(senha, Buffer.alloc(16));
     return false;
-  } // gasta o mesmo tempo
-  return igual((await scrypt(senha, Buffer.from(salt, 'hex'))).toString('hex'), h);
+  }
+  return igual((await scrypt(senha, l.salt, l.params, l.h.length / 2)).toString('hex'), l.h);
+}
+// true quando o hash guardado usa parâmetros diferentes dos atuais (ou o formato legado). Chame só depois de confereSenha dar true.
+function precisaRehash(guardado) {
+  const l = lerHash(guardado);
+  return !!l && (l.params.N !== SCRYPT.N || l.params.r !== SCRYPT.r || l.params.p !== SCRYPT.p || String(guardado).split('$').length !== 6);
 }
 
 /* ---------- sessão: cookie assinado "id.versao.validade.assinatura" ---------- */
@@ -96,4 +133,4 @@ const rota =
     }
   };
 
-module.exports = { db, rota, erro, assinar, igual, hashSenha, confereSenha, criarSessao, encerrarSessao, renovarSessao, logado };
+module.exports = { db, rota, erro, assinar, igual, hashSenha, confereSenha, precisaRehash, lerHash, HASH_FALSO, SCRYPT, criarSessao, encerrarSessao, renovarSessao, logado };

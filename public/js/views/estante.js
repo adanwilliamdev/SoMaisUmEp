@@ -1,5 +1,5 @@
 // Estante de séries e filmes: cards, "Continuar assistindo", próximos lançamentos, filtros e lista.
-import { esc, hue } from '../util.js';
+import { html, raw, hue } from '../util.js';
 import { L } from '../loja.js';
 import {
   tp,
@@ -26,7 +26,7 @@ const segs = s => Math.max(1, Math.min(tot(s), 40));
 // Selo "Novo ep sexta" / "Estreia em 12 nov" (some sozinho quando a data passa).
 const chipLanc = s => {
   const l = lancamento(s);
-  return l ? `<span class="lanc${l.dias <= 1 ? ' perto' : ''}">${esc(l.texto)}</span>` : '';
+  return l ? html`<span class="lanc${l.dias <= 1 ? ' perto' : ''}">${l.texto}</span>` : '';
 };
 
 export function cardHtml(s, n = 0) {
@@ -38,23 +38,23 @@ export function cardHtml(s, n = 0) {
   // Selo de estado em todo card: assim a estante inteira se lê sem abrir nada.
   const chip =
     est === 'fim'
-      ? '<span class="sel ok">Concluído</span>'
+      ? raw('<span class="sel ok">Concluído</span>')
       : sit
-        ? `<span class="sel pausa">${sit === 'pausada' ? 'Pausada' : 'Abandonada'}</span>`
+        ? html`<span class="sel pausa">${sit === 'pausada' ? 'Pausada' : 'Abandonada'}</span>`
         : est === 'quero'
-          ? '<span class="sel fila">Na fila</span>'
+          ? raw('<span class="sel fila">Na fila</span>')
           : '';
   const menos =
-    !mv && vis(s) > 0 ? `<button class="menos" data-act="menos" aria-label="−1 episódio de ${esc(s.nome)}" title="−1 episódio">${ICO_MENOS}</button>` : '';
+    !mv && vis(s) > 0 ? html`<button class="menos" data-act="menos" aria-label="−1 episódio de ${s.nome}" title="−1 episódio">${ICO_MENOS}</button>` : '';
   const prog = !mv && est === 'assistindo' ? ` · ${vis(s)}/${tot(s)} eps` : '';
-  return `<article class="card" data-id="${esc(s.id)}" data-est="${estadoLista(s)}" data-i="${Math.min(n, 14)}">
+  return html`<article class="card" data-id="${s.id}" data-est="${estadoLista(s)}" data-i="${Math.min(n, 14)}">
       <div class="poster">
-        <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? `<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
+        <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? html`<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
         ${menos}
-        ${prx ? `<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + esc(s.nome) + ' como visto' : '+1 episódio de ' + esc(s.nome)}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : ICO_MAIS + '<b>1</b>'}</button>` : ''}
+        ${prx ? html`<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + s.nome + ' como visto' : '+1 episódio de ' + s.nome}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : html`${ICO_MAIS}<b>1</b>`}</button>` : ''}
       </div>
-      ${mv ? '' : `<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>`}
-      <h3>${esc(s.nome)}</h3><small>${rotulo(s)}${prog}${mv && s.ano ? ' · ' + esc(s.ano) : ''}</small>${chipLanc(s)}
+      ${mv ? '' : html`<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>`}
+      <h3>${s.nome}</h3><small>${rotulo(s)}${prog}${mv && s.ano ? ' · ' + s.ano : ''}</small>${chipLanc(s)}
     </article>`;
 }
 
@@ -63,25 +63,25 @@ export function cardContinuar(s, n = 0) {
   const p = pct(s),
     prx = prox(s);
   const botao = (cls, miolo) =>
-    prx ? `<button class="mais ${cls}" data-act="mais" aria-label="+1 episódio de ${esc(s.nome)}" title="+1 episódio">${miolo}</button>` : '';
+    prx ? html`<button class="mais ${cls}" data-act="mais" aria-label="+1 episódio de ${s.nome}" title="+1 episódio">${miolo}</button>` : '';
   if (n > 0) {
-    return `<article class="card cc" data-id="${esc(s.id)}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
-      <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa)}</button>
-      <div class="cc-info"><h3>${esc(s.nome)}</h3>
+    return html`<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
+      <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}</button>
+      <div class="cc-info"><h3>${s.nome}</h3>
         <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>${chipLanc(s)}
         <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div></div>
-      ${botao('', ICO_MAIS + '<b>1</b>')}
+      ${botao('', html`${ICO_MAIS}<b>1</b>`)}
     </article>`;
   }
   const urlFundo = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
-  return `<article class="card cc cc-hero" data-id="${esc(s.id)}" data-est="${estado(s)}" data-i="0">
-      <div class="cc-fundo" aria-hidden="true" ${urlFundo ? `data-cover="${esc(s.capa)}"` : `data-h="${hue(s.nome)}"`}></div>
-      <button class="capa" data-act="abrir" aria-label="Abrir ${esc(s.nome)}">${capa(s.nome, s.capa, true)}</button>
-      <div class="cc-info"><h3>${esc(s.nome)}</h3>
+  return html`<article class="card cc cc-hero" data-id="${s.id}" data-est="${estado(s)}" data-i="0">
+      <div class="cc-fundo" aria-hidden="true" ${urlFundo ? html`data-cover="${s.capa}"` : html`data-h="${hue(s.nome)}"`}></div>
+      <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa, true)}</button>
+      <div class="cc-info"><h3>${s.nome}</h3>
         <p class="cc-ep">${prx ? `T${prx[0]} E${prx[1]}` : ''}</p>
         <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>
         <small>Próximo episódio: ${vis(s)} de ${tot(s)} vistos</small>${chipLanc(s)}</div>
-      ${botao('mais-grande', '<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>')}
+      ${botao('mais-grande', raw('<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>'))}
     </article>`;
 }
 
@@ -110,7 +110,7 @@ export function htmlStats(tipo) {
         [eps, 'episódios vistos'],
         [fim, 'concluídas'],
       ];
-  return stats.map(([n, r]) => `<div class="stat"><b>${n}</b><span>${r}</span></div>`).join('');
+  return html`${stats.map(([n, r]) => html`<div class="stat"><b>${n}</b><span>${r}</span></div>`)}`;
 }
 
 // "Próximos lançamentos": o que sai nas próximas semanas entre os títulos da estante (série ou filme, conforme a aba).
@@ -119,14 +119,12 @@ export function htmlProximos(tipo) {
   const lista = proximosLancamentos(L.series, { tipo });
   if (!lista.length) return '';
   const mv = tipo === 'movie';
-  return `<section class="prox" aria-labelledby="t-prox"><h2 class="sec-tit" id="t-prox">${mv ? 'Próximas estreias' : 'Próximos episódios'}</h2>
-    <ul class="prox-lista">${lista
-      .map(
-        ({ s, l }) => `<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${esc(s.id)}">
-      <button class="prox-b" data-act="abrir" aria-label="Abrir ${esc(s.nome)}"><span class="prox-data" aria-hidden="true"><b>${l.dia}</b>${esc(l.mes)}</span>
-      <span class="prox-txt"><b>${esc(s.nome)}</b><small>${l.t && l.e ? `T${l.t} · E${l.e} · ` : ''}${esc(l.quando)}</small></span></button></li>`,
-      )
-      .join('')}</ul></section>`;
+  return html`<section class="prox" aria-labelledby="t-prox"><h2 class="sec-tit" id="t-prox">${mv ? 'Próximas estreias' : 'Próximos episódios'}</h2>
+    <ul class="prox-lista">${lista.map(
+        ({ s, l }) => html`<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${s.id}">
+      <button class="prox-b" data-act="abrir" aria-label="Abrir ${s.nome}"><span class="prox-data" aria-hidden="true"><b>${l.dia}</b>${l.mes}</span>
+      <span class="prox-txt"><b>${s.nome}</b><small>${l.t && l.e ? `T${l.t} · E${l.e} · ` : ''}${l.quando}</small></span></button></li>`,
+      )}</ul></section>`;
 }
 
 export function htmlContinuar(tipo) {
@@ -134,12 +132,12 @@ export function htmlContinuar(tipo) {
   const c = continuar(L.series);
   if (!c.length) return '';
   const [destaque, ...resto] = c;
-  return `<section class="fila" aria-labelledby="t-fila"><h2 class="sec-tit" id="t-fila">Continuar assistindo</h2>
-    <div class="fila-grade${resto.length ? '' : ' so-um'}">${cardContinuar(destaque, 0)}${resto.length ? `<div class="fila-resto">${resto.map((s, n) => cardContinuar(s, n + 1)).join('')}</div>` : ''}</div></section>`;
+  return html`<section class="fila" aria-labelledby="t-fila"><h2 class="sec-tit" id="t-fila">Continuar assistindo</h2>
+    <div class="fila-grade${resto.length ? '' : ' so-um'}">${cardContinuar(destaque, 0)}${resto.length ? html`<div class="fila-resto">${resto.map((s, n) => cardContinuar(s, n + 1))}</div>` : ''}</div></section>`;
 }
 
 const VAZIO_ICO =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>';
+  raw('<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>');
 // Grupos da aba "Todas": cada estado vira uma seção recolhível, com o contador no título.
 const GRUPOS = {
   tv: [
@@ -159,15 +157,13 @@ const GRUPOS = {
 
 function htmlGrupos(lista, tipo) {
   let n = 0;
-  return GRUPOS[tipo]
-    .map(([k, rot]) => {
+  return html`${GRUPOS[tipo].map(([k, rot]) => {
       const g = lista.filter(s => estadoLista(s) === k);
       if (!g.length) return '';
       const aberto = !UI.fechados.has(k);
-      return `<details class="grupo" data-grupo="${k}"${aberto ? ' open' : ''}><summary><h2 class="sec-tit">${rot} <span class="grupo-n">${g.length}</span></h2></summary>
-        <div class="grade">${g.map(s => cardHtml(s, n++)).join('')}</div></details>`;
-    })
-    .join('');
+      return html`<details class="grupo" data-grupo="${k}"${aberto ? ' open' : ''}><summary><h2 class="sec-tit">${rot} <span class="grupo-n">${g.length}</span></h2></summary>
+        <div class="grade">${g.map(s => cardHtml(s, n++))}</div></details>`;
+    })}`;
 }
 
 export function htmlLista(tipo) {
@@ -177,16 +173,16 @@ export function htmlLista(tipo) {
   if (lista.length) {
     // Sem busca e em "Todas", agrupa por estado. Com busca ou filtro específico, é uma grade só.
     if (UI.filtro === 'todas' && !UI.busca) return htmlGrupos(lista, tipo);
-    return `<div class="grade">${lista.map((s, n) => cardHtml(s, n)).join('')}</div>`;
+    return html`<div class="grade">${lista.map((s, n) => cardHtml(s, n))}</div>`;
   }
-  if (UI.busca) return `<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${esc(UI.busca)}”.</p></div>`;
-  if (total) return `<div class="vazio">${VAZIO_ICO}<p>Nada neste filtro.</p></div>`;
-  return `<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série e marque o episódio de hoje.'}</p>
+  if (UI.busca) return html`<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${UI.busca}”.</p></div>`;
+  if (total) return html`<div class="vazio">${VAZIO_ICO}<p>Nada neste filtro.</p></div>`;
+  return html`<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série e marque o episódio de hoje.'}</p>
     <button class="btn" data-act="nova" data-tipo="${tipo}">${mv ? '+ Adicionar filme' : '+ Adicionar série'}</button>
     <button class="link" data-act="importar-abrir">Já usa Trakt, Letterboxd ou IMDb? Importe sua lista</button></div>`;
 }
 
-const LUPA = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+const LUPA = raw('<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>');
 export function viewLista(tipo) {
   const mv = tipo === 'movie';
   const fs = (
@@ -216,8 +212,8 @@ export function viewLista(tipo) {
     if (UI.filtro === k || L.series.some(s => tp(s) === tipo && situacao(s) === k)) fs.splice(fs.length - 1, 0, [k, rot]);
   }
   if (!fs.some(([k]) => k === UI.filtro)) UI.filtro = 'todas';
-  const chips = fs.map(([k, r]) => `<button class="chip" data-act="filtro" data-k="${k}" aria-pressed="${UI.filtro === k}">${r}</button>`).join('');
-  return `<div class="cabeca"><div><h1>${mv ? 'Meus filmes' : 'Minhas séries'}</h1>
+  const chips = fs.map(([k, r]) => html`<button class="chip" data-act="filtro" data-k="${k}" aria-pressed="${UI.filtro === k}">${r}</button>`);
+  return html`<div class="cabeca"><div><h1>${mv ? 'Meus filmes' : 'Minhas séries'}</h1>
       <p class="sub">${mv ? 'Registre o que você já viu e o que quer ver.' : 'Acompanhe cada temporada e episódio.'}</p></div>
       <button class="btn nova" data-act="nova" data-tipo="${tipo}"><span aria-hidden="true">+</span><span class="rot">${mv ? 'Novo filme' : 'Nova série'}</span></button></div>
     <div class="stats" id="stats">${htmlStats(tipo)}</div>
@@ -225,8 +221,8 @@ export function viewLista(tipo) {
     <div id="continuar">${htmlContinuar(tipo)}</div>
     <div class="ferramentas">
       <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
-      <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${esc(UI.busca)}" autocomplete="off" enterkeyhint="search"></label>
-      <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => `<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+      <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${UI.busca}" autocomplete="off" enterkeyhint="search"></label>
+      <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => html`<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`)}</select></label>
     </div>
     <div id="lista">${htmlLista(tipo)}</div>`;
 }

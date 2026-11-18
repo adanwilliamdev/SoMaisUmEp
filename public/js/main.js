@@ -1,5 +1,5 @@
 // Ponto de entrada: renderiza a aba atual, inicia a sessão e despacha os cliques para o módulo de cada tela (telas/).
-import { $, esc, status, aviso, desfazerUltimo, guardar, lerJSON, observarEstilos } from './util.js';
+import { $, html, status, aviso, desfazerUltimo, guardar, lerJSON, observarEstilos } from './util.js';
 import { L, achar, carregar, ligar, ligarRede, recarregarSuave } from './loja.js';
 import { lancamento, proximosLancamentos, hojeISO } from './regras.js';
 import * as V from './views.js';
@@ -90,7 +90,7 @@ async function iniciar() {
   } catch (e) {
     if (e.auth) conta.telaAuth('entrar');
     else
-      app.innerHTML = `<div class="vazio">Não foi possível carregar seus dados: ${esc(e.message)}<br><small>Se persistir, confira as variáveis de ambiente e o banco (veja o README, "Se aparecer erro no servidor").</small><br><br><button class="btn mini" data-act="recarregar">Tentar de novo</button></div>`;
+      app.innerHTML = html`<div class="vazio">Não foi possível carregar seus dados: ${e.message}<br><small>Se persistir, confira as variáveis de ambiente e o banco (veja o README, "Se aparecer erro no servidor").</small><br><br><button class="btn mini" data-act="recarregar">Tentar de novo</button></div>`;
   }
 }
 

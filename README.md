@@ -104,9 +104,12 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 │
 ├── docs/
 │   ├── notificacoes.md
-│   └── acessibilidade.md
+│   ├── acessibilidade.md
+│   └── backup.md
 │
 ├── test/
+├── e2e/
+├── integracao/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
@@ -123,8 +126,11 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 - **`api/`**: funções serverless responsáveis pela autenticação, sincronização e integração com serviços externos.
 - **`neon/migracoes/`**: migrações SQL numeradas e versionadas.
 - **`scripts/`**: automações para migração, build e geração de chaves VAPID.
-- **`docs/`**: documentação técnica sobre notificações e acessibilidade.
-- **`test/`**: testes automatizados executados pelo Node.js.
+- **`docs/`**: documentação técnica sobre notificações, acessibilidade e cópias de segurança.
+- **`public/fonts/`**: fonte Inter (subconjunto latino, licença OFL) hospedada no próprio site.
+- **`test/`**: testes automatizados executados pelo Node.js (unitários, de API com banco simulado e de interface sem navegador).
+- **`e2e/`**: testes de ponta a ponta no Chromium (Playwright), com a API simulada.
+- **`integracao/`**: testes dos handlers contra um PostgreSQL de verdade (SQL do sync, migrações, cascata).
 
 ---
 
@@ -212,7 +218,9 @@ A importação utiliza a API do TMDb para localizar os títulos. Duplicados são
 ### 🔐 Contas e segurança
 
 - Cadastro e autenticação individual.
-- Senhas protegidas com scrypt.
+- Senhas protegidas com scrypt no custo recomendado pela OWASP (N=2^17); os parâmetros ficam gravados no próprio hash, e hashes mais antigos são atualizados sozinhos no próximo login.
+- Texto vindo de fora (TMDb, backups, o que a pessoa digita) é escapado por padrão ao montar HTML (`html```), com testes que travam o uso de `innerHTML` sem ele.
+- CSP restrita: scripts, estilos e fontes só do próprio site, sem `unsafe-inline`.
 - Bloqueio temporário contra tentativas de login.
 - Recuperação de senha por e-mail.
 - Alteração de senha e e-mail.
@@ -246,6 +254,10 @@ Cada tela possui dois módulos principais:
 As ações são exportadas por meio de `acoes` e registradas no `main.js`, utilizando atributos `data-act` para associar eventos aos elementos da interface.
 
 O estado compartilhado fica centralizado em `telas/ctx.js`.
+
+O HTML é montado com a função `html```, em `util.js`: tudo o que entra em `${...}` é escapado automaticamente, e trechos já seguros (outro `html``` ou um ícone SVG fixo marcado com `raw()`) entram sem novo escape. Listas são juntadas sozinhas, sem `.join('')`. O caminho mais curto é o seguro, e `test/html.test.js` falha se alguém voltar a montar `innerHTML` com template comum ou concatenação.
+
+Os formatos dos dados (`Titulo`, `Top`...) estão descritos em `public/js/tipos.js` (JSDoc), conferidos por `npm run tipos`.
 
 ### Backend serverless
 
@@ -304,13 +316,13 @@ A pasta `public/` permanece intacta durante o processo.
 Clone o repositório:
 
 ```bash
-git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
+git clone https://github.com/<seu-usuario>/SoMaisUmEp.git
 ```
 
 Entre na pasta:
 
 ```bash
-cd SEU_REPOSITORIO
+cd SoMaisUmEp
 ```
 
 Instale as dependências:
@@ -323,11 +335,15 @@ npm install
 
 | Comando | Descrição |
 |---|---|
-| `npm test` | Executa os testes automatizados |
+| `npm test` | Executa os testes automatizados (unitários, API simulada e views) |
+| `npm run test:cobertura` | Testes com relatório de cobertura e mínimo exigido |
+| `npm run e2e` | Testes de ponta a ponta no Chromium (veja "Testes e integração contínua") |
+| `npm run test:integracao` | Testes contra um PostgreSQL de teste (precisa de `TEST_DATABASE_URL`) |
 | `npm run lint` | Executa o ESLint |
 | `npm run format` | Formata os arquivos com Prettier |
 | `npm run format:check` | Verifica a formatação |
-| `npm run verificar` | Executa lint, formatação e testes |
+| `npm run tipos` | Confere os tipos JSDoc com o TypeScript |
+| `npm run verificar` | Executa lint, formatação, tipos e testes |
 | `npm run build` | Gera a pasta `dist/` |
 | `npm run vapid` | Gera as chaves para notificações push |
 
@@ -372,7 +388,7 @@ neon/migracoes/
 Exemplo:
 
 ```text
-neon/migracoes/007_descricao.sql
+neon/migracoes/008_descricao.sql
 ```
 
 Depois, regenere o schema consolidado utilizando:
@@ -400,6 +416,7 @@ Configure as variáveis em **Vercel → Settings → Environment Variables**.
 | `VAPID_SUBJECT` | Não | Identificação do remetente push |
 | `APP_URL` | Não | URL pública da aplicação |
 | `RESEND_API_KEY` | Não | Integração com Resend |
+| `ALERTA_EMAIL` | Não | Recebe um e-mail quando o cron diário falha (usa o Resend) |
 | `EMAIL_FROM` | Não | Endereço de envio dos e-mails |
 | `ADOTAR_DADOS_ANTIGOS` | Não | Migração de dados de versões antigas |
 | `CADASTRO_ABERTO` | Não | Controle de novos cadastros |
@@ -497,16 +514,25 @@ vercel dev
 
 ## 🧪 Testes e integração contínua
 
-O projeto utiliza o test runner nativo do Node.js.
+O projeto usa o test runner nativo do Node.js, em quatro camadas:
 
-Os testes verificam regras de negócio, validações da API, estrutura do projeto e sincronização da biblioteca com um servidor simulado.
+| Camada | Comando | O que prova |
+|---|---|---|
+| Unitários e API simulada | `npm test` | Regras de negócio, validações, segurança (XSS, CSRF, senhas), cliente de sincronização e views, com banco e servidor falsos |
+| Cobertura | `npm run test:cobertura` | Os mesmos testes, falhando se a cobertura cair abaixo do mínimo (hoje 50% de linhas, 65% de branches, 60% de funções; suba o piso quando melhorar) |
+| Ponta a ponta | `npm run e2e` | Chromium de verdade: entrar, criar série, marcar episódio, recarregar, conflito entre aparelhos, texto malicioso, CSP sem violações e nenhum pedido a terceiros |
+| Integração com banco | `npm run test:integracao` | Os handlers de `api/` contra um PostgreSQL real: `on conflict`, `unnest`, jsonb, migrações, cascata e limite de tentativas |
 
-O GitHub Actions executa automaticamente:
+Antes do primeiro `npm run e2e`, instale o navegador uma vez: `npx playwright install chromium`.
 
-- ESLint.
-- Verificação do Prettier.
-- Testes automatizados.
-- Build de produção.
+Os testes de integração **apagam todas as tabelas** do banco indicado, por isso só aceitam uma `TEST_DATABASE_URL` cujo nome do banco contenha "test". Com o Docker:
+
+```bash
+docker run -d --name pg-teste -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=somaisumep_test -p 5432:5432 postgres:16
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/somaisumep_test npm run test:integracao
+```
+
+O GitHub Actions executa três jobs: `verificar` (ESLint, Prettier, tipos, testes com cobertura e build), `e2e` e `integracao` (com um PostgreSQL 16 como serviço). O Dependabot abre pull requests de atualização, que passam pela mesma CI.
 
 O workflow está disponível em:
 
@@ -553,6 +579,10 @@ A versão do cache é atualizada automaticamente durante o build. Não é necess
 - O encerramento de todas as sessões utiliza uma versão de conta.
 - A alteração de `SESSION_SECRET` invalida todas as sessões.
 - A exclusão de títulos utiliza controle de versão para evitar remover alterações feitas em outro dispositivo.
+- Alterar uma linha que já existe exige a versão atual (`base`); um pedido sem versão só consegue criar e, se a linha existir, vira conflito que o app resolve sozinho.
+- Se o cron diário falha em alguma etapa, a execução termina com erro (HTTP 500, visível nos logs da Vercel), registra uma linha `[ALERTA]` e, com `ALERTA_EMAIL`, avisa por e-mail.
+- A fonte Inter é hospedada em `public/fonts/` (nenhum pedido a terceiros para fontes ou CSS).
+- Cópias de segurança do banco: veja [`docs/backup.md`](docs/backup.md).
 - Os backups importados passam por validação e saneamento antes de serem exibidos ou persistidos.
 - Os dados de streaming são fornecidos pelo JustWatch por meio do TMDb.
 - A data de lançamento informada pelo TMDb representa a exibição original, podendo haver diferenças no lançamento por streaming no Brasil.

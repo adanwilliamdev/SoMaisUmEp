@@ -27,8 +27,9 @@ test('views: id malicioso é escapado em todo atributo (cards, detalhe, tops, co
     viewStats: V.viewStats(),
     htmlDescDetalhe: V.htmlDescDetalhe(tmdb, 'tv', null),
   };
-  for (const [nome, html] of Object.entries(saidas)) {
-    assert.ok(html.length > 50, nome + ' gerou HTML');
-    assert.doesNotMatch(html, /<img src=x/i, nome + ' deixou o HTML do id escapar');
+  for (const [nome, saida] of Object.entries(saidas)) {
+    const doc = String(saida);
+    assert.ok(doc.length > 50, nome + ' gerou HTML');
+    assert.doesNotMatch(doc, /<img src=x/i, nome + ' deixou o HTML do id escapar');
   }
 });

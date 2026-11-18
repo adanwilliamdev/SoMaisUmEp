@@ -508,7 +508,12 @@ test('cron: com as chaves VAPID inclui o resultado dos avisos e uma falha neles 
     return /with d as \(delete/.test(t) ? [{ n: 3 }] : [];
   };
   const erro = await cron();
-  assert.equal(erro.code, 200, 'a faxina termina mesmo assim');
+  assert.equal(erro.code, 500, 'a faxina termina, mas a execução é marcada como falha para aparecer nos logs');
+  assert.equal(erro.body.ok, false);
+  assert.deepEqual(
+    erro.body.falhas.map(f => f.etapa),
+    ['push'],
+  );
   assert.equal(erro.body.tentativas, 3);
   assert.deepEqual(erro.body.push, { ativo: true, erro: true });
   semVapid();

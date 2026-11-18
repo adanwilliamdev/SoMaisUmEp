@@ -13,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Rápido e sem dependências externas: roda em todo push e pull request.
   verificar:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -27,7 +28,54 @@ jobs:
         run: npm run lint
       - name: Formatação (Prettier)
         run: npm run format:check
-      - name: Testes
-        run: npm test
+      - name: Tipos (JSDoc conferido pelo TypeScript)
+        run: npm run tipos
+      - name: Testes, com cobertura mínima
+        run: npm run test:cobertura
       - name: Build (gera dist/ com a versão do service worker)
         run: npm run build
+
+  # Navegador de verdade (Chromium): entrar, criar série, marcar episódio, conflito entre aparelhos, XSS e CSP.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Instalar o Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Testes de ponta a ponta
+        run: npm run e2e
+
+  # Postgres de verdade: SQL do sync (on conflict, unnest, jsonb), migrações, cascata e limite de tentativas.
+  integracao:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: somaisumep_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/somaisumep_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Testes de integração com o banco
+        run: npm run test:integracao

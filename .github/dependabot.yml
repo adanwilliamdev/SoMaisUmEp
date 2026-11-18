@@ -1,0 +1,19 @@
+# Atualizações automáticas: o Dependabot abre um pull request quando sai versão nova (e a CI roda os testes nele).
+# Agrupa as ferramentas de desenvolvimento num só PR para não encher a caixa de entrada.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      ferramentas-de-desenvolvimento:
+        dependency-type: development
+    # Pacotes recém-publicados podem ser comprometidos antes de alguém notar: espera alguns dias antes de propor.
+    cooldown:
+      default-days: 7
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

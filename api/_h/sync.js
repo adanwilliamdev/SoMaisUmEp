@@ -10,6 +10,8 @@ const MAX_TITULOS = 5000,
 // Cada título/top carrega "base": a versão (campo `atualizado`) que o navegador conhecia.
 // Vale também para exclusões (del: [{ id, base }]). Se outro aparelho gravou depois, a linha não é alterada nem apagada e o id volta em `conflitos`;
 // o navegador então recarrega, mescla e reenvia.
+// A base é obrigatória para mexer numa linha que já existe: pedido sem base só consegue CRIAR (insert). Se a linha já existe, vira conflito
+// (o navegador recarrega e reenvia com a versão certa). Antes, base ausente gravava por cima sem checar, o que furava a detecção de conflito.
 module.exports = rota('POST', async (req, res, u) => {
   const sql = db(),
     b = req.body || {},
@@ -50,27 +52,27 @@ module.exports = rota('POST', async (req, res, u) => {
     on conflict (user_id, id) do update set tipo = excluded.tipo, nome = excluded.nome, capa = excluded.capa, sinopse = excluded.sinopse,
       ano = excluded.ano, nota = excluded.nota, duracao = excluded.duracao, tmdb = excluded.tmdb, eps = excluded.eps, vis = excluded.vis,
       nota_pessoal = excluded.nota_pessoal, resenha = excluded.resenha, visto_em = excluded.visto_em, hist = excluded.hist, proximo = excluded.proximo, situacao = excluded.situacao, atualizado = excluded.atualizado
-    where titulos.user_id = ${u.id} and (titulos.atualizado = ${t.base}::bigint or ${t.base}::bigint is null)
+    where titulos.user_id = ${u.id} and titulos.atualizado = ${t.base}::bigint
     returning id, atualizado`);
   for (const t of P)
     q.push(sql`
     insert into tops (id, user_id, nome, itens, criado, atualizado)
     values (${t.id}, ${u.id}, ${t.nome}, ${JSON.stringify(t.itens)}::jsonb, ${t.criado}, ${agora})
     on conflict (user_id, id) do update set nome = excluded.nome, itens = excluded.itens, atualizado = excluded.atualizado
-    where tops.user_id = ${u.id} and (tops.atualizado = ${t.base}::bigint or ${t.base}::bigint is null)
+    where tops.user_id = ${u.id} and tops.atualizado = ${t.base}::bigint
     returning id, atualizado`);
   // Exclusão com checagem de versão: só apaga se a linha ainda está na versão (base) que o navegador conhecia.
-  // Sem base (formato antigo) apaga sempre. Cada item é comparado com a sua própria base (unnest em paralelo).
+  // Sem base não apaga linha que existe (conflito). Cada item é comparado com a sua própria base (unnest em paralelo).
   const iDelT = q.length;
   if (delT.length)
     q.push(sql`
     delete from titulos t using unnest(${idsDelT}::text[], ${delT.map(x => x.base)}::bigint[]) as x(i, b)
-    where t.user_id = ${u.id} and t.id = x.i and (x.b is null or t.atualizado = x.b) returning t.id`);
+    where t.user_id = ${u.id} and t.id = x.i and t.atualizado = x.b returning t.id`);
   const iDelP = q.length;
   if (delP.length)
     q.push(sql`
     delete from tops t using unnest(${idsDelP}::text[], ${delP.map(x => x.base)}::bigint[]) as x(i, b)
-    where t.user_id = ${u.id} and t.id = x.i and (x.b is null or t.atualizado = x.b) returning t.id`);
+    where t.user_id = ${u.id} and t.id = x.i and t.atualizado = x.b returning t.id`);
 
   const out = q.length ? await sql.transaction(q) : []; // tudo ou nada
   const versoes = {},

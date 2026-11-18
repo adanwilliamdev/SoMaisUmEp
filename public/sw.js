@@ -1,5 +1,5 @@
 // Service worker do SóMaisUmEp: abre o app rápido e funciona sem internet.
-// Imagens e fontes de outros sites são buscadas pelo próprio service worker, por isso esses
+// Imagens de outros sites (TMDb, Vercel Blob) são buscadas pelo próprio service worker, por isso esses
 // endereços também precisam estar em connect-src no vercel.json.
 // Dados (/api) nunca passam pelo cache: o app guarda a própria cópia no aparelho (loja.js).
 // A versão do cache muda sozinha a cada deploy: scripts/build.js troca "dev" pelo commit (VERCEL_GIT_COMMIT_SHA) e
@@ -9,9 +9,8 @@
 const VERSAO = 'somaisumep-dev';
 const MODULOS = [];
 const SHELL = VERSAO + '-shell',
-  IMAGENS = VERSAO + '-img',
-  EXTERNO = VERSAO + '-ext';
-const ARQUIVOS = ['/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png', ...MODULOS];
+  IMAGENS = VERSAO + '-img';
+const ARQUIVOS = ['/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png', '/fonts/inter-400.woff', '/fonts/inter-700.woff', ...MODULOS];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -94,7 +93,6 @@ self.addEventListener('fetch', e => {
     e.respondWith(antigoEnovo(req, IMAGENS, 250));
     return;
   }
-  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') e.respondWith(antigoEnovo(req, EXTERNO));
 });
 
 /* ---------- notificações push (avisos de episódios novos; quem envia é api/_notificar.js, no cron diário) ---------- */

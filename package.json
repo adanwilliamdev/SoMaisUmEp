@@ -5,11 +5,15 @@
   "license": "MIT",
   "scripts": {
     "test": "node --test",
-    "lint": "npx --yes eslint@10.1.0 .",
-    "format": "npx --yes prettier@3.8.1 --write .",
-    "format:check": "npx --yes prettier@3.8.1 --check .",
+    "test:cobertura": "node --test --experimental-test-coverage --test-coverage-exclude=test/** --test-coverage-exclude=integracao/** --test-coverage-lines=50 --test-coverage-branches=65 --test-coverage-functions=60",
+    "test:integracao": "node --test --test-concurrency=1 \"integracao/*.integracao.js\"",
+    "e2e": "node --test --test-concurrency=1 \"e2e/*.e2e.js\"",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "tipos": "tsc -p tsconfig.json",
+    "verificar": "npm run lint && npm run format:check && npm run tipos && npm test",
     "build": "node scripts/build.js",
-    "verificar": "npm run lint && npm run format:check && npm test",
     "migrar": "node scripts/migrar.js",
     "schema": "node scripts/migrar.js --gerar-schema",
     "vapid": "node scripts/vapid.js"
@@ -19,6 +23,13 @@
     "@vercel/blob": "^1.0.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19"
+  },
+  "devDependencies": {
+    "eslint": "10.1.0",
+    "pg": "8.16.3",
+    "playwright": "1.63.0",
+    "prettier": "3.8.1",
+    "typescript": "6.0.3"
   }
 }

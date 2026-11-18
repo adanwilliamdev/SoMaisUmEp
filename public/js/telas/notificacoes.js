@@ -1,6 +1,6 @@
 // Avisos de episódios novos por notificação push (bloco em "Minha conta"). A parte que decide o que mostrar está em push.js;
 // o envio é feito pelo servidor (api/_notificar.js, no cron diário) e a exibição pelo service worker (sw.js).
-import { $, aviso, ler, guardar } from '../util.js';
+import { $, html, raw, aviso, ler, guardar } from '../util.js';
 import { api } from '../api.js';
 import { hojeISO } from '../regras.js';
 import { chaveParaBytes, mesmaChave, diagnostico } from '../push.js';
@@ -25,7 +25,7 @@ const assinaturaAtual = async () => {
 let chaveServidor = null; // guardada para ativar() poder pedir a permissão logo no clique (o navegador exige gesto do usuário)
 
 export const blocoPush = () =>
-  `<section class="push-bloco" aria-labelledby="push-tit"><h3 id="push-tit">Avisos de episódios novos</h3><div id="push-corpo" aria-live="polite"><p class="aviso">Verificando…</p></div></section>`;
+  html`<section class="push-bloco" aria-labelledby="push-tit"><h3 id="push-tit">Avisos de episódios novos</h3><div id="push-corpo" aria-live="polite"><p class="aviso">Verificando…</p></div></section>`;
 
 export async function pintaPush() {
   if (!$('#push-corpo')) return;
@@ -54,10 +54,10 @@ export async function pintaPush() {
   if (!el) return; // o diálogo mudou de tela enquanto consultava
   const botoes = {
     ativo:
-      '<div class="rodape-dlg esq"><button class="btn sec" data-act="push-teste">Enviar um aviso de teste</button><button class="btn sec" data-act="push-desativar">Desativar neste aparelho</button></div>',
-    inativo: '<div class="rodape-dlg esq"><button class="btn" data-act="push-ativar">Ativar neste aparelho</button></div>',
+      raw('<div class="rodape-dlg esq"><button class="btn sec" data-act="push-teste">Enviar um aviso de teste</button><button class="btn sec" data-act="push-desativar">Desativar neste aparelho</button></div>'),
+    inativo: raw('<div class="rodape-dlg esq"><button class="btn" data-act="push-ativar">Ativar neste aparelho</button></div>'),
   }[d.estado];
-  el.innerHTML = `<p class="aviso">${d.texto}</p>${botoes || ''}`;
+  el.innerHTML = html`<p class="aviso">${d.texto}</p>${botoes || ''}`;
 }
 
 async function ativar(b) {

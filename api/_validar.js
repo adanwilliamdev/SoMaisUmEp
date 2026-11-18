@@ -91,7 +91,7 @@ function top(x) {
 }
 
 // Exclusões: aceita ids soltos (formato antigo) ou { id, base }, onde base é a versão que o navegador conhecia.
-// Com base, o servidor só apaga se ninguém alterou o item depois; sem base, apaga sempre (comportamento antigo).
+// O servidor só apaga se ninguém alterou o item depois (base igual à versão atual); id solto, sem base, nunca apaga uma linha existente.
 const exclusoes = a =>
   (Array.isArray(a) ? a : [])
     .slice(0, 200)

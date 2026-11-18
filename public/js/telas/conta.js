@@ -1,5 +1,5 @@
 // Entrar, criar conta, recuperar/redefinir senha, "Minha conta" (trocar senha/e-mail, excluir) e sair.
-import { $, esc, aviso, confirma } from '../util.js';
+import { $, html, raw, aviso, confirma } from '../util.js';
 import { api } from '../api.js';
 import { L, limparSnap, zerar, pendente } from '../loja.js';
 import * as V from '../views.js';
@@ -35,7 +35,7 @@ async function enviarEsqueci(f) {
   btn.disabled = true;
   try {
     await api('/api/esqueci', { method: 'POST', body: { email: f.email.value } });
-    f.innerHTML = '<p class="aviso">Se esse e-mail tiver uma conta, o link já está a caminho (olhe também o spam). Ele vale por 1 hora.</p>';
+    f.innerHTML = raw('<p class="aviso">Se esse e-mail tiver uma conta, o link já está a caminho (olhe também o spam). Ele vale por 1 hora.</p>');
   } catch (e) {
     m.textContent = e.message;
     btn.disabled = false;
@@ -102,7 +102,7 @@ async function sair(todos = false) {
 
 function conta() {
   ctx.aberta = null;
-  dlg.innerHTML = `<h2>Minha conta</h2><p class="sub topo6"><b>${esc(L.usuario.nome)}</b><br>${esc(L.usuario.email)}</p>
+  dlg.innerHTML = html`<h2>Minha conta</h2><p class="sub topo6"><b>${L.usuario.nome}</b><br>${L.usuario.email}</p>
     ${blocoPush()}
     <p class="aviso">“Sair de todos os dispositivos” encerra a sessão deste e de todos os outros aparelhos onde você entrou.</p>
     <div class="rodape-dlg esq"><button class="btn sec" data-act="conta-senha">Trocar senha</button><button class="btn sec" data-act="conta-email">Trocar e-mail</button><button class="btn sec perigo" data-act="conta-excluir">Excluir conta</button></div>

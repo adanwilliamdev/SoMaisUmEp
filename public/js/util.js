@@ -1,6 +1,18 @@
 export const $ = s => document.querySelector(s);
 export const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const uid = () => crypto.randomUUID();
+/* ---------- HTML com escape automático ---------- */
+// Como usar: html`<b>${texto}</b>`. Tudo o que entra em ${...} é escapado, a menos que já seja um trecho feito com html`` ou raw().
+// Listas (arrays) são juntadas, então `${lista.map(x => html`<li>${x}</li>`)}` não precisa de .join(''); null e undefined viram vazio.
+// Booleanos saem como "true"/"false" (é o que atributos como aria-pressed querem). Para mostrar algo só às vezes, use ternário: ${ok ? html`...` : ''}.
+// O resultado é um Html (uma String), então serve direto em `elemento.innerHTML = ...`, concatenação e .length.
+// raw(): só para HTML que o próprio código escreveu (um ícone SVG fixo, por exemplo). Nunca passe texto vindo de fora (TMDb, backup, usuário).
+// Esquecer o escape aqui não é mais possível por distração: o caminho mais curto (${valor}) é o seguro.
+class Html extends String {}
+export const raw = t => new Html(t);
+const trecho = v => (v instanceof Html ? String(v) : Array.isArray(v) ? v.map(trecho).join('') : v == null ? '' : esc(v));
+export const html = (partes, ...valores) => new Html(partes.reduce((s, p, i) => s + trecho(valores[i - 1]) + p));
+
 export const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
 
 // Texto de status no rodapé

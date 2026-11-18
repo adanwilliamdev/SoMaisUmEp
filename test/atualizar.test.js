@@ -208,7 +208,7 @@ test('cron: atualiza as datas ANTES dos avisos e uma falha nessa etapa não impe
     assert.equal(res.body.proximos.atualizados, 1);
     assert.ok(updates()[0].vals.includes(JSON.stringify({ d: '2099-01-01', t: 1, e: 2 })));
 
-    // Falha na etapa das datas (banco recusa o update): o cron continua e responde 200.
+    // Falha na etapa das datas (banco recusa o update): o cron continua com as outras etapas, mas termina com erro (500) e diz o que falhou.
     limpar();
     const erroErr = console.error;
     console.error = () => {};
@@ -219,7 +219,10 @@ test('cron: atualiza as datas ANTES dos avisos e uma falha nessa etapa não impe
     const res2 = novoRes();
     await cron(req, res2);
     console.error = erroErr;
-    assert.equal(res2.code, 200);
+    assert.equal(res2.code, 500);
+    assert.equal(res2.body.ok, false);
+    assert.deepEqual(res2.body.falhas, [{ etapa: 'proximos', motivo: 'boom' }]);
+    assert.equal(res2.body.avisado, false, 'sem ALERTA_EMAIL não há e-mail');
     assert.deepEqual(res2.body.proximos, { ativo: true, erro: true });
     assert.deepEqual(res2.body.push, { ativo: false });
   } finally {
@@ -235,4 +238,52 @@ test('vercel.json: o cron tem tempo para as datas, os avisos e a faxina; o schem
   const schema = fs.readFileSync(path.join(__dirname, '..', 'neon', 'schema.sql'), 'utf8');
   assert.match(schema, /add column if not exists tmdb_verificado bigint/);
   assert.match(schema, /'006_verificacao_proximo'/);
+});
+
+test('cron: falha avisa o dono por e-mail quando ALERTA_EMAIL e o Resend estão configurados, sem expor dados de usuários', async () => {
+  const cron = require('../api/cron');
+  const guardado = { ...process.env };
+  Object.assign(process.env, { CRON_SECRET: 'segredo-do-cron', TMDB_READ_TOKEN: 'eyJteXRva2Vu', ALERTA_EMAIL: 'dono@exemplo.com', RESEND_API_KEY: 're_x', EMAIL_FROM: 'app@exemplo.com', APP_URL: 'https://app.exemplo.com' });
+  const fetchOriginal = global.fetch,
+    enviados = [];
+  global.fetch = async (url, opts) => {
+    enviados.push({ url: String(url), corpo: JSON.parse(opts.body) });
+    return { ok: true, json: async () => ({}) };
+  };
+  const erroErr = console.error,
+    logs = [];
+  console.error = (...a) => logs.push(a.join(' '));
+  const res = {
+    code: 200,
+    setHeader() {},
+    status(c) {
+      this.code = c;
+      return this;
+    },
+    json(b) {
+      this.body = b;
+      return this;
+    },
+  };
+  try {
+    limpar();
+    banco.resposta = t => {
+      if (/group by tipo, tmdb/.test(t)) throw new Error('TMDb fora do ar <b>');
+      return /with d as \(delete/.test(t) ? [{ n: 0 }] : [];
+    };
+    await cron({ method: 'GET', headers: { authorization: 'Bearer segredo-do-cron' }, query: {} }, res);
+    assert.equal(res.code, 500);
+    assert.equal(res.body.avisado, true);
+    assert.equal(enviados.length, 1);
+    assert.equal(enviados[0].url, 'https://api.resend.com/emails');
+    assert.deepEqual(enviados[0].corpo.to, ['dono@exemplo.com']);
+    assert.match(enviados[0].corpo.text, /proximos: TMDb fora do ar/);
+    assert.match(enviados[0].corpo.html, /TMDb fora do ar &lt;b&gt;/, 'o motivo vai escapado no HTML do e-mail');
+    assert.ok(logs.some(l => l.startsWith('[ALERTA] cron diário com falhas: proximos')), 'linha fácil de filtrar nos logs');
+  } finally {
+    console.error = erroErr;
+    global.fetch = fetchOriginal;
+    for (const k of Object.keys(process.env)) if (!(k in guardado)) delete process.env[k];
+    Object.assign(process.env, guardado);
+  }
 });

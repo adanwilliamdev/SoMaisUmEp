@@ -1,5 +1,5 @@
 // Testes de public/js/loja.js: fila de envio, nova tentativa, conflito entre aparelhos e a cópia local (reaplicar).
-// O servidor é falso (um Map por tipo, com a mesma regra de versão do api/sync.js); o relógio também (mock.timers).
+// O servidor é falso (um Map por tipo, com a mesma regra de versão do api/sync.js: mexer em linha que existe exige a base atual); o relógio também (mock.timers).
 globalThis.localStorage = (() => {
   const m = new Map();
   return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k), clear: () => m.clear() };
@@ -63,7 +63,7 @@ function criarServidor() {
         for (const x of corpo[tipo] || []) {
           const { base, ...resto } = x,
             atual = mapa.get(x.id);
-          if (!atual || base == null || atual.atualizado === base) {
+          if (!atual || atual.atualizado === base) {
             mapa.set(x.id, { ...resto, atualizado: ++srv.relogio });
             versoes[x.id] = srv.relogio;
           } else conflitos.push(x.id);
@@ -71,7 +71,7 @@ function criarServidor() {
         for (const d of (corpo.del || {})[tipo] || []) {
           const atual = mapa.get(d.id);
           if (!atual) continue;
-          if (d.base == null || atual.atualizado === d.base) mapa.delete(d.id);
+          if (atual.atualizado === d.base) mapa.delete(d.id);
           else conflitos.push(d.id);
         }
       }
@@ -241,6 +241,22 @@ ambiente('conflito: o servidor tem mais episódios vistos que o aparelho: nada r
   await avancar(300);
   assert.deepEqual(srv.t.get('a').vis, [3]);
   assert.equal(srv.t.get('a').nota_pessoal, 7, 'a nota daqui entra porque o servidor não tinha');
+});
+
+ambiente('conflito: título "novo" aqui (sem versão conhecida) que já existe no servidor não sobrescreve: é combinado', async srv => {
+  const M = await sessao();
+  await M.carregar(); // o servidor ainda está vazio
+  M.L.series.push(serie('a', [2], { nome: 'Criado aqui' })); // sem versão conhecida: vai com base null
+  srv.semear(serie('a', [1], { nome: 'Criado lá', nota_pessoal: 9 })); // mas o mesmo id já nasceu em outro aparelho
+  M.save();
+  await avancar(300);
+  assert.equal(srv.posts[0].titulos[0].base, null, 'primeira tentativa sem base');
+  assert.equal(M.eventos.render, 1, 'o servidor recusou (não sobrescreveu às cegas) e o app combinou as versões');
+  assert.equal(srv.posts.length, 2, 'uma tentativa recusada e um reenvio com a versão certa');
+  assert.ok(srv.posts[1].titulos[0].base > 0);
+  assert.deepEqual(srv.t.get('a').vis, [2], 'o maior progresso vence');
+  assert.equal(srv.t.get('a').nota_pessoal, 9, 'o que só o outro aparelho tinha não se perde');
+  assert.equal(M.pendente(), false);
 });
 
 ambiente('conflito: excluir um título que outro aparelho alterou não apaga; a edição vence e ele volta', async srv => {

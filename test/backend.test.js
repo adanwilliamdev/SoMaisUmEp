@@ -420,7 +420,8 @@ test('sync: exclusão leva a versão (base) e só apaga se ninguém alterou depo
   assert.equal(r.code, 200);
   const d = banco.consultas.find(c => /delete from titulos t using unnest/.test(c.texto));
   assert.ok(d, 'usa unnest com as versões');
-  assert.match(d.texto, /\(x\.b is null or t\.atualizado = x\.b\)/);
+  assert.match(d.texto, /t\.atualizado = x\.b/);
+  assert.doesNotMatch(d.texto, /is null/, 'sem base não apaga linha existente');
   assert.deepEqual(
     d.vals.slice(0, 2),
     [
@@ -430,6 +431,35 @@ test('sync: exclusão leva a versão (base) e só apaga se ninguém alterou depo
     'ids e bases em paralelo; id solto (formato antigo) fica sem base',
   );
   assert.equal(d.vals[2], 'u1', 'sempre restrito ao dono');
+});
+
+test('sync: alterar linha existente exige a versão (base); sem base só consegue criar', async () => {
+  limpar();
+  banco.resposta = base(t => (/insert into (titulos|tops)/.test(t) ? [{ id: 'x', atualizado: 1 }] : []));
+  await chamar('_h/sync', {
+    logado: true,
+    body: { titulos: [{ id: 'a1', tipo: 'tv', nome: 'Série', eps: [1], vis: [0], base: 5 }], tops: [{ id: 't1', nome: 'Top', itens: [], base: 7 }] },
+  });
+  const t = banco.consultas.find(c => /insert into titulos/.test(c.texto)),
+    p = banco.consultas.find(c => /insert into tops/.test(c.texto));
+  assert.ok(t && p);
+  for (const c of [t, p]) {
+    assert.doesNotMatch(c.texto, /is null/, 'a checagem de versão não tem atalho para base ausente');
+    assert.match(c.texto, /\.atualizado = \?::bigint returning id, atualizado/);
+  }
+  assert.ok(t.vals.includes(5) && p.vals.includes(7), 'a base vai como parâmetro da consulta');
+});
+
+test('sync: título que já existe e chega sem base não sobrescreve nada: vira conflito', async () => {
+  limpar();
+  // o banco só devolve linha quando o insert vale (linha nova ou versão igual); aqui a linha existe e a versão não confere
+  banco.resposta = base(t => (/insert into titulos/.test(t) ? [] : []));
+  const r = await chamar('_h/sync', { logado: true, body: { titulos: [{ id: 'a1', tipo: 'tv', nome: 'Série', eps: [1], vis: [0] }] } });
+  assert.equal(r.code, 200);
+  assert.deepEqual(r.body.conflitos, ['a1']);
+  assert.deepEqual(r.body.versoes, {});
+  const t = banco.consultas.find(c => /insert into titulos/.test(c.texto));
+  assert.ok(t.vals.includes(null), 'base ausente chega ao banco como null (e null nunca é igual a versão nenhuma)');
 });
 
 test('sync: exclusão recusada porque outro aparelho editou vira conflito e preserva o arquivo do Blob', async () => {
