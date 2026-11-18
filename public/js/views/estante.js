@@ -214,7 +214,7 @@ export function viewLista(tipo) {
   }
   if (!fs.some(([k]) => k === UI.filtro)) UI.filtro = 'todas';
   const chips = fs.map(([k, r]) => html`<button class="chip" data-act="filtro" data-k="${k}" aria-pressed="${UI.filtro === k}">${r}</button>`);
-  return html`<div class="cabeca"><div><h1>${mv ? 'Meus filmes' : 'Minhas séries'}</h1>
+  return html`<div class="estante"><div class="cabeca"><div><h1>${mv ? 'Meus filmes' : 'Minhas séries'}</h1>
       <p class="sub">${mv ? 'Registre o que você já viu e o que quer ver.' : 'Acompanhe cada temporada e episódio.'}</p></div>
       <button class="btn nova" data-act="nova" data-tipo="${tipo}"><span aria-hidden="true">+</span><span class="rot">${mv ? 'Novo filme' : 'Nova série'}</span></button></div>
     <div class="stats" id="stats">${htmlStats(tipo)}</div>
@@ -225,5 +225,5 @@ export function viewLista(tipo) {
       <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${UI.busca}" autocomplete="off" enterkeyhint="search"></label>
       <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => html`<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`)}</select></label>
     </div>
-    <div id="lista">${htmlLista(tipo)}</div>`;
+    <div id="lista">${htmlLista(tipo)}</div></div>`;
 }
