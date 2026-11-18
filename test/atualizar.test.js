@@ -243,7 +243,14 @@ test('vercel.json: o cron tem tempo para as datas, os avisos e a faxina; o schem
 test('cron: falha avisa o dono por e-mail quando ALERTA_EMAIL e o Resend estão configurados, sem expor dados de usuários', async () => {
   const cron = require('../api/cron');
   const guardado = { ...process.env };
-  Object.assign(process.env, { CRON_SECRET: 'segredo-do-cron', TMDB_READ_TOKEN: 'eyJteXRva2Vu', ALERTA_EMAIL: 'dono@exemplo.com', RESEND_API_KEY: 're_x', EMAIL_FROM: 'app@exemplo.com', APP_URL: 'https://app.exemplo.com' });
+  Object.assign(process.env, {
+    CRON_SECRET: 'segredo-do-cron',
+    TMDB_READ_TOKEN: 'eyJteXRva2Vu',
+    ALERTA_EMAIL: 'dono@exemplo.com',
+    RESEND_API_KEY: 're_x',
+    EMAIL_FROM: 'app@exemplo.com',
+    APP_URL: 'https://app.exemplo.com',
+  });
   const fetchOriginal = global.fetch,
     enviados = [];
   global.fetch = async (url, opts) => {
@@ -279,7 +286,10 @@ test('cron: falha avisa o dono por e-mail quando ALERTA_EMAIL e o Resend estão 
     assert.deepEqual(enviados[0].corpo.to, ['dono@exemplo.com']);
     assert.match(enviados[0].corpo.text, /proximos: TMDb fora do ar/);
     assert.match(enviados[0].corpo.html, /TMDb fora do ar &lt;b&gt;/, 'o motivo vai escapado no HTML do e-mail');
-    assert.ok(logs.some(l => l.startsWith('[ALERTA] cron diário com falhas: proximos')), 'linha fácil de filtrar nos logs');
+    assert.ok(
+      logs.some(l => l.startsWith('[ALERTA] cron diário com falhas: proximos')),
+      'linha fácil de filtrar nos logs',
+    );
   } finally {
     console.error = erroErr;
     global.fetch = fetchOriginal;

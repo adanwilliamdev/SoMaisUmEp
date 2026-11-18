@@ -111,7 +111,8 @@ const login = async senha => {
   return res;
 };
 const responde = hash => t => {
-  if (/select id, nome, email, versao, senha_hash from usuarios/.test(t)) return [{ id: 'u1', nome: 'Ana', email: 'ana@exemplo.com', versao: 3, senha_hash: hash }];
+  if (/select id, nome, email, versao, senha_hash from usuarios/.test(t))
+    return [{ id: 'u1', nome: 'Ana', email: 'ana@exemplo.com', versao: 3, senha_hash: hash }];
   if (/insert into tentativas/.test(t)) return [{ falhas: 1 }];
   return [];
 };

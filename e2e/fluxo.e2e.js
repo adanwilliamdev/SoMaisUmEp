@@ -19,10 +19,13 @@ async function abrir(srv, { logado = false } = {}) {
   const contexto = await navegador.newContext({ serviceWorkers: 'block', viewport: { width: 1100, height: 800 } });
   if (logado) await contexto.addCookies([{ name: 'sessao', value: 'ok', url: srv.url }]);
   const problemas = [];
-  await contexto.route(u => new URL(u).origin !== srv.url, rota => {
-    problemas.push('pedido externo: ' + rota.request().url());
-    return rota.abort();
-  });
+  await contexto.route(
+    u => new URL(u).origin !== srv.url,
+    rota => {
+      problemas.push('pedido externo: ' + rota.request().url());
+      return rota.abort();
+    },
+  );
   const page = await contexto.newPage();
   page.on('console', m => {
     // 401 é esperado: é a resposta do servidor a quem ainda não entrou (o navegador a registra como erro de console)
@@ -73,7 +76,10 @@ test('fluxo: entrar, criar série, marcar episódio, recarregar e ver o progress
     await page.waitForFunction(() => /Salvo/.test(document.querySelector('#status').textContent));
     const [linha] = [...srv.estado.series.values()];
     assert.deepEqual(linha.vis, [1], 'o servidor guardou o episódio');
-    assert.ok(srv.estado.pedidos.every(p => !p.titulos || p.titulos.every(t => 'base' in t)), 'todo título enviado leva a base (versão conhecida)');
+    assert.ok(
+      srv.estado.pedidos.every(p => !p.titulos || p.titulos.every(t => 'base' in t)),
+      'todo título enviado leva a base (versão conhecida)',
+    );
 
     // recarregar: tudo continua lá
     await page.reload();
@@ -157,7 +163,12 @@ test('abas: séries, filmes, tops e estatísticas abrem sem erro, e o menu mostr
   try {
     await page.goto(srv.url + '/');
     await page.locator(CARD).waitFor();
-    for (const [hash, titulo] of [['#filmes', 'Meus filmes'], ['#tops', 'Meu Hall da Fama'], ['#stats', 'Estatísticas'], ['#series', 'Minhas séries']]) {
+    for (const [hash, titulo] of [
+      ['#filmes', 'Meus filmes'],
+      ['#tops', 'Meu Hall da Fama'],
+      ['#stats', 'Estatísticas'],
+      ['#series', 'Minhas séries'],
+    ]) {
       await page.evaluate(h => (location.hash = h), hash);
       await page.locator('h1', { hasText: titulo }).waitFor();
     }

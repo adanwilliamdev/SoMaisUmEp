@@ -102,11 +102,18 @@ async function sair(todos = false) {
 
 function conta() {
   ctx.aberta = null;
-  dlg.innerHTML = html`<h2>Minha conta</h2><p class="sub topo6"><b>${L.usuario.nome}</b><br>${L.usuario.email}</p>
+  dlg.innerHTML = html`<h2>Minha conta</h2>
+    <p class="sub topo6"><b>${L.usuario.nome}</b><br />${L.usuario.email}</p>
     ${blocoPush()}
     <p class="aviso">“Sair de todos os dispositivos” encerra a sessão deste e de todos os outros aparelhos onde você entrou.</p>
-    <div class="rodape-dlg esq"><button class="btn sec" data-act="conta-senha">Trocar senha</button><button class="btn sec" data-act="conta-email">Trocar e-mail</button><button class="btn sec perigo" data-act="conta-excluir">Excluir conta</button></div>
-    <div class="rodape-dlg"><button class="btn sec perigo" data-act="sair-todos">Sair de todos os dispositivos</button><button class="btn sec" data-act="sair">Sair</button><button class="btn" data-act="fechar">Fechar</button></div>`;
+    <div class="rodape-dlg esq">
+      <button class="btn sec" data-act="conta-senha">Trocar senha</button><button class="btn sec" data-act="conta-email">Trocar e-mail</button
+      ><button class="btn sec perigo" data-act="conta-excluir">Excluir conta</button>
+    </div>
+    <div class="rodape-dlg">
+      <button class="btn sec perigo" data-act="sair-todos">Sair de todos os dispositivos</button><button class="btn sec" data-act="sair">Sair</button
+      ><button class="btn" data-act="fechar">Fechar</button>
+    </div>`;
   if (!dlg.open) dlg.showModal();
   pintaPush();
 }

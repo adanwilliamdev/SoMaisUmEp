@@ -10,5 +10,10 @@
     "strict": false,
     "skipLibCheck": true
   },
-  "files": ["public/js/tipos.js", "public/js/regras.js", "public/js/push.js", "public/js/exportacao.js"]
+  "files": [
+    "public/js/tipos.js",
+    "public/js/regras.js",
+    "public/js/push.js",
+    "public/js/exportacao.js"
+  ]
 }

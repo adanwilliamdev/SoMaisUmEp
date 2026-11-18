@@ -7,8 +7,20 @@ const path = require('node:path');
 
 const RAIZ = path.join(__dirname, '..');
 const PUBLIC = path.join(RAIZ, 'public');
-const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff': 'font/woff', '.txt': 'text/plain; charset=utf-8' };
-const REGRAS = JSON.parse(fs.readFileSync(path.join(RAIZ, 'vercel.json'), 'utf8')).headers.map(h => ({ re: new RegExp('^' + h.source + '$'), headers: h.headers }));
+const TIPOS = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.woff': 'font/woff',
+  '.txt': 'text/plain; charset=utf-8',
+};
+const REGRAS = JSON.parse(fs.readFileSync(path.join(RAIZ, 'vercel.json'), 'utf8')).headers.map(h => ({
+  re: new RegExp('^' + h.source + '$'),
+  headers: h.headers,
+}));
 
 const USUARIO = { id: 'u1', nome: 'Ana', email: 'ana@exemplo.com' };
 const SENHA = 'senha-certa-1';
@@ -21,11 +33,12 @@ function iniciar() {
     res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...extra });
     res.end(JSON.stringify(corpo));
   };
-  const lerCorpo = req => new Promise(ok => {
-    let t = '';
-    req.on('data', c => (t += c));
-    req.on('end', () => ok(t ? JSON.parse(t) : {}));
-  });
+  const lerCorpo = req =>
+    new Promise(ok => {
+      let t = '';
+      req.on('data', c => (t += c));
+      req.on('end', () => ok(t ? JSON.parse(t) : {}));
+    });
 
   // Mesma regra do servidor: gravar linha que já existe exige a versão atual; sem ela (ou com versão velha) vira conflito.
   function gravar(mapa, itens, versoes, conflitos) {
@@ -54,7 +67,8 @@ function iniciar() {
     const rota = url.pathname;
     if (rota === '/api/login' && req.method === 'POST') {
       const b = await lerCorpo(req);
-      if (b.email === USUARIO.email && b.senha === SENHA) return json(res, 200, { ok: true, usuario: USUARIO }, { 'Set-Cookie': 'sessao=ok; Path=/; HttpOnly; SameSite=Strict' });
+      if (b.email === USUARIO.email && b.senha === SENHA)
+        return json(res, 200, { ok: true, usuario: USUARIO }, { 'Set-Cookie': 'sessao=ok; Path=/; HttpOnly; SameSite=Strict' });
       return json(res, 401, { erro: 'E-mail ou senha incorretos' });
     }
     if (!logado(req)) return json(res, 401, { erro: 'Não autorizado' });
@@ -100,7 +114,9 @@ function iniciar() {
     }
   });
   return new Promise(ok =>
-    servidor.listen(0, '127.0.0.1', () => ok({ url: 'http://127.0.0.1:' + servidor.address().port, estado, USUARIO, SENHA, fechar: () => new Promise(f => servidor.close(f)) })),
+    servidor.listen(0, '127.0.0.1', () =>
+      ok({ url: 'http://127.0.0.1:' + servidor.address().port, estado, USUARIO, SENHA, fechar: () => new Promise(f => servidor.close(f)) }),
+    ),
   );
 }
 

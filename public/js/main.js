@@ -90,7 +90,11 @@ async function iniciar() {
   } catch (e) {
     if (e.auth) conta.telaAuth('entrar');
     else
-      app.innerHTML = html`<div class="vazio">Não foi possível carregar seus dados: ${e.message}<br><small>Se persistir, confira as variáveis de ambiente e o banco (veja o README, "Se aparecer erro no servidor").</small><br><br><button class="btn mini" data-act="recarregar">Tentar de novo</button></div>`;
+      app.innerHTML = html`<div class="vazio">
+        Não foi possível carregar seus dados: ${e.message}<br /><small
+          >Se persistir, confira as variáveis de ambiente e o banco (veja o README, "Se aparecer erro no servidor").</small
+        ><br /><br /><button class="btn mini" data-act="recarregar">Tentar de novo</button>
+      </div>`;
   }
 }
 

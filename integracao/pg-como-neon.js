@@ -12,7 +12,14 @@ function criarSql(pool) {
   });
   const sql = (partes, ...valores) => {
     const q = preparar(partes, valores);
-    return { ...q, then: (ok, no) => pool.query(q.text, q.values).then(r => r.rows).then(ok, no) };
+    return {
+      ...q,
+      then: (ok, no) =>
+        pool
+          .query(q.text, q.values)
+          .then(r => r.rows)
+          .then(ok, no),
+    };
   };
   sql.transaction = async consultas => {
     const cli = await pool.connect();

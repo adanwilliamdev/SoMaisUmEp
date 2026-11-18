@@ -10,7 +10,17 @@ const VERSAO = 'somaisumep-dev';
 const MODULOS = [];
 const SHELL = VERSAO + '-shell',
   IMAGENS = VERSAO + '-img';
-const ARQUIVOS = ['/', '/style.css', '/tema.js', '/manifest.json', '/icons/icon.svg', '/icons/icon-192.png', '/fonts/inter-400.woff', '/fonts/inter-700.woff', ...MODULOS];
+const ARQUIVOS = [
+  '/',
+  '/style.css',
+  '/tema.js',
+  '/manifest.json',
+  '/icons/icon.svg',
+  '/icons/icon-192.png',
+  '/fonts/inter-400.woff',
+  '/fonts/inter-700.woff',
+  ...MODULOS,
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(

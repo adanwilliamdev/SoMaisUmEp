@@ -25,9 +25,7 @@ const SCRYPT_LEGADO = { N: 2 ** 14, r: 8, p: 1 };
 const TAM_HASH = 64;
 const memoria = ({ N, r }) => 128 * N * r;
 const scrypt = (senha, salt, { N, r, p } = SCRYPT, tam = TAM_HASH) =>
-  new Promise((ok, no) =>
-    crypto.scrypt(String(senha).normalize('NFKC'), salt, tam, { N, r, p, maxmem: memoria({ N, r }) * 2 }, (e, k) => (e ? no(e) : ok(k))),
-  );
+  new Promise((ok, no) => crypto.scrypt(String(senha).normalize('NFKC'), salt, tam, { N, r, p, maxmem: memoria({ N, r }) * 2 }, (e, k) => (e ? no(e) : ok(k))));
 
 // Lê um hash guardado. Devolve null se o formato não é reconhecido ou os parâmetros são absurdos (um valor adulterado
 // no banco não pode fazer o servidor gastar memória sem limite).
@@ -133,4 +131,20 @@ const rota =
     }
   };
 
-module.exports = { db, rota, erro, assinar, igual, hashSenha, confereSenha, precisaRehash, lerHash, HASH_FALSO, SCRYPT, criarSessao, encerrarSessao, renovarSessao, logado };
+module.exports = {
+  db,
+  rota,
+  erro,
+  assinar,
+  igual,
+  hashSenha,
+  confereSenha,
+  precisaRehash,
+  lerHash,
+  HASH_FALSO,
+  SCRYPT,
+  criarSessao,
+  encerrarSessao,
+  renovarSessao,
+  logado,
+};

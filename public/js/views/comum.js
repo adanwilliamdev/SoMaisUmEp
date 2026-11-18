@@ -5,17 +5,22 @@ export const UI = { filtro: 'todas', busca: '', ordem: ler('smue:ordem', 'recent
 
 export const capa = (nome, img, urgente) =>
   img
-    ? html`<img class="fade" src="${img}" alt="" decoding="async" ${raw(urgente ? 'fetchpriority="high"' : 'loading="lazy"')}>`
+    ? html`<img class="fade" src="${img}" alt="" decoding="async" ${raw(urgente ? 'fetchpriority="high"' : 'loading="lazy"')} />`
     : html`<div class="ph" data-h="${hue(nome)}"><span>${(String(nome).trim()[0] || '?').toUpperCase()}</span></div>`;
 
 export function esqueleto(hash) {
-  const caixa = n =>
-    Array.from({ length: n }, () => raw('<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>'));
+  const caixa = n => Array.from({ length: n }, () => raw('<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>'));
   const corpo =
     hash === '#tops'
       ? raw('<div class="tops"><div class="sk sk-top"></div><div class="sk sk-top"></div></div>')
-      : html`<div class="stats"><div class="sk sk-stat"></div></div><div class="grade">${caixa(8)}</div>`;
-  return html`<div aria-busy="true"><span class="sr" role="status">Carregando…</span><div class="sk sk-h1"></div><div class="sk sk-sub"></div>${corpo}</div>`;
+      : html`<div class="stats"><div class="sk sk-stat"></div></div>
+          <div class="grade">${caixa(8)}</div>`;
+  return html`<div aria-busy="true">
+    <span class="sr" role="status">Carregando…</span>
+    <div class="sk sk-h1"></div>
+    <div class="sk sk-sub"></div>
+    ${corpo}
+  </div>`;
 }
 
 // Ícones fixos (SVG escrito aqui no código): marcados como HTML seguro para entrar em html`` sem serem escapados.

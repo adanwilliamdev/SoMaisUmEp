@@ -26,8 +26,14 @@ async function alertar(falhas) {
     await email.enviar({
       para,
       assunto: 'SóMaisUmEp: falha no cron diário',
-      texto: 'O cron diário terminou com falhas:\n\n' + falhas.map(f => `- ${f.etapa}: ${f.motivo}`).join('\n') + '\n\nOs avisos de hoje podem não ter saído. Veja os logs da função api/cron.js na Vercel.',
-      html: '<p>O cron diário terminou com falhas:</p><ul>' + falhas.map(f => `<li><b>${esc(f.etapa)}</b>: ${esc(f.motivo)}</li>`).join('') + '</ul><p>Os avisos de hoje podem não ter saído. Veja os logs da função <code>api/cron.js</code> na Vercel.</p>',
+      texto:
+        'O cron diário terminou com falhas:\n\n' +
+        falhas.map(f => `- ${f.etapa}: ${f.motivo}`).join('\n') +
+        '\n\nOs avisos de hoje podem não ter saído. Veja os logs da função api/cron.js na Vercel.',
+      html:
+        '<p>O cron diário terminou com falhas:</p><ul>' +
+        falhas.map(f => `<li><b>${esc(f.etapa)}</b>: ${esc(f.motivo)}</li>`).join('') +
+        '</ul><p>Os avisos de hoje podem não ter saído. Veja os logs da função <code>api/cron.js</code> na Vercel.</p>',
     });
     return true;
   } catch (e) {

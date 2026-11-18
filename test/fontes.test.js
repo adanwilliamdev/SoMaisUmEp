@@ -10,7 +10,15 @@ const csp = () => {
   const cab = JSON.parse(ler('vercel.json')).headers.flatMap(h => h.headers);
   return cab.find(h => h.key === 'Content-Security-Policy').value;
 };
-const diretiva = (nome, politica) => (politica.split(';').map(d => d.trim()).find(d => d.startsWith(nome + ' ')) || '').split(/\s+/).slice(1);
+const diretiva = (nome, politica) =>
+  (
+    politica
+      .split(';')
+      .map(d => d.trim())
+      .find(d => d.startsWith(nome + ' ')) || ''
+  )
+    .split(/\s+/)
+    .slice(1);
 
 test('fontes: todo @font-face do CSS aponta para um arquivo que existe em public/fonts', () => {
   const css = ler('public/style.css');
@@ -32,7 +40,10 @@ test('CSP: estilos e fontes só do próprio site; sem unsafe-inline/unsafe-eval 
   assert.deepEqual(diretiva('style-src', p), ["'self'"]);
   assert.deepEqual(diretiva('font-src', p), ["'self'"]);
   assert.deepEqual(diretiva('script-src', p), ["'self'"]);
-  assert.deepEqual(diretiva('connect-src', p).filter(h => /google|gstatic/.test(h)), []);
+  assert.deepEqual(
+    diretiva('connect-src', p).filter(h => /google|gstatic/.test(h)),
+    [],
+  );
   assert.doesNotMatch(p, /unsafe-(inline|eval)/);
 });
 

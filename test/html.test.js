@@ -20,14 +20,21 @@ test('html: tudo o que entra em ${} é escapado, em texto e em atributo', async 
 test('html: null e undefined somem; booleanos saem como texto (aria-pressed precisa de "false")', async () => {
   const { html } = await import('../public/js/util.js');
   assert.equal(String(html`[${null}][${undefined}]`), '[][]');
-  assert.equal(String(html`<button aria-pressed="${false}">`), '<button aria-pressed="false">');
-  assert.equal(String(html`<button aria-pressed="${true}">`), '<button aria-pressed="true">');
+  assert.equal(String(html`<button aria-pressed="${false}"></button>`), '<button aria-pressed="false">');
+  assert.equal(String(html`<button aria-pressed="${true}"></button>`), '<button aria-pressed="true">');
 });
 
 test('html: trechos html``/raw() entram sem novo escape e listas são juntadas', async () => {
   const { html, raw } = await import('../public/js/util.js');
   const li = ['a<', 'b'].map(x => html`<li>${x}</li>`);
-  assert.equal(String(html`<ul>${li}</ul>`), '<ul><li>a&lt;</li><li>b</li></ul>');
+  assert.equal(
+    String(
+      html`<ul>
+        ${li}
+      </ul>`,
+    ),
+    '<ul><li>a&lt;</li><li>b</li></ul>',
+  );
   assert.equal(String(html`${html`<b>${'&'}</b>`}`), '<b>&amp;</b>');
   assert.equal(String(html`${raw('<i>ok</i>')}`), '<i>ok</i>');
   assert.equal(String(html`${[raw('<b>1</b>'), '<2>']}`), '<b>1</b>&lt;2&gt;');
@@ -51,7 +58,10 @@ test('html: o resultado serve como string (innerHTML, concatenação e length)',
 });
 
 /* ---------- trava: nada de innerHTML montado à mão com ${} ---------- */
-const lista = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? lista(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
+const lista = dir =>
+  fs
+    .readdirSync(dir, { withFileTypes: true })
+    .flatMap(e => (e.isDirectory() ? lista(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
 const ARQUIVOS = lista(path.join(__dirname, '../public/js'));
 
 test('trava: innerHTML/insertAdjacentHTML nunca recebem template com ${} sem html``', () => {
@@ -59,7 +69,8 @@ test('trava: innerHTML/insertAdjacentHTML nunca recebem template com ${} sem htm
   for (const f of ARQUIVOS) {
     const src = fs.readFileSync(f, 'utf8');
     // atribuição (=, +=) ou insertAdjacentHTML(pos, ...) seguidos de um template literal sem o prefixo html
-    for (const m of src.matchAll(/(?:innerHTML\s*\+?=\s*|insertAdjacentHTML\([^,]+,\s*)`([^`]*)`/g)) if (m[1].includes('${')) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
+    for (const m of src.matchAll(/(?:innerHTML\s*\+?=\s*|insertAdjacentHTML\([^,]+,\s*)`([^`]*)`/g))
+      if (m[1].includes('${')) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
   }
   assert.deepEqual(ruins, [], 'use html`...` (escapa sozinho) em vez de template comum');
 });
@@ -68,8 +79,10 @@ test('trava: innerHTML nunca recebe concatenação de strings (+) nem esc() manu
   const ruins = [];
   for (const f of ARQUIVOS) {
     const src = fs.readFileSync(f, 'utf8');
-    for (const m of src.matchAll(/innerHTML\s*\+?=\s*([^;\n]*)/g)) if (/['"`]\s*\+|\+\s*['"`]/.test(m[1])) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
-    if (/\besc\(/.test(src.replace(/^export const esc = .*$/m, '')) && !f.endsWith('util.js')) ruins.push(path.relative(process.cwd(), f) + ': esc() manual (use html``)');
+    for (const m of src.matchAll(/innerHTML\s*\+?=\s*([^;\n]*)/g))
+      if (/['"`]\s*\+|\+\s*['"`]/.test(m[1])) ruins.push(path.relative(process.cwd(), f) + ': ' + m[0].slice(0, 70));
+    if (/\besc\(/.test(src.replace(/^export const esc = .*$/m, '')) && !f.endsWith('util.js'))
+      ruins.push(path.relative(process.cwd(), f) + ': esc() manual (use html``)');
   }
   assert.deepEqual(ruins, []);
 });
