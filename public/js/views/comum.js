@@ -9,8 +9,7 @@ export const capa = (nome, img, urgente) =>
     : html`<div class="ph" data-h="${hue(nome)}"><span>${(String(nome).trim()[0] || '?').toUpperCase()}</span></div>`;
 
 export function esqueleto(hash) {
-  const caixa = n =>
-    Array.from({ length: n }, () => raw('<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>'));
+  const caixa = n => Array.from({ length: n }, () => raw('<div><div class="sk sk-capa"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>'));
   const corpo =
     hash === '#tops'
       ? raw('<div class="tops"><div class="sk sk-top"></div><div class="sk sk-top"></div></div>')

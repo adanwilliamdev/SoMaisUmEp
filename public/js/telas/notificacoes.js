@@ -53,8 +53,9 @@ export async function pintaPush() {
   const el = $('#push-corpo');
   if (!el) return; // o diálogo mudou de tela enquanto consultava
   const botoes = {
-    ativo:
-      raw('<div class="rodape-dlg esq"><button class="btn sec" data-act="push-teste">Enviar um aviso de teste</button><button class="btn sec" data-act="push-desativar">Desativar neste aparelho</button></div>'),
+    ativo: raw(
+      '<div class="rodape-dlg esq"><button class="btn sec" data-act="push-teste">Enviar um aviso de teste</button><button class="btn sec" data-act="push-desativar">Desativar neste aparelho</button></div>',
+    ),
     inativo: raw('<div class="rodape-dlg esq"><button class="btn" data-act="push-ativar">Ativar neste aparelho</button></div>'),
   }[d.estado];
   el.innerHTML = html`<p class="aviso">${d.texto}</p>${botoes || ''}`;

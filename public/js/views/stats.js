@@ -11,16 +11,15 @@ export function graficoMeses(meses, compacto = typeof matchMedia === 'function' 
     H = compacto ? 200 : 220,
     pad = compacto ? 8 : 28,
     bw = (W - pad * 2) / meses.length;
-  const barras = meses
-    .map((m, i) => {
-      const h = Math.round(((H - 56) * m.valor) / max),
-        x = pad + i * bw + bw * 0.16,
-        w = bw * 0.68,
-        y = H - 30 - h;
-      return html`<g><rect x="${x}" y="${y}" width="${w}" height="${Math.max(h, m.valor ? 3 : 1)}" rx="4" class="${m.valor ? '' : 'vz'}"><title>${m.rotulo}/${m.ano}: ${m.valor}</title></rect>
+  const barras = meses.map((m, i) => {
+    const h = Math.round(((H - 56) * m.valor) / max),
+      x = pad + i * bw + bw * 0.16,
+      w = bw * 0.68,
+      y = H - 30 - h;
+    return html`<g><rect x="${x}" y="${y}" width="${w}" height="${Math.max(h, m.valor ? 3 : 1)}" rx="4" class="${m.valor ? '' : 'vz'}"><title>${m.rotulo}/${m.ano}: ${m.valor}</title></rect>
       ${m.valor ? html`<text x="${x + w / 2}" y="${y - 6}" text-anchor="middle" class="v">${m.valor}</text>` : ''}
       <text x="${x + w / 2}" y="${H - 10}" text-anchor="middle">${m.rotulo}</text></g>`;
-    });
+  });
   return html`<svg class="graf" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false"><line x1="${pad}" x2="${W - pad}" y1="${H - 30}" y2="${H - 30}"/>${barras}</svg>
     <table class="sr"><caption>Episódios e filmes marcados como vistos, por mês, nos últimos 12 meses</caption>
       <thead><tr><th scope="col">Mês</th><th scope="col">Marcados</th></tr></thead>

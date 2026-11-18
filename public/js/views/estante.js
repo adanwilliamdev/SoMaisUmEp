@@ -121,10 +121,10 @@ export function htmlProximos(tipo) {
   const mv = tipo === 'movie';
   return html`<section class="prox" aria-labelledby="t-prox"><h2 class="sec-tit" id="t-prox">${mv ? 'Próximas estreias' : 'Próximos episódios'}</h2>
     <ul class="prox-lista">${lista.map(
-        ({ s, l }) => html`<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${s.id}">
+      ({ s, l }) => html`<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${s.id}">
       <button class="prox-b" data-act="abrir" aria-label="Abrir ${s.nome}"><span class="prox-data" aria-hidden="true"><b>${l.dia}</b>${l.mes}</span>
       <span class="prox-txt"><b>${s.nome}</b><small>${l.t && l.e ? `T${l.t} · E${l.e} · ` : ''}${l.quando}</small></span></button></li>`,
-      )}</ul></section>`;
+    )}</ul></section>`;
 }
 
 export function htmlContinuar(tipo) {
@@ -136,8 +136,9 @@ export function htmlContinuar(tipo) {
     <div class="fila-grade${resto.length ? '' : ' so-um'}">${cardContinuar(destaque, 0)}${resto.length ? html`<div class="fila-resto">${resto.map((s, n) => cardContinuar(s, n + 1))}</div>` : ''}</div></section>`;
 }
 
-const VAZIO_ICO =
-  raw('<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>');
+const VAZIO_ICO = raw(
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>',
+);
 // Grupos da aba "Todas": cada estado vira uma seção recolhível, com o contador no título.
 const GRUPOS = {
   tv: [
@@ -158,12 +159,12 @@ const GRUPOS = {
 function htmlGrupos(lista, tipo) {
   let n = 0;
   return html`${GRUPOS[tipo].map(([k, rot]) => {
-      const g = lista.filter(s => estadoLista(s) === k);
-      if (!g.length) return '';
-      const aberto = !UI.fechados.has(k);
-      return html`<details class="grupo" data-grupo="${k}"${aberto ? ' open' : ''}><summary><h2 class="sec-tit">${rot} <span class="grupo-n">${g.length}</span></h2></summary>
+    const g = lista.filter(s => estadoLista(s) === k);
+    if (!g.length) return '';
+    const aberto = !UI.fechados.has(k);
+    return html`<details class="grupo" data-grupo="${k}"${aberto ? ' open' : ''}><summary><h2 class="sec-tit">${rot} <span class="grupo-n">${g.length}</span></h2></summary>
         <div class="grade">${g.map(s => cardHtml(s, n++))}</div></details>`;
-    })}`;
+  })}`;
 }
 
 export function htmlLista(tipo) {

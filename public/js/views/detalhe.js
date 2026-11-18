@@ -24,14 +24,15 @@ export function htmlDetalhe(s, onde) {
   const temps = mv
     ? html`<div class="temp"><button class="btn${vis(s) ? ' sec' : ''}" data-act="visto">${vis(s) ? 'Desmarcar como visto' : 'Marcar como visto'}</button></div>`
     : s.eps.map((n, i) => {
-          const c = Array.from({ length: n }, (_, k) => k + 1).map(
-            e => html`<button class="ep" data-act="ep" data-s="${i}" data-e="${e}" aria-pressed="${s.vis[i] >= e}" aria-label="Temporada ${i + 1}, episódio ${e}">${e}</button>`,
-          );
-          return html`<div class="temp"><div class="temp-cab"><b>Temporada ${i + 1} <span class="mut-leve">· ${s.vis[i]}/${n}</span></b>
+        const c = Array.from({ length: n }, (_, k) => k + 1).map(
+          e =>
+            html`<button class="ep" data-act="ep" data-s="${i}" data-e="${e}" aria-pressed="${s.vis[i] >= e}" aria-label="Temporada ${i + 1}, episódio ${e}">${e}</button>`,
+        );
+        return html`<div class="temp"><div class="temp-cab"><b>Temporada ${i + 1} <span class="mut-leve">· ${s.vis[i]}/${n}</span></b>
       <button class="btn sec mini" data-act="temp-tudo" data-s="${i}" aria-label="Marcar toda a temporada ${i + 1}">Marcar toda</button>
       <button class="btn sec mini" data-act="temp-antes" data-s="${i}" title="Marca sem contar nas estatísticas de hoje" aria-label="Já vi a temporada ${i + 1} antes de usar o app">Já vi antes</button>
       <button class="btn sec mini" data-act="temp-zero" data-s="${i}" aria-label="Zerar temporada ${i + 1}">Zerar</button></div><div class="eps">${c}</div></div>`;
-        });
+      });
   const urlHero = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
   const l = lancamento(s),
     pilulas = [

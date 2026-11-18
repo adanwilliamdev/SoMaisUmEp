@@ -74,7 +74,9 @@ export function htmlDescobrir(tipo, d) {
   const demais = resto.length ? secao('t-rad', lanc.length ? 'Também combina com você' : 'Talvez você curta', resto, tipo, sementes) : '';
   const corpo = lista.length
     ? html`${novidades}${demais}`
-    : raw('<section class="desc-sec"><p class="aviso">Nada novo por aqui: tudo o que combina com o seu gosto já está na sua estante ou foi dispensado.</p></section>');
+    : raw(
+        '<section class="desc-sec"><p class="aviso">Nada novo por aqui: tudo o que combina com o seu gosto já está na sua estante ou foi dispensado.</p></section>',
+      );
   return html`${atualizado(d.quando)}${blocoDna(r.dna, sementes, tipo)}${corpo}`;
 }
 // "Atualizado há 5 min" + botão para refazer o radar agora.
@@ -95,9 +97,7 @@ export function viewDescobrir(d) {
 }
 export function htmlDescDetalhe(x, tipo, onde) {
   const tem = jaNaEstante(L.series, tipo, x);
-  const pilulas = [tipo === 'movie' ? 'Filme' : 'Série', x.ano, x.nota ? '★ ' + x.nota : '']
-    .filter(Boolean)
-    .map(p => html`<span class="pilula">${p}</span>`);
+  const pilulas = [tipo === 'movie' ? 'Filme' : 'Série', x.ano, x.nota ? '★ ' + x.nota : ''].filter(Boolean).map(p => html`<span class="pilula">${p}</span>`);
   return html`<div data-tid="${x.id}"><div class="cab"><div class="mini-capa">${capa(x.nome, x.poster, true)}</div>
     <div class="cab-info"><h2>${x.nome}</h2><div class="pilulas">${pilulas}</div></div></div>
     ${x.sinopse ? html`<p class="sin">${x.sinopse}${x.sinopse.length >= 300 ? '…' : ''}</p>` : ''}
