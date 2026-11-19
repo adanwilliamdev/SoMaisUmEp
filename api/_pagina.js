@@ -13,7 +13,7 @@ const pagina = ({ titulo, descricao, imagem, corpo, status = 200 }) => ({
 <title>${esc(titulo)}</title><meta name="description" content="${esc(descricao)}"><meta name="robots" content="noindex">
 <meta property="og:type" content="website"><meta property="og:site_name" content="SóMaisUmEp"><meta property="og:title" content="${esc(titulo)}"><meta property="og:description" content="${esc(descricao)}">
 ${imagem ? `<meta property="og:image" content="${esc(imagem)}"><meta name="twitter:card" content="summary_large_image">` : '<meta name="twitter:card" content="summary">'}
-<meta name="theme-color" content="#121214"><link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#13100c"><link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css"><script src="/tema.js"></script><script type="module" src="/js/publico.js"></script></head>
 <body class="publico"><main class="pub">${corpo}</main></body></html>`,
 });

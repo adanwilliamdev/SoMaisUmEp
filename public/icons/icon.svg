@@ -1,16 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SóMaisUmEp">
-  <defs>
-    <linearGradient id="ouro" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f6d896"/>
-      <stop offset="1" stop-color="#d49a42"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="118" fill="#0b0b0d"/>
-  <rect x="12" y="12" width="488" height="488" rx="106" fill="none" stroke="#e8b967" stroke-opacity=".22" stroke-width="3"/>
-  <g fill="url(#ouro)" transform="translate(34 0)">
-    <rect x="84" y="238" width="140" height="36" rx="18"/>
-    <rect x="136" y="186" width="36" height="140" rx="18"/>
-    <rect x="316" y="160" width="44" height="192" rx="14"/>
-    <path d="M316 160 262 202v46l54-36z"/>
+  <rect width="512" height="512" rx="118" fill="#d8381c"/>
+  <g transform="rotate(-8 256 256)">
+    <path d="M100 160H412Q436 160 436 184V228A28 28 0 0 0 436 284V328Q436 352 412 352H100Q76 352 76 328V284A28 28 0 0 0 76 228V184Q76 160 100 160Z" fill="#1c1a16" transform="translate(14 14)"/>
+    <path d="M100 160H412Q436 160 436 184V228A28 28 0 0 0 436 284V328Q436 352 412 352H100Q76 352 76 328V284A28 28 0 0 0 76 228V184Q76 160 100 160Z" fill="#f7efdc" stroke="#1c1a16" stroke-width="12" stroke-linejoin="round"/>
+    <path d="M340 178V334" stroke="#1c1a16" stroke-width="6" stroke-dasharray="10 12" fill="none"/>
+    <g fill="#1c1a16">
+      <rect x="140" y="247" width="64" height="18" rx="9"/>
+      <rect x="163" y="224" width="18" height="64" rx="9"/>
+      <rect x="268" y="210" width="26" height="92" rx="9"/>
+      <path d="M268 214 238 240v22l30-20z"/>
+    </g>
+    <path d="M366 226v60l40-30z" fill="#d8381c" stroke="#1c1a16" stroke-width="6" stroke-linejoin="round"/>
   </g>
 </svg>

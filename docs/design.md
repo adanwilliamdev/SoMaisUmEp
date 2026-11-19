@@ -1,47 +1,55 @@
-# Design (v5.6 · "Sofá")
+# Design (v6.0 · "Bilheteria")
 
-O visual vive em **uma folha só**: `public/style.css`. Antes eram dez camadas (v5 a v10) que se sobrescreviam; agora cada regra aparece uma vez.
+O visual vive em **uma folha só**: `public/style.css`. Cada regra aparece uma vez, na ordem: tokens, base, estrutura, componentes, telas, telas pequenas, movimento.
 
 ## Ideia
 
-A interface é quieta e as capas são a cor. Existe **uma** cor de destaque (`--acc`, um violeta), usada só no que se toca: o botão **+1**, o progresso, o item ativo do menu e os filtros marcados. Nada de degradê, vidro fosco ou brilho.
+Tudo é **papel e tinta**, como um ingresso de cinema. De dia, fundo creme (`#f2ecdf`) e texto em tinta quase preta; à noite, carvão quente (`#13100c`) e texto creme. Cartões, capas, botões e campos têm **borda de 2px** e **sombra dura** (sem desfoque) deslocada para baixo e para a direita. De dia a sombra é de tinta; à noite, de coral (`--sd`).
 
-Outras duas cores têm função fixa, para o violeta não carregar tudo sozinho: **verde menta** (`--ok`) para o que está concluído (selo e barra de progresso cheia) e **ouro** (`--ouro`) para a nota que você deu.
+Existe **uma** cor de ação, o **vermelhão** (`--acc`: `#c7321a` de dia, coral `#ff7a55` à noite), usada só no que se toca: o botão **+1**, o progresso, a aba ativa do celular, o botão principal e os números 1 a 3 dos tops. Duas cores têm função fixa: **verde** (`--ok`) para o que está concluído e **ouro** (`--ouro`) para a nota que você deu.
+
+A tipografia tem duas vozes: **serifa editorial** (`--serifa`, a pilha do sistema Iowan Old Style / Palatino / Georgia) nos títulos e nas histórias, e **Inter** (hospedada em `public/fonts/`) no resto, com números sempre em Inter pesada. O fundo tem uma grade de pontos feita só de CSS (`radial-gradient`), então não pede imagem nem relaxa a CSP.
 
 ## Tokens (começo do `style.css`)
 
 | Token | Para que serve |
 |---|---|
-| `--bg`, `--card`, `--card2` | fundo (`#121214` no escuro), superfície e superfície em destaque |
-| `--tx`, `--mut` | texto e texto de apoio (cinza-claro `#9ca3af`, com entrelinha de 1,6 a 1,7) |
+| `--bg`, `--card`, `--card2` | papel (fundo), superfície e superfície em destaque |
+| `--tx`, `--mut` | tinta e texto de apoio |
 | `--ctl` | borda de controles (contraste ≥ 3:1) |
-| `--acc`, `--on` | destaque e o texto sobre ele |
+| `--acc`, `--on` | vermelhão e o texto sobre ele (branco de dia, escuro à noite) |
 | `--ok`, `--perigo`, `--ouro` | concluído, ações sem volta e nota pessoal |
-| `--bloco`, `--bloco-b` | fundo translúcido e borda fina dos blocos de estatísticas |
-| `--r-s`, `--r-m`, `--r-g` | cantos: detalhes, controles/capas, superfícies |
-| `--lateral` | largura da barra lateral no computador |
+| `--sd`, `--duro`, `--duro-p`, `--sombra` | cor da sombra e as três sombras duras (média, pequena, grande) |
+| `--bloco`, `--bloco-b` | fundo e borda dos cartões de estatística |
+| `--r-s`, `--r-m`, `--r-g` | cantos: selos, controles/capas, superfícies |
+| `--serifa`, `--corpo` | as duas famílias de letra |
+| `--topo` | altura da barra superior |
 
-Para trocar a cor, mude só os dois blocos de tokens (claro e escuro) e rode `npm test`: `test/acessibilidade.test.js` confere o contraste.
-
-> O violeta é `#9566fa`, um pouco mais claro que o `#8b5cf6` do Tailwind: com ele o texto sobre o destaque e o destaque sobre o card ficam em ≥ 4,5:1 (AA). Pelo mesmo motivo o texto sobre o violeta é escuro (`--on`), não branco.
+Para trocar a cor, mude só os dois blocos de tokens (claro e escuro) e rode `npm test`: `test/acessibilidade.test.js` confere o contraste (texto ≥ 4,5:1, bordas de controles ≥ 3:1). O texto sobre o vermelhão é branco de dia e escuro à noite, pelo mesmo motivo.
 
 ## Onde fica cada coisa
 
-- **Computador (≥ 900 px)**: barra lateral à esquerda (`.rail`): marca, abas (Séries, Filmes, Descobrir, Tops, Estatísticas) e, embaixo, status, tema e conta. A estante usa até 4–5 colunas.
-- **Celular**: topo com marca, status, tema e conta; abas numa barra fixa embaixo, boa para o polegar.
+- **Computador (≥ 900 px)**: **barra superior** (`.rail`) em três colunas: marca à esquerda, abas (Séries, Filmes, Descobrir, Tops, Estatísticas) numa pílula ao centro, e status, tema e conta à direita. A aba atual fica em tinta cheia. A estante usa 4–5 colunas.
+- **Celular**: topo com marca, status, tema e conta; as abas viram um **dock flutuante** embaixo (`.menu`), com borda e sombra dura, e a aba ativa em vermelhão.
 - **Status de sincronização** (`#status`): só um ícone de nuvem (verde = salvo, pulsando = salvando, aviso = sem conexão ou erro). O texto fica no tooltip e para o leitor de tela.
 - **Minha conta** (botão redondo): importar lista, backup e exportação, avisos, trocar senha/e-mail, sair e excluir conta.
 - **Rodapé**: só o crédito do TMDB.
-- **Estante**: título e números → *Continuar assistindo* → *Próximos episódios* → filtros → grupos por estado.
-  - *Continuar assistindo* é um **carrossel horizontal** com rolagem encaixada: o primeiro título (o último que você viu) é o destaque, em tamanho grande e com o botão "Só mais um ep"; os demais são capas menores ao lado.
-  - **Filtros** (Todas, Assistindo, Na fila...) são abas compactas que deslizam. No celular só elas ficam coladas abaixo do topo ao rolar; busca e ordem rolam com a página. No computador a barra inteira (abas, busca, ordem) fica colada.
-  - O selo de estado só aparece na lista plana (busca ou filtro), porque dentro de um grupo o título da seção já diz o estado.
+- **Estante**: título e números (chips) → *Continuar assistindo* → *Próximos episódios* → filtros → grupos por estado.
+  - *Continuar assistindo* é um **carrossel de ingressos**: o primeiro título (o último que você viu) é o destaque, com borda de tinta, costura pontilhada por dentro, a capa levemente inclinada, o episódio em uma etiqueta (`T4 E5`) e o botão grande "Só mais um ep"; os demais são capas menores ao lado.
+  - *Próximos episódios*: cada lançamento tem uma "folha de calendário" (dia grande, mês em maiúsculas); a de hoje fica em vermelhão.
+  - **Filtros** (Todas, Assistindo, Na fila...) são pílulas; a marcada fica em tinta cheia. No celular só elas ficam coladas abaixo do topo ao rolar; busca e ordem rolam com a página. No computador a barra inteira (abas, busca, ordem) fica colada abaixo da barra superior.
+  - O selo de estado (sempre tinta escura com letra clara, nos dois temas) só aparece na lista plana (busca ou filtro), porque dentro de um grupo o título da seção já diz o estado.
+- **Painel de um título**: gaveta lateral no computador, folha no celular. Episódios são "carimbos": vistos em tinta cheia, o próximo com contorno vermelho.
+- **Tops (Hall da Fama)**: cada ranking é um cartão com sombra grande; números grandes em Inter pesada, os três primeiros em vermelhão; a nota de rodapé de cada item aparece em itálico serifado, entre aspas.
 - **Descobrir**: sob cada título há uma frase curta ("Baseado no seu gosto por Drama") e um "i". O motivo completo aparece num balão ao passar o mouse ou tocar (`Esc` ou clicar fora fecha). A lista de títulos-base do DNA fica recolhida.
-- **Estatísticas**: *Curiosidades* (histórias em cartões grandes) separadas de *Em números* (números brutos) e do gráfico, todos em blocos com fundo `rgba(255,255,255,.03)` e borda `rgba(255,255,255,.1)`.
+- **Estatísticas**: *Curiosidades* são **cartões de cor sólida**: tempo total em vermelhão, mês mais ativo em tinta, jeito de avaliar em papel, título campeão em papel escuro. *Em números* são cartões menores, seguidos do gráfico.
+- **Entrar / criar conta**: um ingresso na tela (borda, sombra e costura pontilhada).
+- **Imagem de compartilhar um Top** (`public/js/compartilhar.js`, canvas 1080×1350) usa a mesma identidade: papel com grade de pontos, moldura de tinta, etiqueta "TOP 10" em vermelhão e cada posição num cartão com sombra dura. As cores ficam em `COR`, no topo do arquivo.
+- **Ícone**: um ingresso inclinado com "+1" e um play sobre fundo vermelhão (`public/icons/icon.svg`; os PNGs seguem a mesma geometria).
 
 ## Gestos e botões de +1 / −1
 
-O **+1** é um botão pequeno e escuro no canto da capa; só ganha o violeta ao passar o mouse ou receber foco. No computador ele (e o −1) só aparece ao passar o mouse sobre a capa. No celular, deslizar a capa na grade:
+O **+1** é um botão vermelhão com borda de tinta no canto da capa. No computador ele (e o −1) só aparece ao passar o mouse sobre a capa ou receber foco. No celular, deslizar a capa na grade:
 
 - **para a direita** (a partir de 72 px): +1 episódio, ou marca o filme como visto (com "Desfazer");
 - **para a esquerda**: abre o painel do título, onde ficam as opções e o −1.
@@ -50,4 +58,8 @@ O gesto só vale para toque e só na grade (o carrossel rola na horizontal). Ele
 
 ## Movimento
 
-Um único movimento de entrada ao trocar de aba. O resto responde a um toque (apertar, abrir o painel, acompanhar o dedo ao deslizar). `prefers-reduced-motion` desliga tudo.
+Um único movimento de entrada ao trocar de aba. O resto responde a um toque: botões e cartões "afundam" ao serem apertados (a sombra dura some e o elemento desce 2px) e sobem 2–3px ao passar o mouse. `prefers-reduced-motion` desliga tudo.
+
+## O que não mudou
+
+Só o visual foi refeito. As classes e os `data-act` que o JavaScript usa, a API, o banco e o service worker continuam como eram, então o redesenho não toca em regra de negócio nem em sincronização.
