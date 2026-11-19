@@ -47,7 +47,8 @@ export function cardHtml(s, n = 0, agrupado = false) {
           : '';
   const menos =
     !mv && vis(s) > 0 ? html`<button class="menos" data-act="menos" aria-label="−1 episódio de ${s.nome}" title="−1 episódio">${ICO_MENOS}</button>` : '';
-  const prog = !mv && est === 'assistindo' ? ` · ${vis(s)}/${tot(s)} eps` : '';
+  // Andamento fixo à direita da linha de apoio ("55/62"); o leitor de tela ouve "episódios vistos".
+  const prog = !mv && est === 'assistindo' ? html`<span class="meta-n">${vis(s)}/${tot(s)}<span class="sr"> episódios vistos</span></span>` : '';
   return html`<article class="card" data-id="${s.id}" data-est="${estadoLista(s)}" data-i="${Math.min(n, 14)}">
       <div class="poster">
         <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? html`<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
@@ -55,7 +56,7 @@ export function cardHtml(s, n = 0, agrupado = false) {
         ${prx ? html`<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + s.nome + ' como visto' : '+1 episódio de ' + s.nome}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : html`${ICO_MAIS}<b>1</b>`}</button>` : ''}
       </div>
       ${mv ? '' : html`<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>`}
-      <h3>${s.nome}</h3><small>${rotulo(s)}${prog}${mv && s.ano ? ' · ' + s.ano : ''}</small>${chipLanc(s)}
+      <h3>${s.nome}</h3><small class="meta"><span class="meta-t">${rotulo(s)}${mv && s.ano ? ' · ' + s.ano : ''}</span>${prog}</small>${chipLanc(s)}
     </article>`;
 }
 

@@ -59,7 +59,9 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none}
 button,a,input,select,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:3px solid var(--acc);outline-offset:3px;border-radius:var(--r-s)}
 #app:focus,h1:focus{outline:none}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+/* uma <table> ignora width:1px e alargava a página (rolagem lateral no celular); como bloco ela obedece e mantém a semântica de tabela */
+table.sr{display:block}
 a{color:var(--tx);text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--acc)}
 h1,h2,h3{font-weight:700;letter-spacing:-.02em;line-height:1.12;text-wrap:balance}
 h1,h2{font-family:var(--serifa)}
@@ -216,7 +218,7 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 
 .poster{position:relative}
 .card .capa{display:block;position:relative;width:100%;aspect-ratio:2/3;padding:0;border:2px solid var(--tx);border-radius:var(--r-m);overflow:hidden;background:var(--card2);box-shadow:var(--duro-p);transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
-.card .capa::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(to top,rgba(0,0,0,.42),transparent 32%)}
+.card .capa::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(to top,rgba(0,0,0,.52),transparent 38%)}
 .card img{display:block;width:100%;height:100%;object-fit:cover}
 .card .capa img{transition:opacity .35s}
 @media (hover:hover){
@@ -226,7 +228,11 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 .ph{width:100%;height:100%;display:grid;place-items:center;background:hsl(var(--h) 34% 30%)}
 .ph span{font-family:var(--serifa);font-weight:800;font-size:3.4rem;line-height:1;color:rgba(255,255,255,.9)}
 .card h3{margin-top:12px;font-size:.94rem;font-weight:700;letter-spacing:-.01em;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.card small{display:block;margin-top:2px;color:var(--mut);font-size:.8rem;font-weight:500}
+.card small{display:block;margin-top:3px;color:var(--mut);font-size:.8rem;font-weight:500}
+/* o rótulo ("Próximo: T5 · E10") corta com reticências e o andamento (55/62) fica fixo à direita: nunca quebra em duas linhas soltas */
+.card small.meta{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.meta-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta-n{flex:none;color:var(--tx);font-weight:700;font-variant-numeric:tabular-nums}
 
 /* selos sobre a capa: sempre tinta escura com letra clara, qualquer que seja o tema */
 .sel{position:absolute;z-index:1;top:8px;left:8px;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px 9px;border-radius:var(--r-s);border:1px solid rgba(255,255,255,.22);background:#14110d;color:#f4ecd8;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.4}
@@ -266,8 +272,8 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 .linha+h3{margin-top:10px}
 
 /* aviso de lançamento: texto com ponto */
-.lanc{display:inline-flex;align-items:center;gap:6px;margin-top:5px;color:var(--mut);font-size:.78rem;font-weight:600;line-height:1.4}
-.lanc::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ctl)}
+.lanc{display:flex;align-items:flex-start;gap:6px;margin-top:6px;color:var(--mut);font-size:.78rem;font-weight:600;line-height:1.35;text-wrap:balance}
+.lanc::before{content:"";flex:none;width:7px;height:7px;margin-top:.42em;border-radius:50%;background:var(--ctl)}
 .lanc.perto{color:var(--acc);font-weight:700}
 .lanc.perto::before{background:var(--acc)}
 
@@ -277,7 +283,9 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 
 /* ===== continuar assistindo: carrossel de ingressos, com o último título em destaque ===== */
 .fila{margin:0 0 30px}
-.fila-trilho{display:flex;align-items:flex-start;gap:16px;margin:0;padding:4px 6px 14px 2px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;overscroll-behavior-x:contain}
+.fila>.sec-tit,.prox>.sec-tit{display:flex;align-items:center;gap:14px}
+.fila>.sec-tit::after,.prox>.sec-tit::after{content:"";flex:1;height:2px;border-radius:2px;background:var(--line2)}
+.fila-trilho{display:flex;align-items:stretch;gap:16px;margin:0;padding:4px 6px 14px 2px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;overscroll-behavior-x:contain}
 .fila-trilho>.card{flex:none;scroll-snap-align:start}
 
 /* o destaque é um ingresso: borda de tinta, costura pontilhada por dentro e o botão grande */
@@ -291,6 +299,7 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 @media (hover:hover){.card.cc-hero .capa:hover{transform:rotate(0) translate(-2px,-2px)}}
 .card.cc-hero .capa::after{background:none}
 .card.cc-hero .cc-info{grid-area:info;min-width:0}
+.card.cc-hero .cc-info::before{content:"Próximo episódio";display:block;margin:0 0 6px;color:var(--acc);font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
 .card.cc-hero h3{margin:0;font-family:var(--serifa);font-size:clamp(1.2rem,2.4vw,1.6rem);font-weight:800;letter-spacing:-.025em;line-height:1.15;-webkit-line-clamp:2;line-clamp:2}
 .cc-ep{margin:10px 0 0;display:inline-block;padding:4px 12px;border:2px solid var(--tx);border-radius:var(--r-s);background:var(--tx);color:var(--bg);font-size:clamp(1.3rem,3.2vw,1.8rem);font-weight:800;line-height:1.1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .card.cc-hero .linha{height:9px;margin:16px 0 8px;max-width:420px}
@@ -305,15 +314,15 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 }
 
 /* os demais: capas menores, lado a lado */
-.card.cc-peq{width:clamp(128px,38vw,160px)}
-.card.cc-peq h3{margin-top:10px;font-size:.9rem;-webkit-line-clamp:1;line-clamp:1}
+.card.cc-peq{width:clamp(136px,38vw,172px)}
+.card.cc-peq h3{margin-top:10px;font-size:.9rem;-webkit-line-clamp:2;line-clamp:2}
 .card.cc-peq .linha{height:6px;margin:10px 0 0}
 .card.cc-peq .linha+h3{margin-top:8px}
 
 /* ===== próximos lançamentos: cada um é uma "data de calendário" ===== */
 .prox{margin:0 0 36px}
 .prox-lista{display:flex;gap:12px;margin:0;padding:4px 6px 10px 2px;list-style:none;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin}
-.prox-i{flex:none;min-width:min(240px,76vw);scroll-snap-align:start}
+.prox-i{flex:none;width:clamp(236px,74vw,276px);scroll-snap-align:start}
 .prox-b{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px 10px 10px;border:2px solid var(--tx);border-radius:var(--r-m);background:var(--card);box-shadow:var(--duro-p);text-align:left;transition:transform .12s,box-shadow .12s}
 .prox-b:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--sd)}
 .prox-b:active{transform:translate(1px,1px);box-shadow:none}
@@ -322,8 +331,8 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 .prox-i.hoje .prox-data{background:var(--acc);color:var(--on)}
 .prox-i.hoje .prox-data b{color:var(--on)}
 .prox-txt{display:grid;gap:1px;min-width:0}
-.prox-txt b{font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.prox-txt small{color:var(--mut);font-size:.8rem}
+.prox-txt b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;font-weight:700;font-size:.92rem;line-height:1.25;text-wrap:balance}
+.prox-txt small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut);font-size:.8rem}
 
 /* ===== painel de detalhes (lateral no computador, gaveta no celular) ===== */
 dialog{--dp:28px;width:min(580px,100vw);max-width:100vw;height:100vh;height:100dvh;max-height:none;margin:0 0 0 auto;padding:var(--dp);overflow:auto;overscroll-behavior:contain;
@@ -397,7 +406,7 @@ details.colar summary{margin-bottom:8px;color:var(--mut);font-size:.9rem;font-we
 .top-cab h1,.top-cab h2{flex:1;min-width:0;font-size:1.4rem;font-weight:800}
 .top-cab small{padding:2px 10px;border-radius:var(--pilula);background:var(--tx);color:var(--bg);font-weight:700;font-size:.76rem}
 .top ol{margin:0;padding:0;list-style:none}
-.top li{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 -6px;padding:12px 6px;border-bottom:2px dotted var(--line2);border-radius:var(--r-s);transition:background-color .15s}
+.top li{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;margin:0 -6px;padding:12px 6px;border-bottom:2px dotted var(--line2);border-radius:var(--r-s);transition:background-color .15s}
 .top li:last-child{border-bottom:0}
 .top li:hover{background:var(--card2)}
 .n{width:46px;text-align:center;color:var(--mut);font-size:1.7rem;font-weight:800;line-height:1;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
@@ -420,7 +429,7 @@ details.colar summary{margin-bottom:8px;color:var(--mut);font-size:.9rem;font-we
 .mv .ord button:disabled{opacity:.35;cursor:default}
 .mv .ord svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .add{display:flex;gap:8px;margin-top:16px}
-.top li .obs{flex-basis:100%;padding-left:46px;margin-top:-4px}
+.top li .obs{flex-basis:100%;padding-left:46px;padding-bottom:4px}
 .obs-txt,.obs-add{display:block;max-width:100%;padding:2px 0;border:0;background:transparent;text-align:left;font-size:.86rem;line-height:1.4;color:var(--mut)}
 .obs-txt{font-family:var(--serifa);font-size:.92rem;font-style:italic}
 .obs-txt::before{content:"“"}
@@ -580,8 +589,13 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
   .cab h2{font-size:1.4rem}
   .temp-cab b{flex-basis:100%}
   .top{padding:18px 14px 16px}
+  .w-card{padding:20px}
+  .w-tempo{padding:24px 20px}
+  .stats.numeros{gap:10px}
+  .stats.numeros .stat{padding:14px 14px 16px}
+  .stats.numeros .stat b{font-size:1.8rem}
   .top-cab h1,.top-cab h2{flex-basis:100%}
-  .top li{gap:8px}
+  .top li{gap:2px 8px}
   .top li .p{display:none}
   .n{width:34px;font-size:1.45rem}
   .top li .obs{padding-left:34px}

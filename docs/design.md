@@ -63,3 +63,12 @@ Um único movimento de entrada ao trocar de aba. O resto responde a um toque: bo
 ## O que não mudou
 
 Só o visual foi refeito. As classes e os `data-act` que o JavaScript usa, a API, o banco e o service worker continuam como eram, então o redesenho não toca em regra de negócio nem em sincronização.
+
+## Ajustes de encaixe (cartões)
+
+- **Linha de apoio do cartão** (`.meta`): o rótulo (`Próximo: T5 · E10`) fica à esquerda e corta com reticências; o andamento (`55/62`) fica fixo à direita (`.meta-n`, com "episódios vistos" só para leitor de tela). Nada de "eps" sozinho na segunda linha.
+- **Aviso de lançamento** (`.lanc`): ponto alinhado à primeira linha e quebra equilibrada (`text-wrap:balance`).
+- **Continuar assistindo**: cartões do trilho com a mesma altura; o destaque ganha a legenda "Próximo episódio"; as capas menores aceitam título em até 2 linhas. Os títulos de seção (`Continuar assistindo`, `Próximos episódios`) são seguidos de um fio.
+- **Próximos episódios**: largura fixa (`clamp(236px,74vw,276px)`) e título em até 2 linhas.
+- **Texto só para leitor de tela** (`.sr`): `<table class="sr">` vira bloco, senão alargava a página no celular (rolagem lateral em Estatísticas) sem perder a semântica de tabela.
+- **Top 10**: menos folga entre a linha do item e a nota; no celular pequeno os cartões de estatística têm menos respiro lateral.
