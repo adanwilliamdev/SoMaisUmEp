@@ -32,7 +32,10 @@ test('Descobrir: o motivo vira uma frase curta com botão "por que estou vendo i
   const { L } = await import('../public/js/loja.js');
   L.series = [];
   const sementes = [serie({ tmdb: 11, nome: 'Succession', vis: [10, 8], nota_pessoal: 9 })];
-  const radar = { dna: { generos: [{ nome: 'Drama', n: 2 }] }, resultados: [{ id: 5, nome: 'Industry', ano: 2020, nota: 8, poster: null, onde: [], porque: [{ tipo: 'genero', seed: 11, nome: 'Drama' }] }] };
+  const radar = {
+    dna: { generos: [{ nome: 'Drama', n: 2 }] },
+    resultados: [{ id: 5, nome: 'Industry', ano: 2020, nota: 8, poster: null, onde: [], porque: [{ tipo: 'genero', seed: 11, nome: 'Drama' }] }],
+  };
   const h = String(htmlDescobrir('tv', { radar, sementes }));
   assert.match(h, /class="porque-btn" data-act="porque" aria-expanded="false" aria-controls="p-5"/);
   assert.match(h, /<span>Baseado no seu gosto por Drama<\/span>/);
@@ -45,7 +48,11 @@ test('Continuar assistindo: carrossel com o destaque primeiro e capas menores de
   const V = await import('../public/js/views.js');
   const { L } = await import('../public/js/loja.js');
   const agora = Date.now();
-  L.series = [serie({ id: 'a', nome: 'A', visto_em: agora }), serie({ id: 'b', nome: 'B', visto_em: agora - 1e3 }), serie({ id: 'c', nome: 'C', visto_em: agora - 2e3 })];
+  L.series = [
+    serie({ id: 'a', nome: 'A', visto_em: agora }),
+    serie({ id: 'b', nome: 'B', visto_em: agora - 1e3 }),
+    serie({ id: 'c', nome: 'C', visto_em: agora - 2e3 }),
+  ];
   const h = String(V.htmlContinuar('tv'));
   assert.match(h, /<div class="fila-trilho">/);
   assert.equal((h.match(/cc-hero/g) || []).length > 0, true);
