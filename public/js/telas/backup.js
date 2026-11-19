@@ -7,7 +7,7 @@ import { dlg, ctx, gancho } from './ctx.js';
 
 function abrirBackup() {
   ctx.aberta = null;
-  dlg.innerHTML = `<h2>Backup</h2><p class="sub topo6">Baixe um arquivo com todos os seus dados ou importe um backup (inclusive o da versão antiga). Itens com o mesmo id são substituídos; os demais são mantidos. Para listas do Letterboxd, IMDb ou Trakt, use o botão Importar do rodapé.</p>
+  dlg.innerHTML = `<h2>Backup</h2><p class="sub topo6">Baixe um arquivo com todos os seus dados ou importe um backup (inclusive o da versão antiga). Itens com o mesmo id são substituídos; os demais são mantidos. Para listas do Letterboxd, IMDb ou Trakt, use “Importar lista” em Minha conta.</p>
     <div class="rodape-dlg esq"><button class="btn" data-act="exportar">Baixar backup (.json)</button>
       <label class="btn sec arq">Importar arquivo…<input type="file" id="bkarq" accept=".json,application/json,text/plain" class="sr-input"></label></div>
     <h3 class="topo6">Exportar para outros apps</h3>
@@ -68,7 +68,7 @@ export function importarBackup(texto) {
     return;
   }
   if (!ehBackupDoApp(j)) {
-    aviso('Este arquivo não parece um backup do SóMaisUmEp. Para listas do Letterboxd, IMDb ou Trakt, use o botão Importar do rodapé.');
+    aviso('Este arquivo não parece um backup do SóMaisUmEp. Para listas do Letterboxd, IMDb ou Trakt, use “Importar lista” em Minha conta.');
     return;
   }
   // Cada item passa pelo saneamento (ids, números, capas, textos) antes de entrar no app; o que não passar é descartado.

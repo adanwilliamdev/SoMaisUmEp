@@ -102,11 +102,20 @@ async function sair(todos = false) {
 
 function conta() {
   ctx.aberta = null;
+  // Tudo o que é da pessoa fica aqui, em seções: dados (importar e backup), avisos, acesso e, por último, o que não tem volta.
   dlg.innerHTML = html`<h2>Minha conta</h2><p class="sub topo6"><b>${L.usuario.nome}</b><br>${L.usuario.email}</p>
+    <section class="conta-sec"><h3>Seus dados</h3>
+      <p class="aviso">Traga sua lista de outro serviço ou guarde uma cópia de tudo o que está aqui.</p>
+      <div class="conta-acoes"><button class="btn sec" data-act="importar-abrir">Importar lista</button><button class="btn sec" data-act="backup">Backup e exportação</button></div></section>
     ${blocoPush()}
-    <p class="aviso">“Sair de todos os dispositivos” encerra a sessão deste e de todos os outros aparelhos onde você entrou.</p>
-    <div class="rodape-dlg esq"><button class="btn sec" data-act="conta-senha">Trocar senha</button><button class="btn sec" data-act="conta-email">Trocar e-mail</button><button class="btn sec perigo" data-act="conta-excluir">Excluir conta</button></div>
-    <div class="rodape-dlg"><button class="btn sec perigo" data-act="sair-todos">Sair de todos os dispositivos</button><button class="btn sec" data-act="sair">Sair</button><button class="btn" data-act="fechar">Fechar</button></div>`;
+    <section class="conta-sec"><h3>Acesso</h3>
+      <div class="conta-acoes"><button class="btn sec" data-act="conta-senha">Trocar senha</button><button class="btn sec" data-act="conta-email">Trocar e-mail</button></div>
+      <p class="aviso">“Sair de todos os aparelhos” encerra a sessão deste e de todos os outros onde você entrou.</p>
+      <div class="conta-acoes"><button class="btn sec" data-act="sair">Sair</button><button class="btn sec perigo" data-act="sair-todos">Sair de todos os aparelhos</button></div></section>
+    <section class="conta-sec"><h3>Excluir conta</h3>
+      <p class="aviso">Apaga a conta e tudo o que está nela. Baixe um backup antes, se quiser guardar seus dados.</p>
+      <div class="conta-acoes"><button class="btn sec perigo" data-act="conta-excluir">Excluir minha conta</button></div></section>
+    <div class="rodape-dlg"><button class="btn" data-act="fechar">Fechar</button></div>`;
   if (!dlg.open) dlg.showModal();
   pintaPush();
 }

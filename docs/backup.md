@@ -4,7 +4,7 @@ Há duas camadas de proteção para os dados. Vale conhecer as duas, porque cobr
 
 ## 1. Exportação pelo próprio app (por pessoa)
 
-No botão **Backup** do rodapé, o app baixa um arquivo JSON com todos os seus dados (estante e tops). Ele também exporta em planilha CSV e no formato do Letterboxd. O JSON serve para:
+Em **Minha conta › Backup e exportação**, o app baixa um arquivo JSON com todos os seus dados (estante e tops). Ele também exporta em planilha CSV e no formato do Letterboxd. O JSON serve para:
 
 - guardar uma cópia sua fora do serviço;
 - mover os dados para outra conta ou instalação (o botão de importar valida e saneia tudo antes de usar);

@@ -34,7 +34,7 @@ export function viewTops() {
     </section>`;
   });
   return html`<div class="cabeca"><div><h1>Meu Hall da Fama</h1>
-    <p class="sub">Seus rankings, só com a sua opinião. Arraste a alça ⋮⋮ ou use as setas ▲▼ para mudar a posição e deixe uma nota de rodapé em cada título para lembrar do que ele significou.</p></div></div>
+    <p class="sub">Seus rankings, só com a sua opinião. Arraste para reordenar e deixe uma nota em cada título.</p></div></div>
     <div class="nova-top"><input type="text" id="nt" maxlength="60" placeholder="Nome do ranking (ex.: Melhores séries de 2026)" aria-label="Nome do novo ranking"><button class="btn" data-act="novo-top">Criar</button></div>
     ${L.tops.length ? html`<div class="tops">${cards}</div>` : raw('<div class="vazio">Seu Hall da Fama está vazio. Crie o primeiro ranking acima.</div>')}${dl}`;
 }

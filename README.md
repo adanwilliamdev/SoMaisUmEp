@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Vers%C3%A3o-5.4-yellow?style=flat-square" alt="Versão 5.4">
+  <img src="https://img.shields.io/badge/Vers%C3%A3o-5.5-yellow?style=flat-square" alt="Versão 5.5">
   <img src="https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
   <img src="https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel">
@@ -126,7 +126,7 @@ A aplicação combina um frontend estático instalável como PWA, funções serv
 - **`api/`**: funções serverless responsáveis pela autenticação, sincronização e integração com serviços externos.
 - **`neon/migracoes/`**: migrações SQL numeradas e versionadas.
 - **`scripts/`**: automações para migração, build e geração de chaves VAPID.
-- **`docs/`**: documentação técnica sobre notificações, acessibilidade e cópias de segurança.
+- **`docs/`**: documentação técnica sobre notificações, acessibilidade, cópias de segurança e o design visual ([`docs/design.md`](docs/design.md)).
 - **`public/fonts/`**: fonte Inter (subconjunto latino, licença OFL) hospedada no próprio site.
 - **`test/`**: testes automatizados executados pelo Node.js (unitários, de API com banco simulado e de interface sem navegador).
 - **`e2e/`**: testes de ponta a ponta no Chromium (Playwright), com a API simulada.

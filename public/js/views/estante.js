@@ -29,15 +29,16 @@ const chipLanc = s => {
   return l ? html`<span class="lanc${l.dias <= 1 ? ' perto' : ''}">${l.texto}</span>` : '';
 };
 
-export function cardHtml(s, n = 0) {
+export function cardHtml(s, n = 0, agrupado = false) {
   const mv = tp(s) === 'movie',
     p = pct(s),
     prx = prox(s),
     est = estado(s);
   const sit = situacao(s);
-  // Selo de estado em todo card: assim a estante inteira se lê sem abrir nada.
-  const chip =
-    est === 'fim'
+  // Selo de estado só na lista plana (busca ou filtro): dentro de um grupo, o título da seção já diz o estado.
+  const chip = agrupado
+    ? ''
+    : est === 'fim'
       ? raw('<span class="sel ok">Concluído</span>')
       : sit
         ? html`<span class="sel pausa">${sit === 'pausada' ? 'Pausada' : 'Abandonada'}</span>`
@@ -68,7 +69,7 @@ export function cardContinuar(s, n = 0) {
     return html`<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
       <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}</button>
       <div class="cc-info"><h3>${s.nome}</h3>
-        <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>${chipLanc(s)}
+        <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
         <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div></div>
       ${botao('', html`${ICO_MAIS}<b>1</b>`)}
     </article>`;
@@ -80,7 +81,7 @@ export function cardContinuar(s, n = 0) {
       <div class="cc-info"><h3>${s.nome}</h3>
         <p class="cc-ep">${prx ? `T${prx[0]} E${prx[1]}` : ''}</p>
         <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>
-        <small>Próximo episódio: ${vis(s)} de ${tot(s)} vistos</small>${chipLanc(s)}</div>
+        <small>${vis(s)} de ${tot(s)} episódios vistos</small></div>
       ${botao('mais-grande', raw('<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>'))}
     </article>`;
 }
@@ -163,7 +164,7 @@ function htmlGrupos(lista, tipo) {
     if (!g.length) return '';
     const aberto = !UI.fechados.has(k);
     return html`<details class="grupo" data-grupo="${k}"${aberto ? ' open' : ''}><summary><h2 class="sec-tit">${rot} <span class="grupo-n">${g.length}</span></h2></summary>
-        <div class="grade">${g.map(s => cardHtml(s, n++))}</div></details>`;
+        <div class="grade">${g.map(s => cardHtml(s, n++, true))}</div></details>`;
   })}`;
 }
 
@@ -218,8 +219,8 @@ export function viewLista(tipo) {
       <p class="sub">${mv ? 'Registre o que você já viu e o que quer ver.' : 'Acompanhe cada temporada e episódio.'}</p></div>
       <button class="btn nova" data-act="nova" data-tipo="${tipo}"><span aria-hidden="true">+</span><span class="rot">${mv ? 'Novo filme' : 'Nova série'}</span></button></div>
     <div class="stats" id="stats">${htmlStats(tipo)}</div>
-    <div id="proximos">${htmlProximos(tipo)}</div>
     <div id="continuar">${htmlContinuar(tipo)}</div>
+    <div id="proximos">${htmlProximos(tipo)}</div>
     <div class="ferramentas">
       <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
       <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${UI.busca}" autocomplete="off" enterkeyhint="search"></label>

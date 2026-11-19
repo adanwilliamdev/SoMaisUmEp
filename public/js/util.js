@@ -15,7 +15,7 @@ export const html = (partes, ...valores) => new Html(partes.reduce((s, p, i) => 
 
 export const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
 
-// Texto de status no rodapé
+// Texto de status (canto superior, ao lado do tema e da conta)
 export function status(t, erro) {
   const el = $('#status');
   if (el) {
