@@ -25,17 +25,8 @@ function animarCard(card, de) {
     barra = card.querySelector('.linha i'),
     ate = barra && barra.dataset.w;
   if (barra && barra.animate && de != null && de !== ate) barra.animate([{ width: de + '%' }, { width: ate + '%' }], { duration: 520, easing: ease });
-  const capa = card.querySelector('.capa'),
-    ep = card.querySelector('.cc-ep');
+  const capa = card.querySelector('.capa');
   if (capa && capa.animate) capa.animate([{ transform: 'scale(.96)' }, { transform: 'scale(1)' }], { duration: 300, easing: ease });
-  if (ep && ep.animate)
-    ep.animate(
-      [
-        { opacity: 0, transform: 'translateY(8px)' },
-        { opacity: 1, transform: 'none' },
-      ],
-      { duration: 340, easing: ease },
-    );
 }
 
 // Troca só o(s) card(s) do título alterado (e os números do topo). Se o estado mudou, o filtro pode mudar: refaz a lista.
@@ -85,6 +76,13 @@ function mexer(s, fn, rotuloDesfazer, opcoes) {
 /* ---------- eventos ---------- */
 // Cada ação recebe { b, id, s, t, tid, i }: botão clicado, id do card, título, top, id do top e posição na lista.
 export const acoes = {
+  // Setas dos carrosséis: rola quase uma "página" para o lado (o resto é a próxima capa espiando, que avisa que há mais).
+  rolar: ({ b }) => {
+    const t = b.closest('.carrossel')?.querySelector(':scope > .fila-trilho, :scope > .prox-lista');
+    if (!t) return;
+    const suave = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    t.scrollBy({ left: +b.dataset.dir * Math.round(t.clientWidth * 0.85), behavior: suave ? 'smooth' : 'auto' });
+  },
   filtro: ({ b }) => {
     V.UI.filtro = b.dataset.k;
     renderLista(true);

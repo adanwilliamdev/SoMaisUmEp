@@ -1,5 +1,5 @@
 // Estante de séries e filmes: cards, "Continuar assistindo", próximos lançamentos, filtros e lista.
-import { html, raw, hue } from '../util.js';
+import { html, raw } from '../util.js';
 import { L } from '../loja.js';
 import {
   tp,
@@ -18,7 +18,7 @@ import {
   lancamento,
   proximosLancamentos,
 } from '../regras.js';
-import { UI, capa, ICO_MAIS, ICO_MENOS, ICO_OK } from './comum.js';
+import { UI, capa, carrossel, ICO_MAIS, ICO_MENOS, ICO_OK } from './comum.js';
 
 // Segmentos da faixa de episódios: um por episódio, no máximo 40.
 const segs = s => Math.max(1, Math.min(tot(s), 40));
@@ -29,9 +29,14 @@ const chipLanc = s => {
   return l ? html`<span class="lanc${l.dias <= 1 ? ' perto' : ''}">${l.texto}</span>` : '';
 };
 
+// Fio de progresso colado na base da capa (só séries). O leitor de tela ouve o andamento no texto abaixo do título.
+const fio = s => {
+  const p = pct(s);
+  return html`<span class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></span>`;
+};
+
 export function cardHtml(s, n = 0, agrupado = false) {
   const mv = tp(s) === 'movie',
-    p = pct(s),
     prx = prox(s),
     est = estado(s);
   const sit = situacao(s);
@@ -51,37 +56,21 @@ export function cardHtml(s, n = 0, agrupado = false) {
   const prog = !mv && est === 'assistindo' ? html`<span class="meta-n">${vis(s)}/${tot(s)}<span class="sr"> episódios vistos</span></span>` : '';
   return html`<article class="card" data-id="${s.id}" data-est="${estadoLista(s)}" data-i="${Math.min(n, 14)}">
       <div class="poster">
-        <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? html`<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}</button>
+        <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}${chip}${s.nota_pessoal != null ? html`<span class="sel dir" title="Minha nota">★ ${s.nota_pessoal}</span>` : ''}${mv ? '' : fio(s)}</button>
         ${menos}
         ${prx ? html`<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + s.nome + ' como visto' : '+1 episódio de ' + s.nome}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : html`${ICO_MAIS}<b>1</b>`}</button>` : ''}
       </div>
-      ${mv ? '' : html`<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>`}
       <h3>${s.nome}</h3><small class="meta"><span class="meta-t">${rotulo(s)}${mv && s.ano ? ' · ' + s.ano : ''}</span> ${prog}</small>${chipLanc(s)}
     </article>`;
 }
 
-// Carrossel "Continuar assistindo": o primeiro título é o destaque (o que você viu por último); os outros viram capas menores ao lado.
+// "Continuar assistindo": todos os títulos viram o mesmo cartão (capa 2:3, fio de progresso na base e +1 redondo), na ordem do último visto.
 export function cardContinuar(s, n = 0) {
-  const p = pct(s),
-    prx = prox(s);
-  const botao = (cls, miolo) =>
-    prx ? html`<button class="mais ${cls}" data-act="mais" aria-label="+1 episódio de ${s.nome}" title="+1 episódio">${miolo}</button>` : '';
-  if (n > 0) {
-    return html`<article class="card cc cc-peq" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
-      <div class="poster"><button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}</button>${botao('', html`${ICO_MAIS}<b>1</b>`)}</div>
-      <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>
-      <h3>${s.nome}</h3><small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
-    </article>`;
-  }
-  const urlFundo = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
-  return html`<article class="card cc cc-hero" data-id="${s.id}" data-est="${estado(s)}" data-i="0">
-      <div class="cc-fundo" aria-hidden="true" ${urlFundo ? html`data-cover="${s.capa}"` : html`data-h="${hue(s.nome)}"`}></div>
-      <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa, true)}</button>
-      <div class="cc-info"><h3>${s.nome}</h3>
-        <p class="cc-ep">${prx ? `T${prx[0]} E${prx[1]}` : ''}</p>
-        <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>
-        <small>${vis(s)} de ${tot(s)} episódios vistos</small></div>
-      ${botao('mais-grande', raw('<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>'))}
+  const prx = prox(s);
+  const mais = prx ? html`<button class="mais" data-act="mais" aria-label="+1 episódio de ${s.nome}" title="+1 episódio">${ICO_MAIS}<b>1</b></button>` : '';
+  return html`<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
+      <div class="poster"><button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa, n === 0)}${fio(s)}</button>${mais}</div>
+      <h3>${s.nome}</h3><small class="meta"><span class="meta-t">${prx ? `T${prx[0]} · E${prx[1]}` : ''}</span><span class="meta-n">${vis(s)}/${tot(s)}<span class="sr"> episódios vistos</span></span></small>
     </article>`;
 }
 
@@ -119,12 +108,13 @@ export function htmlProximos(tipo) {
   const lista = proximosLancamentos(L.series, { tipo });
   if (!lista.length) return '';
   const mv = tipo === 'movie';
-  return html`<section class="prox" aria-labelledby="t-prox"><h2 class="sec-tit" id="t-prox">${mv ? 'Próximas estreias' : 'Próximos episódios'}</h2>
-    <ul class="prox-lista">${lista.map(
-      ({ s, l }) => html`<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${s.id}">
+  const trilho = html`<ul class="prox-lista">${lista.map(
+    ({ s, l }) => html`<li class="prox-i${l.hoje ? ' hoje' : ''}" data-id="${s.id}">
       <button class="prox-b" data-act="abrir" aria-label="Abrir ${s.nome}"><span class="prox-data" aria-hidden="true"><b>${l.dia}</b>${l.mes}</span>
       <span class="prox-txt"><b>${s.nome}</b><small>${l.t && l.e ? `T${l.t} · E${l.e} · ` : ''}${l.quando}</small></span></button></li>`,
-    )}</ul></section>`;
+  )}</ul>`;
+  return html`<section class="prox" aria-labelledby="t-prox"><h2 class="sec-tit" id="t-prox">${mv ? 'Próximas estreias' : 'Próximos episódios'}</h2>
+    ${carrossel('prox-car', trilho)}</section>`;
 }
 
 export function htmlContinuar(tipo) {
@@ -132,7 +122,7 @@ export function htmlContinuar(tipo) {
   const c = continuar(L.series);
   if (!c.length) return '';
   return html`<section class="fila" aria-labelledby="t-fila"><h2 class="sec-tit" id="t-fila">Continuar assistindo</h2>
-    <div class="fila-trilho${c.length > 1 ? '' : ' so-um'}">${c.map((s, n) => cardContinuar(s, n))}</div></section>`;
+    ${carrossel('fila-car', html`<div class="fila-trilho${c.length > 1 ? '' : ' so-um'}">${c.map((s, n) => cardContinuar(s, n))}</div>`)}</section>`;
 }
 
 const VAZIO_ICO = raw(

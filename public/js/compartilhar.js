@@ -5,8 +5,7 @@ import { hue } from './util.js';
 
 const W = 1080,
   H = 1350;
-const COR = { fundo: '#f2ecdf', ponto: 'rgba(28,26,22,.16)', card: '#fffbf1', tinta: '#1c1a16', mut: '#5a5343', acc: '#c7321a', on: '#ffffff' };
-const SERIFA = '"Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif';
+const COR = { fundo: '#0b0c0e', linha: 'rgba(255,255,255,.08)', card: '#14161a', tx: '#f8fafc', mut: '#94a3b8', acc: '#ff7a59', on: '#2a0a02' };
 
 // Só imagens que a página pode usar (o CSP também barra o resto) e que dá para desenhar no canvas.
 const capaOk = c =>
@@ -47,38 +46,25 @@ function desenhar(canvas, top, imgs) {
   canvas.height = H;
   const ctx = canvas.getContext('2d'),
     fonte = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif';
-  // Papel creme com grade de pontos, moldura de tinta e costura pontilhada: o mesmo "ingresso" do app.
+  // Fundo liso e profundo, como o app: nenhuma textura, só uma moldura quase invisível.
   ctx.fillStyle = COR.fundo;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = COR.ponto;
-  for (let x = 24; x < W; x += 24) for (let y = 24; y < H; y += 24) ctx.fillRect(x, y, 2, 2);
-  ctx.strokeStyle = COR.tinta;
-  ctx.lineWidth = 6;
-  rr(ctx, 20, 20, W - 40, H - 40, 28);
+  ctx.strokeStyle = COR.linha;
+  ctx.lineWidth = 2;
+  rr(ctx, 24, 24, W - 48, H - 48, 28);
   ctx.stroke();
-  ctx.setLineDash([10, 12]);
-  ctx.lineWidth = 3;
-  rr(ctx, 40, 40, W - 80, H - 80, 20);
-  ctx.stroke();
-  ctx.setLineDash([]);
 
   ctx.textBaseline = 'alphabetic';
   const etiqueta = 'TOP ' + Math.max(top.itens.length, 1);
-  ctx.font = `800 30px ${fonte}`;
+  ctx.font = `700 30px ${fonte}`;
   const ew = Math.ceil(ctx.measureText(etiqueta).width) + 40;
-  ctx.fillStyle = COR.tinta;
-  rr(ctx, 76, 88, ew, 52, 8);
-  ctx.fill();
   ctx.fillStyle = COR.acc;
-  rr(ctx, 72, 84, ew, 52, 8);
+  rr(ctx, 72, 84, ew, 52, 12);
   ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = COR.tinta;
-  ctx.stroke();
   ctx.fillStyle = COR.on;
   ctx.fillText(etiqueta, 92, 122);
-  ctx.fillStyle = COR.tinta;
-  ctx.font = `800 64px ${SERIFA}`;
+  ctx.fillStyle = COR.tx;
+  ctx.font = `700 64px ${fonte}`;
   ctx.fillText(recorta(ctx, top.nome, W - 144), 72, 212);
 
   const itens = top.itens.slice(0, 10),
@@ -88,17 +74,14 @@ function desenhar(canvas, top, imgs) {
     const y = y0 + i * passo,
       ph = passo - 16,
       pw = Math.round(((ph - 16) * 2) / 3);
-    ctx.fillStyle = COR.tinta;
-    rr(ctx, 64 + 6, y + 6, W - 128, ph, 14);
-    ctx.fill();
     ctx.fillStyle = COR.card;
-    rr(ctx, 64, y, W - 128, ph, 14);
+    rr(ctx, 64, y, W - 128, ph, 16);
     ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = COR.tinta;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = COR.linha;
     ctx.stroke();
     ctx.fillStyle = i < 3 ? COR.acc : COR.mut;
-    ctx.font = `800 ${Math.round(ph * 0.5)}px ${fonte}`;
+    ctx.font = `700 ${Math.round(ph * 0.5)}px ${fonte}`;
     ctx.textAlign = 'center';
     ctx.fillText(String(i + 1), 64 + 52, y + ph * 0.68);
     ctx.textAlign = 'left';
@@ -112,26 +95,22 @@ function desenhar(canvas, top, imgs) {
       ctx.fillStyle = `hsl(${hue(it.t)} 34% 30%)`;
       ctx.fillRect(px, y + 8, pw, ph - 16);
       ctx.fillStyle = 'rgba(255,255,255,.92)';
-      ctx.font = `800 ${Math.round(pw * 0.5)}px ${SERIFA}`;
+      ctx.font = `700 ${Math.round(pw * 0.5)}px ${fonte}`;
       ctx.textAlign = 'center';
       ctx.fillText((it.t.trim()[0] || '?').toUpperCase(), px + pw / 2, y + ph / 2 + pw * 0.18);
       ctx.textAlign = 'left';
     }
     ctx.restore();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = COR.tinta;
-    rr(ctx, px, y + 8, pw, ph - 16, 6);
-    ctx.stroke();
-    ctx.fillStyle = COR.tinta;
-    ctx.font = `700 ${Math.round(ph * 0.36)}px ${fonte}`;
+    ctx.fillStyle = COR.tx;
+    ctx.font = `600 ${Math.round(ph * 0.36)}px ${fonte}`;
     ctx.fillText(recorta(ctx, it.t, W - 128 - 104 - pw - 56), px + pw + 24, y + ph * 0.62);
   });
 
-  ctx.fillStyle = COR.tinta;
-  ctx.font = `800 36px ${SERIFA}`;
+  ctx.fillStyle = COR.tx;
+  ctx.font = `700 36px ${fonte}`;
   ctx.fillText('SóMaisUmEp', 72, H - 72);
   ctx.fillStyle = COR.mut;
-  ctx.font = `600 24px ${fonte}`;
+  ctx.font = `500 24px ${fonte}`;
   ctx.textAlign = 'right';
   ctx.fillText('só mais um ep', W - 72, H - 72);
   ctx.textAlign = 'left';

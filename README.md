@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Vers%C3%A3o-6.0-c7321a?style=flat-square" alt="Versão 6.0">
+  <img src="https://img.shields.io/badge/Vers%C3%A3o-6.0-c2410c?style=flat-square" alt="Versão 6.0">
   <img src="https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
   <img src="https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel">
@@ -209,7 +209,7 @@ A importação utiliza a API do TMDb para localizar os títulos. Duplicados são
 
 - Instalação na tela inicial do celular.
 - Interface responsiva para computadores, tablets e celulares.
-- Tema claro (papel creme) e escuro (carvão quente), no visual "Bilheteria".
+- Tema escuro (preto azulado, coral como acento) e claro, no visual "Cinema escuro".
 - Funcionamento offline com os últimos dados sincronizados.
 - Atualização automática dos recursos em cache.
 - Barra superior com abas no desktop e dock flutuante no celular.

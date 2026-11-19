@@ -51,7 +51,8 @@ test('foco e bordas: campos não perdem o contorno no alto contraste; controles 
   assert.match(css, /input:focus,textarea:focus,select:focus\{outline:2px solid transparent/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /\.btn\.sec\{[^}]*border-color:var\(--ctl\)/);
-  assert.match(css, /\.chip\{[^}]*border:1\.5px solid var\(--ctl\)/);
+  assert.match(css, /input\[type=text\][^{]*\{[^}]*border:1px solid var\(--ctl\)/, 'campos de formulário usam --ctl');
+  assert.match(css, /\.chip\{[^}]*border:1px solid var\(--line\)/, 'chips têm texto visível: a borda é só decorativa');
   assert.match(css, /::placeholder\{color:var\(--mut\);opacity:1\}/);
   assert.doesNotMatch(css, /\.n\{[^}]*opacity/);
   assert.match(css, /prefers-reduced-motion/);

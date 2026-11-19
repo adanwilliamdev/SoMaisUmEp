@@ -56,11 +56,39 @@ export const aba = () => (['#tops', '#filmes', '#stats', '#descobrir'].includes(
 export const tipoAtual = () => (aba() === '#filmes' ? 'movie' : 'tv');
 export const naLista = () => aba() === '#series' || aba() === '#filmes';
 
-// Imagens entram com fade quando terminam de carregar.
+/* ---------- carrosséis ---------- */
+// Cada faixa rolável ("Continuar assistindo", "Próximos episódios") mostra a seta e o esmaecimento só do lado em que ainda há itens.
+// O CSS lê as classes .m-esq / .m-dir; o atributo hidden esconde a seta que não leva a lugar nenhum.
+const FOLGA = 4;
+function marcaCarrossel(c) {
+  const t = c.querySelector(':scope > .fila-trilho, :scope > .prox-lista');
+  if (!t) return;
+  const esq = t.scrollLeft > FOLGA,
+    dir = t.scrollLeft + t.clientWidth < t.scrollWidth - FOLGA;
+  c.classList.toggle('m-esq', esq);
+  c.classList.toggle('m-dir', dir);
+  const [be, bd] = [c.querySelector(':scope > .seta.esq'), c.querySelector(':scope > .seta.dir')];
+  if (be) be.hidden = !esq;
+  if (bd) bd.hidden = !dir;
+}
+export const marcaCarrosseis = () => document.querySelectorAll('.carrossel').forEach(marcaCarrossel);
+// "scroll" não borbulha: a captura pega a rolagem de qualquer faixa com um único ouvinte.
+document.addEventListener(
+  'scroll',
+  e => {
+    const c = e.target.closest && e.target.closest('.carrossel');
+    if (c) marcaCarrossel(c);
+  },
+  { capture: true, passive: true },
+);
+addEventListener('resize', marcaCarrosseis);
+
+// Depois de cada tela desenhada: imagens já carregadas entram com fade e os carrosséis acertam as setas.
 export function revela() {
   document.querySelectorAll('img.fade:not(.ok)').forEach(i => {
     if (i.complete && i.naturalWidth) i.classList.add('ok');
   });
+  marcaCarrosseis();
 }
 
 // Teclado virtual: a gaveta acompanha a área realmente visível e o campo em foco rola para a vista,

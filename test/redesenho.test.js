@@ -1,4 +1,4 @@
-// Redesenho v5.6: frase curta do "por quê", carrossel de "Continuar assistindo", progresso concluído, status em ícone e regras de layout.
+// Redesenho v5.6 (atualizado para o visual "Cinema escuro"): frase curta do "por quê", carrossel de "Continuar assistindo", progresso concluído, status em ícone e regras de layout.
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.document = { querySelector: () => null, querySelectorAll: () => [] };
 
@@ -44,7 +44,7 @@ test('Descobrir: o motivo vira uma frase curta com botão "por que estou vendo i
   assert.match(h, /<details class="dna-base"><summary>Baseado em 1 título que você curtiu<\/summary>/);
 });
 
-test('Continuar assistindo: carrossel com o destaque primeiro e capas menores depois; sozinho, só o destaque', async () => {
+test('Continuar assistindo: todos os cartões iguais (mesma capa 2:3, mesmo +1 redondo), com setas flutuantes e sem destaque gigante', async () => {
   const V = await import('../public/js/views.js');
   const { L } = await import('../public/js/loja.js');
   const agora = Date.now();
@@ -54,13 +54,39 @@ test('Continuar assistindo: carrossel com o destaque primeiro e capas menores de
     serie({ id: 'c', nome: 'C', visto_em: agora - 2e3 }),
   ];
   const h = String(V.htmlContinuar('tv'));
+  assert.match(h, /<div class="carrossel fila-car">/);
   assert.match(h, /<div class="fila-trilho">/);
-  assert.equal((h.match(/cc-hero/g) || []).length > 0, true);
-  assert.equal((h.match(/class="card cc cc-peq"/g) || []).length, 2);
-  assert.ok(h.indexOf('cc-hero') < h.indexOf('cc-peq'), 'o destaque vem antes');
-  assert.doesNotMatch(h, /fila-grade|fila-resto/);
+  assert.equal((h.match(/class="card cc"/g) || []).length, 3, 'três cartões, todos do mesmo tipo');
+  assert.doesNotMatch(h, /cc-hero|cc-peq|mais-grande|Só mais um ep/, 'sem o card horizontal gigante nem o botão laranja de largura total');
+  assert.equal((h.match(/class="mais"/g) || []).length, 3, 'um +1 redondo por cartão');
+  assert.equal((h.match(/class="seta (esq|dir)"/g) || []).length, 2, 'setas nas duas pontas');
+  assert.match(h, /<button class="capa"[^>]*>[\s\S]*?<span class="linha"[\s\S]*?<\/button>/, 'o fio de progresso fica dentro da capa, na base da imagem');
+  assert.match(h, /T1 · E4/, 'o próximo episódio aparece embaixo do título');
   L.series = [serie({ id: 'a', nome: 'A', visto_em: agora })];
   assert.match(String(V.htmlContinuar('tv')), /class="fila-trilho so-um"/);
+});
+
+test('Próximos episódios: faixa com setas, cartão de superfície e data em coral suave (a de hoje em coral cheio)', async () => {
+  const V = await import('../public/js/views.js');
+  const { L } = await import('../public/js/loja.js');
+  const iso = n => {
+    const d = new Date(Date.now() + n * 864e5);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  L.series = [
+    serie({ id: 'p1', nome: 'Hoje', proximo: { d: iso(0), t: 2, e: 3 } }),
+    serie({ id: 'p2', nome: 'Em breve', proximo: { d: iso(3), t: 1, e: 4 } }),
+  ];
+  const h = String(V.htmlProximos('tv'));
+  assert.match(h, /<div class="carrossel prox-car">/);
+  assert.match(h, /<ul class="prox-lista">/);
+  assert.equal((h.match(/class="prox-i/g) || []).length, 2);
+  assert.match(h, /class="prox-i hoje"/);
+  assert.equal((h.match(/class="seta (esq|dir)"/g) || []).length, 2);
+  assert.match(css, /\.prox-data\{[^}]*background:var\(--acc-suave\);color:var\(--acc\)/);
+  assert.match(css, /\.prox-i\.hoje \.prox-data\{background:var\(--acc\)/);
+  assert.match(css, /\.prox-b\{[^}]*border:1px solid var\(--line\)[^}]*background:var\(--card\)/);
+  assert.doesNotMatch(css, /\.prox-b\{[^}]*2px solid/, 'sem bordas laranjas ou grossas por bloco');
 });
 
 test('progresso concluído fica verde (classe fim) e o em andamento não', async () => {
@@ -88,41 +114,73 @@ test('status vira ícone: o estado vai em data-estado e o texto continua no tool
   globalThis.document = { querySelector: () => null, querySelectorAll: () => [] };
 });
 
-test('layout "Bilheteria": barra superior com abas ao centro no computador, dock flutuante no celular, filtros colados e cartões de estatística em cores sólidas', () => {
+test('layout: cabeçalho de vidro fixo com abas de texto, container centralizado, grade fluida, filtros de mesma altura e estatísticas em linha', () => {
   assert.match(css, /--topo:68px/);
+  assert.match(css, /\.rail\{position:sticky;top:0;[^}]*backdrop-filter:blur\(12px\)/, 'cabeçalho fixo com vidro fosco');
   assert.match(css, /@media \(min-width:900px\)\{\s*body:not\(\.deslogado\) \.rail\{display:grid;grid-template-columns:1fr auto 1fr/);
-  assert.match(css, /body:not\(\.deslogado\) \.menu\{position:static/);
+  assert.match(css, /body:not\(\.deslogado\) \.menu\{position:static[^}]*background:none;border:0/, 'sem a caixa em volta do menu central');
+  assert.match(css, /body:not\(\.deslogado\) \.menu \.ico\{display:none\}/, 'abas só com texto no computador');
+  assert.match(css, /\.menu a\[aria-current=page\]::after\{[^}]*background:var\(--acc\)/, 'aba ativa com marca coral');
   assert.match(css, /\.menu\{position:fixed;left:12px;right:12px;bottom:calc\(12px/);
+  assert.match(css, /--max:1280px;--gut:24px/);
+  assert.match(css, /@media \(min-width:900px\)\{:root\{--gut:48px\}\}/);
+  assert.match(css, /\.palco\{[^}]*max-width:var\(--max\);margin:0 auto;padding:0 var\(--gut\)/);
+  assert.match(css, /@media \(min-width:640px\)\{\.grade\{grid-template-columns:repeat\(auto-fill,minmax\(180px,1fr\)\);gap:24px\}\}/);
   assert.match(css, /\.ferramentas:not\(\.centro\) \.barra-acoes\{position:sticky;top:calc\(var\(--topo\)/);
-  assert.match(css, /\.w-card\{[^}]*background:var\(--bloco\);border:2px solid var\(--bloco-b\)/);
-  assert.match(css, /\.w-tempo\{[^}]*background:var\(--acc\)/);
+  assert.match(css, /\.ferramentas \.chip,\.ferramentas input\[type=search\],\.ferramentas select\{height:var\(--h-ctl\)/, 'filtros, busca e ordenação com a mesma altura');
+  assert.match(css, /--h-ctl:40px/);
+  assert.match(css, /\.chip\[aria-pressed=true\]\{background:var\(--tx\)[^}]*color:var\(--bg\)/, 'filtro ativo: fundo claro e texto escuro');
+  assert.match(css, /\.stats:not\(\.numeros\) \.stat\+\.stat::before\{content:"•"/, 'estatísticas em linha, separadas por ponto médio');
+  assert.doesNotMatch(css, /\.stat\{[^}]*border-radius:var\(--pilula\)/, 'sem pílulas com borda em volta dos números');
+  assert.match(css, /\.w-card\{[^}]*background:var\(--card\);border:1px solid var\(--line\)/);
+  assert.match(css, /\.w-tempo b\{[^}]*color:var\(--acc\)/, 'o número grande leva o coral no texto, não num bloco sólido');
   assert.match(css, /@media \(hover:none\)\{\.grade \.menos\{display:none\}\}/);
   assert.doesNotMatch(css, /--lateral/, 'a barra lateral não existe mais');
 });
 
-test('paleta: papel creme de dia, carvão quente à noite, vermelhão como única cor de ação, verde no concluído e ouro nas notas altas', () => {
-  const claro = /:root\{[^}]*\}/.exec(css)[0],
-    escuro = /:root\[data-theme="dark"\]\{[^}]*\}/.exec(css)[0];
-  assert.match(claro, /--bg:#f2ecdf/);
-  assert.match(claro, /--acc:#c7321a/);
-  assert.match(escuro, /--bg:#13100c/);
-  assert.match(escuro, /--acc:#ff7a55/);
-  assert.match(escuro, /--ok:#3ddc97/);
-  assert.match(escuro, /--mut:#b5ab93/);
-  assert.match(css, /\.sel\.dir\{[^}]*color:#ffd37a/);
-  assert.doesNotMatch(css, /#9566fa|#6d3fe0|#121214|#f5f5f7/, 'nada da paleta violeta antiga');
-  for (const f of ['public/index.html', 'public/manifest.json', 'api/_pagina.js']) assert.match(ler(f), /#13100c/, f);
-  assert.match(ler('public/js/telas/tema.js'), /#13100c' : '#f2ecdf'/);
+test('cartões: progresso de 3px na base da capa e +1 redondo de vidro que vira coral ao passar o mouse', () => {
+  assert.match(css, /\.linha\{position:absolute;[^}]*bottom:0;height:3px/);
+  assert.match(css, /\.mais\{[^}]*width:36px;height:36px;[^}]*border-radius:50%;[\s\S]*?backdrop-filter:blur\(8px\)/);
+  assert.match(css, /\.mais:hover,\.mais:focus-visible\{background:var\(--acc\)/);
+  assert.match(css, /\.carrossel\.m-dir>\.fila-trilho[^{]*\{[^}]*mask-image:linear-gradient\(to right/, 'véu de esmaecimento na borda direita');
+  assert.match(css, /\.seta\{[^}]*opacity:0/);
+  assert.match(css, /\.carrossel:hover>\.seta/, 'as setas aparecem ao passar o mouse');
+  assert.match(css, /\.card\.cc\{flex:none;width:var\(--cw\)/, 'todos os itens da faixa têm a mesma largura');
 });
 
-test('identidade: títulos em serifa, sombras duras de tinta e a imagem de compartilhar usa a mesma paleta do app', () => {
-  assert.match(css, /--serifa:/);
-  assert.match(css, /h1,h2\{font-family:var\(--serifa\)\}/);
-  assert.match(css, /--duro:4px 4px 0 var\(--sd\)/);
+test('paleta: fundo liso #0b0c0e, superfície #14161a, bordas de 8%, coral #ff7a59 só como acento; textos em branco gelo e cinza ardósia', () => {
+  const claro = /:root\{[^}]*\}/.exec(css)[0],
+    escuro = /:root\[data-theme="dark"\]\{[^}]*\}/.exec(css)[0];
+  assert.match(escuro, /--bg:#0b0c0e/);
+  assert.match(escuro, /--card:#14161a/);
+  assert.match(escuro, /--tx:#f8fafc/);
+  assert.match(escuro, /--mut:#94a3b8/);
+  assert.match(escuro, /--acc:#ff7a59/);
+  assert.match(escuro, /--acc-suave:rgba\(255,122,89,\.15\)/);
+  assert.match(escuro, /--line:rgba\(255,255,255,\.08\)/);
+  assert.match(escuro, /--vidro:rgba\(20,22,26,\.7\)/);
+  assert.match(escuro, /--ok:#3ddc97/);
+  assert.match(claro, /--bg:#f6f7f9/);
+  assert.match(claro, /--acc:#c2410c/);
+  assert.match(css, /\.sel\.dir\{[^}]*color:#ffd37a/);
+  assert.doesNotMatch(css, /radial-gradient\(var\(--line\)/, 'sem a textura de pontos no fundo');
+  assert.doesNotMatch(css, /body\{[^}]*background-image/, 'fundo liso');
+  assert.doesNotMatch(css, /#9566fa|#6d3fe0|#121214|#f5f5f7|#13100c|#f2ecdf/, 'nada das paletas antigas');
+  for (const f of ['public/index.html', 'public/manifest.json', 'api/_pagina.js']) assert.match(ler(f), /#0b0c0e/, f);
+  assert.match(ler('public/js/telas/tema.js'), /#0b0c0e' : '#f6f7f9'/);
+});
+
+test('identidade: tudo em Inter (títulos 600/700), sem sombras duras nem bordas grossas, e a imagem de compartilhar usa a mesma paleta do app', () => {
+  assert.doesNotMatch(css, /--serifa|Iowan|Palatino|Georgia/, 'sem serifa');
+  assert.match(css, /h1,h2,h3\{color:var\(--tx\);font-weight:600/);
+  assert.match(css, /h1\{[^}]*font-weight:700/);
+  assert.doesNotMatch(css, /\b[234]px solid var\(--tx\)/, 'sem bordas grossas de tinta');
+  assert.doesNotMatch(css, /box-shadow:[^;}]*\b\d+px \d+px 0 /, 'sem sombras duras deslocadas');
+  assert.doesNotMatch(css, /\b[2-9]px dashed/, 'sem divisórias tracejadas grossas (só o estado vazio leva 1px tracejado)');
   const img = ler('public/js/compartilhar.js');
-  assert.match(img, /fundo: '#f2ecdf'/);
-  assert.match(img, /acc: '#c7321a'/);
-  assert.doesNotMatch(img, /#6ea8fe|#0c0e13/, 'sem o azul antigo na imagem');
+  assert.match(img, /fundo: '#0b0c0e'/);
+  assert.match(img, /acc: '#ff7a59'/);
+  assert.doesNotMatch(img, /#6ea8fe|#0c0e13|#f2ecdf|#c7321a|SERIFA/, 'sem as cores nem a serifa antigas na imagem');
 });
 
 test('gesto de deslizar: só toque, só na grade, e usa os botões de sempre (+1 e abrir)', () => {

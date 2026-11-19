@@ -21,3 +21,12 @@ export function esqueleto(hash) {
 export const ICO_MAIS = raw('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>');
 export const ICO_MENOS = raw('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>');
 export const ICO_OK = raw('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>');
+
+// Carrossel: faixa que rola na horizontal, com setas flutuantes (escondidas até haver para onde rolar; veja marcaCarrosseis em telas/ctx.js).
+const ICO_ESQ = raw('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>');
+const ICO_DIR = raw('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>');
+export const carrossel = (classe, miolo) => html`<div class="carrossel ${classe}">
+    <button type="button" class="seta esq" data-act="rolar" data-dir="-1" aria-label="Rolar para a esquerda" hidden>${ICO_ESQ}</button>
+    ${miolo}
+    <button type="button" class="seta dir" data-act="rolar" data-dir="1" aria-label="Rolar para a direita" hidden>${ICO_DIR}</button>
+  </div>`;
