@@ -56,7 +56,7 @@ export function cardHtml(s, n = 0, agrupado = false) {
         ${prx ? html`<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + s.nome + ' como visto' : '+1 episódio de ' + s.nome}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : html`${ICO_MAIS}<b>1</b>`}</button>` : ''}
       </div>
       ${mv ? '' : html`<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>`}
-      <h3>${s.nome}</h3><small class="meta"><span class="meta-t">${rotulo(s)}${mv && s.ano ? ' · ' + s.ano : ''}</span>${prog}</small>${chipLanc(s)}
+      <h3>${s.nome}</h3><small class="meta"><span class="meta-t">${rotulo(s)}${mv && s.ano ? ' · ' + s.ano : ''}</span> ${prog}</small>${chipLanc(s)}
     </article>`;
 }
 

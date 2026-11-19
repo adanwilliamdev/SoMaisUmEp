@@ -72,7 +72,7 @@ test('fluxo: entrar, criar série, marcar episódio, recarregar e ver o progress
 
     // +1 episódio
     await page.click(`${CARD} .mais`);
-    await page.locator(`${CARD} small`, { hasText: '1/3 eps' }).waitFor();
+    await page.locator(`${CARD} small`, { hasText: '1/3 episódios vistos' }).waitFor();
     await page.waitForFunction(() => /Salvo/.test(document.querySelector('#status').textContent));
     const [linha] = [...srv.estado.series.values()];
     assert.deepEqual(linha.vis, [1], 'o servidor guardou o episódio');
@@ -83,7 +83,7 @@ test('fluxo: entrar, criar série, marcar episódio, recarregar e ver o progress
 
     // recarregar: tudo continua lá
     await page.reload();
-    await page.locator(`${CARD} small`, { hasText: '1/3 eps' }).waitFor();
+    await page.locator(`${CARD} small`, { hasText: '1/3 episódios vistos' }).waitFor();
     assert.equal(await page.locator(`${CARD} h3`).first().textContent(), 'Dark & "Brooklyn" <99>', 'o nome aparece como texto, sem virar HTML');
   } finally {
     await fechar();
@@ -107,7 +107,7 @@ test('conflito: outro aparelho mexeu antes; o app combina as versões e não per
     // este aparelho (que ainda enxerga 0 episódios) marca +1 e envia com a versão velha
     await page.click(`${CARD} .mais`);
     await page.waitForFunction(() => /Salvo/.test(document.querySelector('#status').textContent));
-    await page.waitForFunction(() => /\b[3-9]\/5 eps/.test(document.querySelector('#lista article.card small').textContent));
+    await page.waitForFunction(() => /\b[3-9]\/5 episódios vistos/.test(document.querySelector('#lista article.card small').textContent));
 
     assert.ok(
       srv.estado.respostasSync.some(r => r.conflitos.includes(SERIE.id)),
