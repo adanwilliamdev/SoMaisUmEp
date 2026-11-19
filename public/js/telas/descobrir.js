@@ -197,7 +197,29 @@ async function adicionarDesc(tipo, tid, botao) {
   }
 }
 
+// "Por que estou vendo isso?": abre/fecha o balão (no computador ele também aparece ao passar o mouse). Só um aberto por vez.
+function fecharPorques(menos) {
+  document.querySelectorAll('.porque.aberto').forEach(p => {
+    if (p === menos) return;
+    p.classList.remove('aberto');
+    p.querySelector('.porque-btn')?.setAttribute('aria-expanded', 'false');
+  });
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.porque')) fecharPorques();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') fecharPorques();
+});
+
 export const acoes = {
+  porque: ({ b }) => {
+    const p = b.closest('.porque'),
+      abrir = !p.classList.contains('aberto');
+    fecharPorques(p);
+    p.classList.toggle('aberto', abrir);
+    b.setAttribute('aria-expanded', String(abrir));
+  },
   'desc-tipo': ({ b }) => {
     V.UI.descTipo = b.dataset.k;
     gancho.render();

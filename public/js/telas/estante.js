@@ -155,6 +155,61 @@ export const acoes = {
   },
 };
 
+/* ---------- gesto no celular: deslizar a capa ---------- */
+// Para a direita (a partir de 72 px): +1 episódio (ou marca o filme como visto). Para a esquerda: abre o painel, com as opções.
+// Só vale para toque, na grade (o carrossel de "Continuar assistindo" rola na horizontal). Mouse e teclado usam os botões.
+// O gesto aciona os mesmos botões de sempre (.mais e abrir), então histórico, "Desfazer" e vibração seguem iguais.
+{
+  const LIMITE = 72;
+  let g = null;
+  const solta = poster => {
+    poster.classList.remove('desliza');
+    poster.classList.add('volta');
+    poster.style.transform = '';
+    delete poster.dataset.gesto;
+    setTimeout(() => poster.classList.remove('volta'), 260);
+  };
+  document.addEventListener('pointerdown', e => {
+    const poster = e.pointerType === 'touch' && !e.target.closest('.mais, .menos') ? e.target.closest('.grade .poster') : null;
+    g = poster ? { poster, x: e.clientX, y: e.clientY, dx: 0, ativo: false, id: e.pointerId, marcou: false } : null;
+  });
+  document.addEventListener('pointermove', e => {
+    if (!g || e.pointerId !== g.id) return;
+    const dx = e.clientX - g.x,
+      dy = e.clientY - g.y;
+    if (!g.ativo) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) return void (g = null); // é rolagem vertical
+      if (Math.abs(dx) < 10) return;
+      g.ativo = true;
+      g.poster.classList.add('desliza');
+    }
+    const podeMais = !!g.poster.querySelector('.mais');
+    g.dx = Math.max(-110, Math.min(podeMais ? 110 : 0, dx));
+    g.poster.style.transform = `translateX(${Math.round(g.dx * 0.55)}px)`;
+    const alvo = g.dx >= LIMITE ? 'mais' : g.dx <= -LIMITE ? 'abrir' : '';
+    if (alvo) g.poster.dataset.gesto = alvo;
+    else delete g.poster.dataset.gesto;
+    if (alvo && !g.marcou && navigator.vibrate) navigator.vibrate(6);
+    g.marcou = !!alvo;
+  });
+  const fim = (e, cancelado) => {
+    if (!g || e.pointerId !== g.id) return;
+    const { poster, dx, ativo } = g;
+    g = null;
+    if (!ativo) return;
+    solta(poster);
+    if (cancelado) return;
+    if (dx >= LIMITE) poster.querySelector('.mais')?.click();
+    else if (dx <= -LIMITE) poster.querySelector('[data-act="abrir"]')?.click();
+    // o toque que termina o gesto não pode virar um clique na capa
+    const engole = ev => ev.stopPropagation();
+    document.addEventListener('click', engole, { capture: true, once: true });
+    setTimeout(() => document.removeEventListener('click', engole, true), 350);
+  };
+  document.addEventListener('pointerup', e => fim(e, false));
+  document.addEventListener('pointercancel', e => fim(e, true));
+}
+
 // Busca com atraso curto: não refaz a grade a cada tecla.
 let tBusca = null;
 document.addEventListener('input', e => {

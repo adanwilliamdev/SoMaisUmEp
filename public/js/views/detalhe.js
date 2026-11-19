@@ -47,7 +47,7 @@ export function htmlDetalhe(s, onde) {
   return html`<div data-id="${s.id}">
     <div class="hero" ${urlHero ? html`data-cover="${s.capa}"` : html`data-h="${hue(s.nome)}"`}></div>
     <div class="cab"><div class="mini-capa">${capa(s.nome, s.capa, true)}</div>
-      <div class="cab-info"><h2>${s.nome}</h2><div class="pilulas">${pilulas}</div><div class="barra"><i data-w="${p}"></i></div>
+      <div class="cab-info"><h2>${s.nome}</h2><div class="pilulas">${pilulas}</div><div class="barra"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>
       <small>${mv ? rotulo(s) : vis(s) + ' de ' + tot(s) + ' episódios · ' + rotulo(s)}</small></div></div>
     ${s.sinopse ? html`<p class="sin">${s.sinopse}</p>` : ''}
     ${temps}

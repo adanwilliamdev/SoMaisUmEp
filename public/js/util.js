@@ -16,12 +16,13 @@ export const html = (partes, ...valores) => new Html(partes.reduce((s, p, i) => 
 export const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
 
 // Texto de status (canto superior, ao lado do tema e da conta)
+// Na tela vira só um ícone (data-estado); o texto fica no tooltip e para o leitor de tela.
 export function status(t, erro) {
   const el = $('#status');
-  if (el) {
-    el.textContent = t;
-    el.style.color = erro ? 'var(--perigo)' : '';
-  }
+  if (!el) return;
+  el.textContent = t;
+  el.title = t;
+  if (el.dataset) el.dataset.estado = erro ? 'erro' : /^salvo/i.test(t) ? 'ok' : /conex/i.test(t) ? 'off' : 'ocupado';
 }
 
 // Mensagem rápida (some sozinha)

@@ -340,6 +340,20 @@ export function frasePorque(motivo, semente) {
   }[motivo.tipo];
   return alvo ? `Como você ${verbo} ${semente.nome}${nota}: ${alvo}.` : '';
 }
+// Versão curta do motivo, para a linha logo abaixo do título ("Baseado no seu gosto por Drama"). A frase completa fica no balão.
+export function fraseCurtaPorque(motivo, semente) {
+  if (!motivo) return '';
+  const filme = semente ? tp(semente) === 'movie' : false;
+  const base = semente && semente.nome ? semente.nome : '';
+  const alvo = {
+    dir: motivo.nome ? `${filme ? 'Direção' : 'Criação'} de ${motivo.nome}` : '',
+    ator: motivo.nome ? `Com ${motivo.nome}` : '',
+    genero: motivo.nome ? `Baseado no seu gosto por ${motivo.nome}` : '',
+    vibe: base ? `Mesma vibe de ${base}` : 'Mesma vibe do que você curtiu',
+    rec: base ? `Para quem curtiu ${base}` : '',
+  }[motivo.tipo];
+  return alvo || '';
+}
 // O que se repete nas suas sementes (diretores, atores, gêneros) em rótulos curtos.
 export function rotulosDna(dna) {
   if (!dna) return [];

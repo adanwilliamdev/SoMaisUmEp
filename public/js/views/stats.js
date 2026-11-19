@@ -85,13 +85,14 @@ export function viewStats() {
     [r.episodios, 'episódios vistos'],
     [r.filmes, 'filmes assistidos'],
     [r.concluidas, 'séries concluídas'],
-    [r.notaMedia == null ? '—' : num1(r.notaMedia), `nota média (${r.nNotas} ${r.nNotas === 1 ? 'título' : 'títulos'})`],
+    [r.notaMedia == null ? '—' : num1(r.notaMedia), `nota média (${r.nNotas} ${r.nNotas === 1 ? 'título' : 'títulos'})`, 'ouro'],
   ];
   const faltam = L.series.filter(s => s.tmdb && !s.duracao && vis(s) > 0).length;
   return html`<div class="cabeca"><div><h1>Estatísticas</h1><p class="sub">A sua história como espectador.</p></div></div>
+    <h2 class="sec-tit stats-sec">Curiosidades</h2>
     ${historiaEspectador(L.series)}
-    <h2 class="sec-tit">Em números</h2>
-    <div class="stats numeros">${cards.map(([n, t]) => html`<div class="stat"><b>${n}</b><span>${t}</span></div>`)}</div>
+    <h2 class="sec-tit stats-sec">Em números</h2>
+    <div class="stats numeros">${cards.map(([n, t, cls]) => html`<div class="stat${cls ? ' ' + cls : ''}"><b>${n}</b><span>${t}</span></div>`)}</div>
     ${r.semDuracao ? html`<p class="aviso">${r.semDuracao} ${r.semDuracao === 1 ? 'título' : 'títulos'} sem duração informada não entram na conta de tempo. ${faltam ? html`<button class="btn sec mini" data-act="completar-duracoes">Completar pelo TMDb</button>` : 'Edite o título ou ligue-o ao TMDb para completar.'}</p>` : ''}
     <h2 class="sec-tit">Por mês <small class="mut-leve">· ${totalAno} nos últimos 12 meses</small></h2>
     <div class="graf-caixa">${graficoMeses(meses)}</div>

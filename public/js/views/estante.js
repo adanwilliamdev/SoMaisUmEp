@@ -54,24 +54,22 @@ export function cardHtml(s, n = 0, agrupado = false) {
         ${menos}
         ${prx ? html`<button class="mais" data-act="mais" aria-label="${mv ? 'Marcar ' + s.nome + ' como visto' : '+1 episódio de ' + s.nome}" title="${mv ? 'Marcar como visto' : '+1 episódio'}">${mv ? ICO_OK : html`${ICO_MAIS}<b>1</b>`}</button>` : ''}
       </div>
-      ${mv ? '' : html`<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>`}
+      ${mv ? '' : html`<div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>`}
       <h3>${s.nome}</h3><small>${rotulo(s)}${prog}${mv && s.ano ? ' · ' + s.ano : ''}</small>${chipLanc(s)}
     </article>`;
 }
 
-// Fileira "Continuar assistindo": o primeiro título é o destaque (o que você viu por último); os outros viram linhas compactas.
+// Carrossel "Continuar assistindo": o primeiro título é o destaque (o que você viu por último); os outros viram capas menores ao lado.
 export function cardContinuar(s, n = 0) {
   const p = pct(s),
     prx = prox(s);
   const botao = (cls, miolo) =>
     prx ? html`<button class="mais ${cls}" data-act="mais" aria-label="+1 episódio de ${s.nome}" title="+1 episódio">${miolo}</button>` : '';
   if (n > 0) {
-    return html`<article class="card cc" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
-      <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}</button>
-      <div class="cc-info"><h3>${s.nome}</h3>
-        <small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
-        <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div></div>
-      ${botao('', html`${ICO_MAIS}<b>1</b>`)}
+    return html`<article class="card cc cc-peq" data-id="${s.id}" data-est="${estado(s)}" data-i="${Math.min(n, 14)}">
+      <div class="poster"><button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa)}</button>${botao('', html`${ICO_MAIS}<b>1</b>`)}</div>
+      <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>
+      <h3>${s.nome}</h3><small>${prx ? `T${prx[0]} · E${prx[1]}` : ''}</small>
     </article>`;
   }
   const urlFundo = s.capa && /^https:\/\/[\w./:+=%?&,~@-]+$/.test(s.capa);
@@ -80,7 +78,7 @@ export function cardContinuar(s, n = 0) {
       <button class="capa" data-act="abrir" aria-label="Abrir ${s.nome}">${capa(s.nome, s.capa, true)}</button>
       <div class="cc-info"><h3>${s.nome}</h3>
         <p class="cc-ep">${prx ? `T${prx[0]} E${prx[1]}` : ''}</p>
-        <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i data-w="${p}"></i></div>
+        <div class="linha" aria-hidden="true" data-n="${segs(s)}"><i class="${p >= 100 ? 'fim' : ''}" data-w="${p}"></i></div>
         <small>${vis(s)} de ${tot(s)} episódios vistos</small></div>
       ${botao('mais-grande', raw('<span class="mais-n" aria-hidden="true">+1</span><span>Só mais um ep</span>'))}
     </article>`;
@@ -132,9 +130,8 @@ export function htmlContinuar(tipo) {
   if (tipo !== 'tv' || UI.busca) return '';
   const c = continuar(L.series);
   if (!c.length) return '';
-  const [destaque, ...resto] = c;
   return html`<section class="fila" aria-labelledby="t-fila"><h2 class="sec-tit" id="t-fila">Continuar assistindo</h2>
-    <div class="fila-grade${resto.length ? '' : ' so-um'}">${cardContinuar(destaque, 0)}${resto.length ? html`<div class="fila-resto">${resto.map((s, n) => cardContinuar(s, n + 1))}</div>` : ''}</div></section>`;
+    <div class="fila-trilho${c.length > 1 ? '' : ' so-um'}">${c.map((s, n) => cardContinuar(s, n))}</div></section>`;
 }
 
 const VAZIO_ICO = raw(
@@ -223,8 +220,10 @@ export function viewLista(tipo) {
     <div id="proximos">${htmlProximos(tipo)}</div>
     <div class="ferramentas">
       <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
-      <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${UI.busca}" autocomplete="off" enterkeyhint="search"></label>
-      <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => html`<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`)}</select></label>
+      <div class="busca-ordem">
+        <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${UI.busca}" autocomplete="off" enterkeyhint="search"></label>
+        <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => html`<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`)}</select></label>
+      </div>
     </div>
     <div id="lista">${htmlLista(tipo)}</div></div>`;
 }

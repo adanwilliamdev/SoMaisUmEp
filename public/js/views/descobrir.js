@@ -1,25 +1,33 @@
 // Aba Descobrir: radar de afinidade pessoal (só cruza com o seu histórico) e o painel de um título do TMDb.
 import { html, raw } from '../util.js';
 import { L } from '../loja.js';
-import { jaNaEstante, sementesRadar, frasePorque, rotulosDna, estado } from '../regras.js';
+import { jaNaEstante, sementesRadar, frasePorque, fraseCurtaPorque, rotulosDna, estado } from '../regras.js';
 import { UI, capa, ICO_MAIS } from './comum.js';
 import { htmlOnde } from './detalhe.js';
 
 /* ---------- descobrir ---------- */
 // `d` = { radar }: radar é { dna, resultados }, 'carregando', 'erro' ou null (ainda não há o que cruzar).
 const nomeTipo = tipo => (tipo === 'movie' ? 'filmes' : 'séries');
+const ICO_INFO = raw('<svg class="porque-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>');
 
 function itemRadar(x, tipo, sementes) {
   const tem = jaNaEstante(L.series, tipo, x);
   // Um motivo por semente; a frase usa o que você realmente fez com aquele título (concluiu, nota).
   const frases = [];
+  let curta = '';
   for (const m of x.porque || []) {
-    const f = frasePorque(
-      m,
-      sementes.find(s => s.tmdb === m.seed),
-    );
-    if (f && frases.length < 2) frases.push(f);
+    const semente = sementes.find(s => s.tmdb === m.seed);
+    const f = frasePorque(m, semente);
+    if (f && frases.length < 2) {
+      frases.push(f);
+      if (!curta) curta = fraseCurtaPorque(m, semente);
+    }
   }
+  // Só uma frase curta na tela; o texto completo abre ao tocar no "i" (ou ao passar o mouse).
+  const porque = frases.length
+    ? html`<div class="porque"><button type="button" class="porque-btn" data-act="porque" aria-expanded="false" aria-controls="p-${x.id}"><span>${curta || 'Combina com o seu gosto'}</span>${ICO_INFO}<span class="sr">Por que estou vendo isso?</span></button>
+        <div class="porque-balao" id="p-${x.id}" role="tooltip"><strong>Por que estou vendo isso?</strong>${frases.map(f => html`<p>${f}</p>`)}</div></div>`
+    : '';
   const servicos = (x.onde || []).join(' · ');
   const onde = servicos ? html`<span class="onde-selo" title="Onde assistir no Brasil">▶ ${servicos}</span>` : '';
   return html`<article class="radar-item" data-tid="${x.id}">
@@ -27,7 +35,7 @@ function itemRadar(x, tipo, sementes) {
     <div class="radar-info">
       <h3>${x.nome}</h3>
       <small>${[x.ano, x.nota ? '★ ' + x.nota + ' no TMDb' : ''].filter(Boolean).join(' · ')}</small>
-      ${frases.map(f => html`<p class="porque">${f}</p>`)}
+      ${porque}
       <div class="radar-acoes">${onde}${tem ? '' : html`<button class="btn mini" data-act="desc-add" aria-label="Adicionar ${x.nome} à estante">${ICO_MAIS} Estante</button>`}${tem ? '' : html`<button class="btn sec mini" data-act="desc-dispensar" aria-label="Não tenho interesse em ${x.nome}">Dispensar</button>`}</div>
     </div></article>`;
 }
@@ -40,8 +48,10 @@ function blocoDna(dna, sementes, tipo) {
   const chips = rotulos.length
     ? html`<ul class="dna" aria-label="Padrões nos seus ${nomeTipo(tipo)} favoritos">${rotulos.map(r => html`<li><small>${r.rot}</small> ${r.nome}${r.n > 1 ? html` <span class="mut-leve">×${r.n}</span>` : ''}</li>`)}</ul>`
     : html`<p class="mut-peq">Ainda não há padrões repetidos entre os seus favoritos. Quanto mais você avalia, mais o radar aprende.</p>`;
+  const n = sementes.length;
   return html`<section class="desc-sec" aria-labelledby="t-dna"><h2 class="sec-tit" id="t-dna">Seu DNA em ${nomeTipo(tipo)}</h2>${chips}
-    <p class="mut-peq">Baseado no que você está assistindo, concluiu ou avaliou com nota 7 ou mais: ${base}.</p></section>`;
+    <details class="dna-base"><summary>Baseado em ${n} ${n === 1 ? 'título' : 'títulos'} que você curtiu</summary>
+      <p class="mut-peq topo6">O que você está assistindo, concluiu ou avaliou com nota 7 ou mais: ${base}.</p></details></section>`;
 }
 
 function secao(id, titulo, itens, tipo, sementes) {
@@ -91,7 +101,7 @@ export function viewDescobrir(d) {
       ['tv', 'Séries'],
       ['movie', 'Filmes'],
     ];
-  return html`<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">Seu radar: séries e filmes na mesma vibe do que você está assistindo e curtiu, sempre com novidades e com o motivo de cada sugestão.</p></div></div>
+  return html`<div class="cabeca"><div><h1>Descobrir</h1><p class="sub">Na mesma vibe do que você curtiu, com novidades e o motivo de cada sugestão.</p></div></div>
     <div class="ferramentas centro"><div class="barra-acoes" role="group" aria-label="Tipo">${fs.map(([k, r]) => html`<button class="chip" data-act="desc-tipo" data-k="${k}" aria-pressed="${tipo === k}">${r}</button>`)}</div></div>
     <div id="desc">${htmlDescobrir(tipo, d)}</div>`;
 }
