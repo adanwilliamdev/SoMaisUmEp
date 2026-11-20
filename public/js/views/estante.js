@@ -212,7 +212,7 @@ export function viewLista(tipo) {
     <div class="ferramentas">
       <div class="barra-acoes" role="group" aria-label="Filtrar por estado">${chips}</div>
       <div class="busca-ordem">
-        <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar por nome" value="${UI.busca}" autocomplete="off" enterkeyhint="search"></label>
+        <label class="busca"><span class="sr">Buscar por nome</span>${LUPA}<input type="search" id="busca" placeholder="Buscar" value="${UI.busca}" autocomplete="off" enterkeyhint="search"></label>
         <label class="ordem"><span class="sr">Ordenar por</span><select id="ordem" aria-label="Ordenar por">${ORDENS.map(([k, r]) => html`<option value="${k}" ${UI.ordem === k ? 'selected' : ''}>${r}</option>`)}</select></label>
       </div>
     </div>

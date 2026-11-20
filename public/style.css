@@ -639,8 +639,49 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
   #mres{min-height:96px}
 }
 
+/* ===== celular refinado: dock, cabeça, filtros e busca (só até 899px; o computador não muda) ===== */
+@media (max-width:899px){
+  /* dock: mais baixo e mais opaco (o conteúdo não aparece por baixo dos rótulos); a aba ativa vira uma pílula suave */
+  .menu{left:14px;right:14px;gap:0;padding:5px;border-radius:24px;background:color-mix(in srgb,var(--card) 96%,transparent)}
+  .menu a{min-height:50px;gap:2px;padding:6px 0;border-radius:19px;font-size:.66rem;letter-spacing:-.01em;transition:color .15s,background-color .15s}
+  .menu .ico{width:21px;height:21px}
+  .menu a[aria-current=page]{background:var(--acc-suave);color:var(--acc);font-weight:600}
+  .menu a[aria-current=page]::after{display:none}
+  .palco{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+
+  /* cabeça: título menor, botão em pílula compacta, números mais próximos */
+  .cabeca{margin:20px 0 6px}
+  .cabeca h1{font-size:1.65rem}
+  .cabeca .btn.nova{min-height:40px;padding:0 16px;gap:6px;border-radius:var(--pilula);font-size:.9rem}
+  .stats{margin:0 0 22px}
+  .fila,.prox{margin-bottom:26px}
+  .sec-tit{font-size:1.05rem;margin-bottom:10px}
+
+  /* filtros: uma fileira de pílulas baixas, sem a borda grossa embaixo */
+  .ferramentas:not(.centro){--h-ctl:38px}
+  .ferramentas:not(.centro) .barra-acoes{gap:6px;margin-bottom:10px;padding-top:8px;padding-bottom:8px;border-bottom:0;box-shadow:0 1px 0 var(--line)}
+  .ferramentas .chip{padding:0 14px;border-radius:var(--pilula);font-size:.84rem}
+
+  /* busca + ordem na mesma linha, ambas em pílula e sem cortar o texto */
+  .ferramentas:not(.centro) .busca-ordem{gap:8px;margin:0 0 18px}
+  .ferramentas:not(.centro) .busca-ordem .busca{flex:1 1 0}
+  .ferramentas:not(.centro) .busca-ordem .ordem{flex:0 0 auto}
+  .busca input[type=search]{padding-left:38px;border-radius:var(--pilula);font-size:max(16px,.9rem)}
+  .busca svg{left:13px;width:16px;height:16px}
+  .ordem select{width:auto;max-width:48vw;padding-left:14px;padding-right:32px;border-radius:var(--pilula);font-size:.84rem;background-position:right 11px center;background-size:15px}
+
+  /* grupos da estante */
+  .grupo{margin-bottom:28px}
+  .grupo>summary{margin-bottom:14px}
+  .grid,.grade{gap:20px 12px}
+}
+@media (max-width:359px){
+  .ordem select{max-width:42vw}
+  .ferramentas .chip{padding:0 12px}
+}
+
 /* ===== preferências do sistema ===== */
-@media (max-width:359px){.marca span{display:none}.menu a{font-size:.66rem}}
+@media (max-width:359px){.marca span{display:none}.menu a{font-size:.62rem;letter-spacing:-.02em}}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after,dialog[open]::backdrop{transition:none!important;animation:none!important;scroll-behavior:auto!important}
   img.fade{opacity:1}
