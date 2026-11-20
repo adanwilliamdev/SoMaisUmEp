@@ -23,7 +23,7 @@
     "@vercel/blob": "^1.0.0"
   },
   "engines": {
-    "node": ">=20.19"
+    "node": "22.x"
   },
   "devDependencies": {
     "eslint": "10.1.0",

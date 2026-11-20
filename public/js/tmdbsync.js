@@ -65,6 +65,10 @@ export async function atualizarAutomatico({ max = 4, aoMudar } = {}) {
       if (((r.mudou && r.mudou.length) || r.agendou) && aoMudar) aoMudar(s, r);
     } catch (e) {
       if (e.auth || e.rede) return;
+      // Erro só deste título (ex.: id removido do TMDb, que o servidor devolve como 502): sem carimbo ele ficaria sempre no início da fila e,
+      // com 4 assim, bloquearia a atualização de todos os outros. Carimba a tentativa e tenta de novo daqui a ~6 h (o servidor faz o mesmo no cron).
+      feitos[s.id] = Date.now() - (lancamentoVencido(s, agora) ? HORAS6 : DIA) + HORAS6;
+      guardar(CHAVE, feitos);
     }
   }
 }
