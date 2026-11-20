@@ -73,7 +73,10 @@ test('Próximos episódios: faixa com setas, cartão de superfície e data em co
     const d = new Date(Date.now() + n * 864e5);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
-  L.series = [serie({ id: 'p1', nome: 'Hoje', proximo: { d: iso(0), t: 2, e: 3 } }), serie({ id: 'p2', nome: 'Em breve', proximo: { d: iso(3), t: 1, e: 4 } })];
+  L.series = [
+    serie({ id: 'p1', nome: 'Hoje', proximo: { d: iso(0), t: 2, e: 3 } }),
+    serie({ id: 'p2', nome: 'Em breve', proximo: { d: iso(3), t: 1, e: 4 } }),
+  ];
   const h = String(V.htmlProximos('tv'));
   assert.match(h, /<div class="carrossel prox-car">/);
   assert.match(h, /<ul class="prox-lista">/);
@@ -113,7 +116,9 @@ test('status vira ícone: o estado vai em data-estado e o texto continua no tool
 
 test('layout: cabeçalho de vidro fixo com abas de texto, container centralizado, grade fluida, filtros de mesma altura e estatísticas em linha', () => {
   assert.match(css, /--topo:68px/);
-  assert.match(css, /\.rail\{position:sticky;top:0;[^}]*backdrop-filter:blur\(12px\)/, 'cabeçalho fixo com vidro fosco');
+  assert.match(css, /\.rail\{position:sticky;top:0;/, 'cabeçalho fixo');
+  assert.match(css, /\.rail::before\{[^}]*backdrop-filter:blur\(12px\)/, 'vidro fosco no pseudo-elemento');
+  assert.doesNotMatch(css, /\.rail\{[^}]*backdrop-filter/, 'backdrop-filter no .rail quebraria o position:fixed do dock .menu');
   assert.match(css, /@media \(min-width:900px\)\{\s*body:not\(\.deslogado\) \.rail\{display:grid;grid-template-columns:1fr auto 1fr/);
   assert.match(css, /body:not\(\.deslogado\) \.menu\{position:static[^}]*background:none;border:0/, 'sem a caixa em volta do menu central');
   assert.match(css, /body:not\(\.deslogado\) \.menu \.ico\{display:none\}/, 'abas só com texto no computador');
@@ -124,11 +129,7 @@ test('layout: cabeçalho de vidro fixo com abas de texto, container centralizado
   assert.match(css, /\.palco\{[^}]*max-width:var\(--max\);margin:0 auto;padding:0 var\(--gut\)/);
   assert.match(css, /@media \(min-width:640px\)\{\.grade\{grid-template-columns:repeat\(auto-fill,minmax\(180px,1fr\)\);gap:24px\}\}/);
   assert.match(css, /\.ferramentas:not\(\.centro\) \.barra-acoes\{position:sticky;top:calc\(var\(--topo\)/);
-  assert.match(
-    css,
-    /\.ferramentas \.chip,\.ferramentas input\[type=search\],\.ferramentas select\{height:var\(--h-ctl\)/,
-    'filtros, busca e ordenação com a mesma altura',
-  );
+  assert.match(css, /\.ferramentas \.chip,\.ferramentas input\[type=search\],\.ferramentas select\{height:var\(--h-ctl\)/, 'filtros, busca e ordenação com a mesma altura');
   assert.match(css, /--h-ctl:40px/);
   assert.match(css, /\.chip\[aria-pressed=true\]\{background:var\(--tx\)[^}]*color:var\(--bg\)/, 'filtro ativo: fundo claro e texto escuro');
   assert.match(css, /\.stats:not\(\.numeros\) \.stat\+\.stat::before\{content:"•"/, 'estatísticas em linha, separadas por ponto médio');

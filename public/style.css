@@ -88,7 +88,9 @@ h3{font-size:1rem}
 /* a barra acompanha a rolagem; o conteúdo dela alinha com o do palco (mesma largura máxima e mesma margem lateral) */
 .rail{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;
   min-height:var(--topo);padding:calc(8px + env(safe-area-inset-top,0px)) max(var(--gut),calc((100% - var(--max)) / 2 + var(--gut))) 8px;
-  background:var(--vidro);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4);border-bottom:1px solid var(--line)}
+  border-bottom:1px solid var(--line)}
+/* o vidro fosco fica num pseudo-elemento: backdrop-filter no próprio .rail o tornaria o referencial dos filhos position:fixed (o dock .menu no celular) */
+.rail::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--vidro);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4)}
 .marca{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.03em;line-height:1;white-space:nowrap;color:inherit;text-decoration:none}
 .marca i{display:block;flex:none;width:34px;height:34px;border-radius:9px;background:url("/icons/icon.svg") center/contain no-repeat}
 .acoes-topo{display:flex;align-items:center;gap:6px;min-width:0}
@@ -108,7 +110,8 @@ h3{font-size:1rem}
 .icone.conta{background:var(--card2);color:var(--tx);border:1px solid var(--line2);border-radius:var(--pilula)}
 .icone.conta:hover{background:var(--card2);border-color:var(--ctl)}
 .deslogado .menu,.deslogado #conta,.deslogado .status,.deslogado .marca{display:none}
-.deslogado .rail{justify-content:flex-end;border-bottom:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.deslogado .rail{justify-content:flex-end;border-bottom:0}
+.deslogado .rail::before{background:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 .deslogado .rodape{border-top:0}
 
 /* celular: dock flutuante embaixo, de vidro; a aba ativa fica em branco com uma barrinha coral */
@@ -547,7 +550,7 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
 
 /* sem vidro fosco no navegador: as barras ficam opacas em vez de transparentes demais */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .rail,.menu,.seta{background:var(--card)}
+  .rail::before,.menu,.seta{background:var(--card)}
 }
 
 /* ===== telas pequenas ===== */
