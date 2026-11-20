@@ -48,6 +48,8 @@
   --vidro:rgba(20,22,26,.7);
   --duro:0 8px 24px rgba(0,0,0,.45);--sombra:0 20px 48px rgba(0,0,0,.55);color-scheme:dark}
 @media (min-width:900px){:root{--gut:48px}}
+/* celular: cabeçalho mais baixo; a altura real (com a área segura do aparelho) é --topo + env(safe-area-inset-top) */
+@media (max-width:899px){:root{--topo:56px}}
 @media (pointer:coarse){:root{--h-ctl:44px}}
 
 /* ===== base ===== */
@@ -85,13 +87,15 @@ h3{font-size:1rem}
 .palco{flex:1;display:flex;flex-direction:column;width:100%;max-width:var(--max);margin:0 auto;padding:0 var(--gut) calc(120px + env(safe-area-inset-bottom,0px))}
 #app{flex:1}
 
+/* position:relative nas faixas acima: filhos position:absolute (.sr) ficam presos à faixa rolável em vez de alargar a página */
+.casa{overflow-x:clip}
 /* a barra acompanha a rolagem; o conteúdo dela alinha com o do palco (mesma largura máxima e mesma margem lateral) */
 .rail{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;
-  min-height:var(--topo);padding:calc(8px + env(safe-area-inset-top,0px)) max(var(--gut),calc((100% - var(--max)) / 2 + var(--gut))) 8px;
+  min-height:calc(var(--topo) + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) max(var(--gut),calc((100% - var(--max)) / 2 + var(--gut))) 0;
   border-bottom:1px solid var(--line)}
 /* o vidro fosco fica num pseudo-elemento: backdrop-filter no próprio .rail o tornaria o referencial dos filhos position:fixed (o dock .menu no celular) */
 .rail::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--vidro);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4)}
-.marca{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.03em;line-height:1;white-space:nowrap;color:inherit;text-decoration:none}
+.marca{min-width:0;display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.03em;line-height:1;white-space:nowrap;color:inherit;text-decoration:none}
 .marca i{display:block;flex:none;width:34px;height:34px;border-radius:9px;background:url("/icons/icon.svg") center/contain no-repeat}
 .acoes-topo{display:flex;align-items:center;gap:6px;min-width:0}
 /* status de sincronização: só um ícone (nuvem com check / aviso); o texto fica para o leitor de tela e para o tooltip */
@@ -306,7 +310,7 @@ input[type=search]::-webkit-search-cancel-button{cursor:pointer}
 .fila,.prox{margin:0 0 36px}
 .fila{--cw:clamp(144px,40vw,184px)}
 .carrossel{position:relative}
-.carrossel>.fila-trilho,.carrossel>.prox-lista{display:flex;align-items:stretch;gap:16px;margin:0;padding:6px 2px 8px;list-style:none;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;overscroll-behavior-x:contain}
+.carrossel>.fila-trilho,.carrossel>.prox-lista{position:relative;display:flex;align-items:stretch;gap:16px;margin:0;padding:6px 2px 8px;list-style:none;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;overscroll-behavior-x:contain}
 .carrossel>.fila-trilho::-webkit-scrollbar,.carrossel>.prox-lista::-webkit-scrollbar{display:none}
 .carrossel.m-dir>.fila-trilho,.carrossel.m-dir>.prox-lista{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent)}
 .carrossel.m-esq>.fila-trilho,.carrossel.m-esq>.prox-lista{-webkit-mask-image:linear-gradient(to right,transparent,#000 72px);mask-image:linear-gradient(to right,transparent,#000 72px)}
@@ -561,8 +565,8 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
   .ferramentas:not(.centro) .barra-acoes{position:sticky;top:calc(var(--topo) + env(safe-area-inset-top,0px));z-index:20;margin:0 calc(-1 * var(--gut)) 12px;padding:10px var(--gut);background:var(--bg);border-bottom:1px solid var(--line)}
   .ferramentas:not(.centro) .busca-ordem{display:flex;gap:8px;margin:0 0 20px}
   .busca-ordem .busca{flex:1 1 0;min-width:0}
-  .busca-ordem .ordem{flex:0 0 42%;min-width:0}
-  .ordem select{width:100%;min-width:0;padding-left:12px;padding-right:30px;font-size:.88rem}
+  .ferramentas:not(.centro) .busca-ordem .ordem{flex:0 0 42%;min-width:0}
+  .ordem select{width:100%;min-width:0;padding-left:12px;padding-right:30px;font-size:.88rem;text-overflow:ellipsis}
   .ferramentas.centro{justify-content:center}
   .barra-acoes{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
   .ferramentas.centro .barra-acoes{flex:0 1 auto;margin:0;padding:3px}
@@ -590,6 +594,11 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
   .porque-balao{left:-108px;width:min(340px,calc(100vw - 28px))}
 }
 @media (max-width:480px){
+  .rail{gap:8px}
+  .marca{gap:8px;font-size:1.02rem}
+  .marca i{width:30px;height:30px;border-radius:8px}
+  .marca span{overflow:hidden;text-overflow:ellipsis}
+  .acoes-topo{gap:2px}
   .stats{font-size:.84rem}
   .stats:not(.numeros) .stat+.stat::before{margin:0 7px}
   .eps{gap:6px}
@@ -631,6 +640,7 @@ dialog[open]::backdrop{animation:aparece .2s ease-out}
 }
 
 /* ===== preferências do sistema ===== */
+@media (max-width:359px){.marca span{display:none}.menu a{font-size:.66rem}}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after,dialog[open]::backdrop{transition:none!important;animation:none!important;scroll-behavior:auto!important}
   img.fade{opacity:1}

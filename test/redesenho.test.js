@@ -121,6 +121,12 @@ test('layout: cabeçalho de vidro fixo com abas de texto, container centralizado
   assert.match(css, /body:not\(\.deslogado\) \.menu \.ico\{display:none\}/, 'abas só com texto no computador');
   assert.match(css, /\.menu a\[aria-current=page\]::after\{[^}]*background:var\(--acc\)/, 'aba ativa com marca coral');
   assert.match(css, /\.menu\{position:fixed;left:12px;right:12px;bottom:calc\(12px/);
+  assert.match(
+    css,
+    /\.carrossel>\.fila-trilho,\.carrossel>\.prox-lista\{position:relative;/,
+    'faixa rolável é o bloco de referência dos filhos absolutos (.sr não alarga a página no celular)',
+  );
+  assert.match(css, /@media \(max-width:899px\)\{:root\{--topo:56px\}\}/, 'cabeçalho compacto no celular');
   assert.match(css, /--max:1280px;--gut:24px/);
   assert.match(css, /@media \(min-width:900px\)\{:root\{--gut:48px\}\}/);
   assert.match(css, /\.palco\{[^}]*max-width:var\(--max\);margin:0 auto;padding:0 var\(--gut\)/);
