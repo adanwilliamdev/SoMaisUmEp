@@ -257,7 +257,7 @@ async function rodar() {
   emVoo = true;
   denovo = false;
   try {
-    for (let voltas = 0; ; ) {
+    for (let voltas = 0; ;) {
       const conf = await enviar();
       if (conf.length) {
         if (++voltas > 2) throw Object.assign(new Error('Não foi possível combinar com a versão de outro aparelho. Recarregue a página.'), { fatal: true });
