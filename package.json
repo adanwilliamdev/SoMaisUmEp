@@ -19,7 +19,7 @@
     "vapid": "node scripts/vapid.js"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.0",
+    "@neondatabase/serverless": "^1.2.1",
     "@vercel/blob": "^1.0.0"
   },
   "engines": {
