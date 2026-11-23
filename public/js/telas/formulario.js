@@ -1,5 +1,5 @@
 // Formulário de série/filme (novo ou editar), com busca no TMDb e capa.
-import { $, html, raw, uid, aviso } from '../util.js';
+import { $, html, raw, uid, aviso, guardar } from '../util.js';
 import { tmdb } from '../api.js';
 import { L, achar, save } from '../loja.js';
 import { tp, vis, registrarProgresso, acharDuplicado } from '../regras.js';
@@ -10,7 +10,7 @@ import { pintaDetalhe, salvaAvaliacao } from './detalhe.js';
 
 let novaCapa;
 
-function formSerie(id, tipoNovo) {
+function formSerie(id, tipoNovo, nomeInicial = '') {
   const s = id ? achar(id) : null;
   const tipo = s ? tp(s) : tipoNovo || 'tv',
     mv = tipo === 'movie';
@@ -19,8 +19,8 @@ function formSerie(id, tipoNovo) {
   ctx.aberta = null;
   dlg.innerHTML = html`<h2>${s ? 'Editar' : mv ? 'Novo' : 'Nova'} ${mv ? 'filme' : 'série'}</h2><br>
     <form id="f" data-id="${s ? s.id : ''}">
-      <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? s.nome : ''}"></label>
-      <label>Buscar no TMDb (opcional)<span class="linha-busca"><input type="text" id="tq" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
+      <label>Nome<input type="text" name="nome" required maxlength="80" value="${s ? s.nome : nomeInicial}"></label>
+      <label>Buscar no TMDb (opcional)<span class="linha-busca"><input type="text" id="tq" value="${s ? '' : nomeInicial}" placeholder="${mv ? 'Nome do filme' : 'Nome da série'}"><button type="button" class="btn mini" id="tb">Buscar</button></span></label>
       <div id="res" class="res"></div>
       <div id="dup"></div>
       <div id="blocotemp" ${mv ? 'hidden' : ''}><label>Número de temporadas<input type="number" name="nt" min="1" max="30" value="${s ? s.eps.length : 1}"></label>
@@ -157,6 +157,7 @@ function formSerie(id, tipoNovo) {
       L.series.unshift({ ...meta, tipo, id: uid(), criado: Date.now(), nome, capa: capaFinal, eps, vis: eps.map(() => 0) });
       ctx.aberta = null;
       V.UI.filtro = 'todas';
+      guardar('smue:filtro', 'todas');
       V.UI.busca = '';
     }
     save();
@@ -169,7 +170,7 @@ function formSerie(id, tipoNovo) {
 }
 
 export const acoes = {
-  nova: ({ b }) => formSerie(null, b.dataset.tipo),
+  nova: ({ b }) => formSerie(null, b.dataset.tipo, (b.dataset.nome || '').slice(0, 80)),
   editar: ({ s }) => {
     if (!s) return;
     salvaAvaliacao();

@@ -1,5 +1,5 @@
 // Importar de outro app (Letterboxd, IMDb, Trakt): ler arquivos, buscar no TMDb em lotes, desfazer.
-import { $, uid, aviso } from '../util.js';
+import { $, uid, aviso, guardar } from '../util.js';
 import { api } from '../api.js';
 import { L, save } from '../loja.js';
 import { acharDuplicado, ehBackupDoApp } from '../regras.js';
@@ -147,6 +147,7 @@ async function iniciarImportacao() {
   }
   imp.rodando = false;
   V.UI.filtro = 'todas';
+  guardar('smue:filtro', 'todas');
   V.UI.busca = '';
   dlg.innerHTML = V.htmlImportar({ fim: { novos: imp.ids.length, repetidos, naoAchou, parou } });
   if (imp.ids.length)

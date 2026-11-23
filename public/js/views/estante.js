@@ -165,7 +165,9 @@ export function htmlLista(tipo) {
     if (UI.filtro === 'todas' && !UI.busca) return htmlGrupos(lista, tipo);
     return html`<div class="grade">${lista.map((s, n) => cardHtml(s, n))}</div>`;
   }
-  if (UI.busca) return html`<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${UI.busca}”.</p></div>`;
+  if (UI.busca)
+    return html`<div class="vazio">${VAZIO_ICO}<p>Nada encontrado para “${UI.busca}”.</p>
+      <button class="btn" data-act="nova" data-tipo="${tipo}" data-nome="${UI.busca}">${mv ? '+ Adicionar este filme' : '+ Adicionar esta série'}</button></div>`;
   if (total) return html`<div class="vazio">${VAZIO_ICO}<p>Nada neste filtro.</p></div>`;
   return html`<div class="vazio">${VAZIO_ICO}<p><b>${mv ? 'Nenhum filme ainda' : 'Sua estante está vazia'}</b><br>${mv ? 'Registre o primeiro filme que você viu.' : 'Adicione a primeira série e marque o episódio de hoje.'}</p>
     <button class="btn" data-act="nova" data-tipo="${tipo}">${mv ? '+ Adicionar filme' : '+ Adicionar série'}</button>

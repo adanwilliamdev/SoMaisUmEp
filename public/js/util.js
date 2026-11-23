@@ -152,6 +152,18 @@ export function desfazerUltimo() {
   return true;
 }
 
+// "Mostrar senha": troca o tipo dos campos de senha do formulário do botão (o autocomplete *-password os identifica nos dois estados).
+export function alternarSenha(b) {
+  const mostrar = b.getAttribute('aria-pressed') !== 'true';
+  b.closest('form')
+    ?.querySelectorAll('input[autocomplete$="password"]')
+    .forEach(i => {
+      i.type = mostrar ? 'text' : 'password';
+    });
+  b.setAttribute('aria-pressed', String(mostrar));
+  b.textContent = mostrar ? 'Ocultar senha' : 'Mostrar senha';
+}
+
 // Botão de dois toques: o primeiro vira "Confirmar?" por 3 s; o segundo executa.
 export function confirma(b, fn) {
   if (b.dataset.sure) {

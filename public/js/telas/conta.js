@@ -1,5 +1,5 @@
 // Entrar, criar conta, recuperar/redefinir senha, "Minha conta" (trocar senha/e-mail, excluir) e sair.
-import { $, html, raw, aviso, confirma } from '../util.js';
+import { $, html, raw, aviso, confirma, alternarSenha } from '../util.js';
 import { api } from '../api.js';
 import { L, limparSnap, zerar, pendente } from '../loja.js';
 import * as V from '../views.js';
@@ -163,6 +163,7 @@ async function enviarConta(f) {
 export const formularios = { fa: enviarAuth, fe: enviarEsqueci, fr: enviarRedefinir, fc: enviarConta };
 
 export const acoes = {
+  'ver-senha': ({ b }) => alternarSenha(b),
   'auth-modo': ({ b }) => telaAuth(b.dataset.m),
   sair: () => sair(false),
   'sair-todos': ({ b }) => confirma(b, () => sair(true)),

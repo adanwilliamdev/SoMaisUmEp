@@ -182,6 +182,7 @@ textarea{min-height:140px;font-family:ui-monospace,monospace;font-size:.8rem}
 input::placeholder,textarea::placeholder{color:var(--mut);opacity:1}
 input[type=file]{max-width:100%;color:var(--mut);font-size:.9rem}
 input[type=file]::file-selector-button{margin-right:12px;padding:8px 16px;border-radius:var(--r-m);border:1px solid var(--ctl);background:var(--card);color:var(--tx);font:inherit;font-weight:600;cursor:pointer}
+.mostrar-linha{margin:-6px 0 10px;text-align:right}
 .sr-input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);pointer-events:none}
 label.btn.arq{flex-direction:row;margin:0;font-size:inherit;color:var(--tx);cursor:pointer}
 label.arq:focus-within{outline:2px solid var(--acc);outline-offset:3px}

@@ -1,6 +1,9 @@
 // Telas de entrada (entrar, criar conta, recuperar senha) e formulários da conta.
 import { html, raw } from '../util.js';
 
+// Alterna a visibilidade dos campos de senha do mesmo formulário (telas/conta.js, ação `ver-senha`).
+const MOSTRAR = raw('<p class="mostrar-linha"><button type="button" class="link" data-act="ver-senha" aria-pressed="false">Mostrar senha</button></p>');
+
 /* ---------- entrar / criar conta ---------- */
 // Um cartão centralizado: logotipo na horizontal no topo e o formulário; a frase de apoio fica abaixo.
 const casca = corpo => html`<div class="auth"><div class="auth-form">
@@ -19,6 +22,7 @@ export function viewAuth(modo = 'entrar') {
       ${nova ? raw('<label>Nome<input type="text" name="nome" maxlength="60" autocomplete="name" required></label>') : ''}
       <label>E-mail<input type="text" name="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="${nova ? 'email' : 'username'}" required></label>
       <label>Senha${nova ? ' (mínimo 8 caracteres)' : ''}<input type="password" name="senha" autocomplete="${nova ? 'new-password' : 'current-password'}" required></label>
+      ${MOSTRAR}
       <p class="aviso" id="msg" role="alert"></p>
       <button class="btn" type="submit">${nova ? 'Criar conta e entrar' : 'Entrar'}</button>
     </form>
@@ -41,6 +45,7 @@ export const viewRedefinir = () =>
     <form id="fr" novalidate>
       <label>Nova senha (mínimo 8 caracteres)<input type="password" name="senha" autocomplete="new-password" required></label>
       <label>Repita a nova senha<input type="password" name="senha2" autocomplete="new-password" required></label>
+      ${MOSTRAR}
       <p class="aviso" id="msg" role="alert"></p>
       <button class="btn" type="submit">Salvar nova senha</button>
     </form>`);
@@ -57,7 +62,7 @@ export function viewFormConta(acao, email = '') {
         ? html`<label>Novo e-mail<input type="text" name="email" inputmode="email" autocapitalize="off" spellcheck="false" autocomplete="email" value="${email}" required></label>${senhaAtual}`
         : html`<p class="aviso">Isto apaga a sua conta, todas as séries, filmes, tops e capas. <b>Não dá para desfazer.</b> Baixe um backup antes, se quiser guardar seus dados.</p>${senhaAtual}`;
   const titulo = { senha: 'Trocar senha', email: 'Trocar e-mail', excluir: 'Excluir conta' }[acao];
-  return html`<h2>${titulo}</h2><form id="fc" data-acao="${acao}" novalidate>${campos}
+  return html`<h2>${titulo}</h2><form id="fc" data-acao="${acao}" novalidate>${campos}${MOSTRAR}
     <p class="aviso" id="msgc" role="alert"></p>
     <div class="rodape-dlg"><button type="button" class="btn sec" data-act="conta">Voltar</button><button class="btn${acao === 'excluir' ? ' perigo' : ''}" type="submit">${acao === 'excluir' ? 'Excluir minha conta' : 'Salvar'}</button></div></form>`;
 }

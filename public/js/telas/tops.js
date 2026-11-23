@@ -10,6 +10,10 @@ function addItem(tid) {
     inp = document.querySelector(`[data-top="${CSS.escape(String(tid))}"] input`);
   const v = inp.value.trim();
   if (!v || t.itens.length >= 10) return;
+  if (t.itens.some(it => it.t.toLowerCase() === v.toLowerCase())) {
+    aviso(`“${v}” já está neste top.`);
+    return;
+  }
   const m = L.series.find(s => s.nome.toLowerCase() === v.toLowerCase());
   t.itens.push(m ? { t: m.nome, sid: m.id } : { t: v });
   save();

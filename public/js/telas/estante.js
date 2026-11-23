@@ -85,6 +85,7 @@ export const acoes = {
   },
   filtro: ({ b }) => {
     V.UI.filtro = b.dataset.k;
+    guardar('smue:filtro', V.UI.filtro);
     renderLista(true);
   },
   mais: ({ s }) => {

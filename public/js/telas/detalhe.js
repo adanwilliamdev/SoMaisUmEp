@@ -1,5 +1,5 @@
 // Painel de detalhes de um título: onde assistir, avaliação pessoal, atualizar pelo TMDb e excluir.
-import { $, aviso, confirma } from '../util.js';
+import { $, aviso, avisoDesfazer, confirma } from '../util.js';
 import { L, achar, save } from '../loja.js';
 import * as V from '../views.js';
 import { atualizarDoTmdb, ondeAssistir } from '../tmdbsync.js';
@@ -103,16 +103,35 @@ export const acoes = {
   del: ({ b, s }) => {
     if (!s) return;
     confirma(b, () => {
+      // Guarda a posição e os itens de tops ligados ao título, para o "Desfazer" devolver tudo como estava.
+      const pos = L.series.indexOf(s),
+        ligados = [];
       L.series = L.series.filter(x => x.id !== s.id);
       L.tops.forEach(top =>
         top.itens.forEach(it => {
-          if (it.sid === s.id) delete it.sid;
+          if (it.sid === s.id) {
+            ligados.push(it);
+            delete it.sid;
+          }
         }),
       );
       delete onde[s.id];
       save();
       dlg.close();
       gancho.render();
+      avisoDesfazer(
+        `${s.nome} excluído`,
+        () => {
+          if (achar(s.id)) return;
+          L.series.splice(Math.min(pos, L.series.length), 0, s);
+          ligados.forEach(it => {
+            it.sid = s.id;
+          });
+          save();
+          gancho.render();
+        },
+        9000,
+      );
     });
   },
 };
