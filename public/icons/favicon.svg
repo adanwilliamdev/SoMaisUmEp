@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SóMaisUmEp">
+  <defs>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8460"/>
+      <stop offset="1" stop-color="#e03d1f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="118" fill="url(#coral)"/>
+  <g transform="rotate(-8 256 256) translate(256 256) scale(1.12) translate(-256 -256)">
+    <path d="M100 160H412Q436 160 436 184V228A28 28 0 0 0 436 284V328Q436 352 412 352H100Q76 352 76 328V284A28 28 0 0 0 76 228V184Q76 160 100 160Z" fill="#fbf3e2" stroke="#14161a" stroke-width="14" stroke-linejoin="round"/>
+    <g fill="#14161a" transform="translate(41 0)">
+      <rect x="140" y="243" width="64" height="26" rx="12"/>
+      <rect x="159" y="224" width="26" height="64" rx="12"/>
+      <rect x="268" y="206" width="34" height="100" rx="12"/>
+      <path d="M268 212 232 240v26l36-24z"/>
+    </g>
+  </g>
+</svg>

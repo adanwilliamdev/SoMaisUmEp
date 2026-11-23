@@ -80,3 +80,11 @@ Só o visual (e a marcação dos carrosséis) foi refeito. Os `data-act` que o J
 - **Aviso de lançamento** (`.lanc`): ponto alinhado à primeira linha e quebra equilibrada (`text-wrap:balance`).
 - **Texto só para leitor de tela** (`.sr`): `<table class="sr">` vira bloco, senão alargava a página no celular sem perder a semântica de tabela.
 - **Top 10**: no celular pequeno os cartões de estatística têm menos respiro lateral.
+
+## Identidade da marca
+
+- **Conceito**: um ingresso de cinema com **“+1 ▶”**, a ideia do nome (“só mais um ep”). O ingresso é o único símbolo da marca; ele aparece no ícone do app e, em traço fino, no estado vazio da estante.
+- **Cores da marca** (só no ícone e na imagem de compartilhar; a interface continua usando os tokens `--acc` etc.): fundo em gradiente coral `#ff8460` → `#e03d1f` (da mesma família do `--acc`), ingresso em creme `#fbf3e2`, contorno e “+1” em tinta `#14161a` (o mesmo tom do `--card` escuro) e o ▶ em `#e8452a`.
+- **Arquivos** (`public/icons/`): `icon.svg` (ícone completo: contorno de 10, sombra suave, perfuração e ▶), `favicon.svg` (versão simplificada para 16–32 px: ingresso maior, contorno grosso, só o “+1”), `icon-192.png`, `icon-512.png` (cantos arredondados), `icon-maskable-512.png` (quadrado, ingresso a 88% para caber na zona segura do Android) e `apple-touch-icon.png` (180, quadrado e sem transparência).
+- **Gerar os PNGs**: `python3 scripts/gerar-icones.py` (Pillow e numpy; só para quem mexe na marca). Ele redesenha a mesma geometria do `icon.svg`: se mudar o desenho ou as cores, altere os dois.
+- **Nome**: “Só**MaisUm**Ep” em Inter: **Só** em 500, **MaisUm** em 800 e **Ep** em 800 na cor `--acc` (cabeçalho, tela de entrada e assinatura da imagem de compartilhar). O texto continua sendo “SóMaisUmEp” para leitores de tela e para o título da página.

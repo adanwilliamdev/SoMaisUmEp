@@ -16,6 +16,7 @@ const ARQUIVOS = [
   '/tema.js',
   '/manifest.json',
   '/icons/icon.svg',
+  '/icons/favicon.svg',
   '/icons/icon-192.png',
   '/fonts/inter-400.woff',
   '/fonts/inter-700.woff',

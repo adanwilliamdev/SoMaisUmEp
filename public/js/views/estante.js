@@ -126,7 +126,7 @@ export function htmlContinuar(tipo) {
 }
 
 const VAZIO_ICO = raw(
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18M8 5l-2 4M13 5l-2 4M18 5l-2 4"/></svg>',
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8a2 2 0 0 1 2-2z"/><path d="M15 7.5V9M15 11.25v1.5M15 15v1.5"/></svg>',
 );
 // Grupos da aba "Todas": cada estado vira uma seção recolhível, com o contador no título.
 const GRUPOS = {

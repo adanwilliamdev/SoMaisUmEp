@@ -7,7 +7,7 @@ const MOSTRAR = raw('<p class="mostrar-linha"><button type="button" class="link"
 /* ---------- entrar / criar conta ---------- */
 // Um cartão centralizado: logotipo na horizontal no topo e o formulário; a frase de apoio fica abaixo.
 const casca = corpo => html`<div class="auth"><div class="auth-form">
-    <div class="auth-marca"><span class="auth-logo" aria-hidden="true"></span><p class="auth-nome">SóMaisUmEp</p></div>
+    <div class="auth-marca"><span class="auth-logo" aria-hidden="true"></span><p class="auth-nome">Só<b>MaisUm</b><em>Ep</em></p></div>
     ${corpo}</div>
     <p class="auth-frase">Marque cada episódio e saiba sempre qual é o próximo.</p></div>`;
 

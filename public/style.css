@@ -96,6 +96,9 @@ h3{font-size:1rem}
 /* o vidro fosco fica num pseudo-elemento: backdrop-filter no próprio .rail o tornaria o referencial dos filhos position:fixed (o dock .menu no celular) */
 .rail::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--vidro);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4)}
 .marca{min-width:0;display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.03em;line-height:1;white-space:nowrap;color:inherit;text-decoration:none}
+.marca span,.auth-nome{font-weight:500}
+.marca b,.auth-nome b{font-weight:800}
+.marca em,.auth-nome em{font-style:normal;font-weight:800;color:var(--acc)}
 .marca i{display:block;flex:none;width:34px;height:34px;border-radius:9px;background:url("/icons/icon.svg") center/contain no-repeat}
 .acoes-topo{display:flex;align-items:center;gap:6px;min-width:0}
 /* status de sincronização: só um ícone (nuvem com check / aviso); o texto fica para o leitor de tela e para o tooltip */

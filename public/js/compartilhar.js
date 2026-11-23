@@ -106,9 +106,18 @@ function desenhar(canvas, top, imgs) {
     ctx.fillText(recorta(ctx, it.t, W - 128 - 104 - pw - 56), px + pw + 24, y + ph * 0.62);
   });
 
-  ctx.fillStyle = COR.tx;
-  ctx.font = `700 36px ${fonte}`;
-  ctx.fillText('SóMaisUmEp', 72, H - 72);
+  // O nome da marca, como no cabeçalho do app: "Só" leve, "MaisUm" forte e "Ep" em coral.
+  let mx = 72;
+  for (const [parte, peso, cor] of [
+    ['Só', 500, COR.tx],
+    ['MaisUm', 800, COR.tx],
+    ['Ep', 800, COR.acc],
+  ]) {
+    ctx.fillStyle = cor;
+    ctx.font = `${peso} 36px ${fonte}`;
+    ctx.fillText(parte, mx, H - 72);
+    mx += ctx.measureText(parte).width;
+  }
   ctx.fillStyle = COR.mut;
   ctx.font = `500 24px ${fonte}`;
   ctx.textAlign = 'right';
