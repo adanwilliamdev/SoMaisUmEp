@@ -51,7 +51,7 @@ test('nome da marca: três pesos (Só / MaisUm / Ep em coral) no cabeçalho, na 
   assert.match(ler('public/index.html'), /<span>Só<b>MaisUm<\/b><em>Ep<\/em><\/span>/);
   assert.match(ler('public/index.html'), /aria-label="SóMaisUmEp, início"/, 'o nome acessível continua inteiro');
   assert.match(ler('public/js/views/conta.js'), /<p class="auth-nome">Só<b>MaisUm<\/b><em>Ep<\/em><\/p>/);
-  assert.match(ler('public/js/compartilhar.js'), /\['Só', 500, COR\.tx\], \['MaisUm', 800, COR\.tx\], \['Ep', 800, COR\.acc\]/);
+  assert.match(ler('public/js/compartilhar.js'), /\[\s*\['Só',\s*500,\s*COR\.tx\],\s*\['MaisUm',\s*800,\s*COR\.tx\],\s*\['Ep',\s*800,\s*COR\.acc\],?\s*\]/);
   const css = ler('public/style.css');
   assert.match(css, /\.marca em,\.auth-nome em\{font-style:normal;font-weight:800;color:var\(--acc\)\}/);
   assert.match(css, /inter-800\.woff/, 'o peso 800 do nome está hospedado');
