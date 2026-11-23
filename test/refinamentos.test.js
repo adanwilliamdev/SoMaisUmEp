@@ -55,11 +55,17 @@ test('"Mostrar senha" alterna todos os campos de senha do formulário e o rótul
     closest: () => ({ querySelectorAll: sel => (sel === 'input[autocomplete$="password"]' ? campos : []) }),
   };
   alternarSenha(b);
-  assert.deepEqual(campos.map(c => c.type), ['text', 'text']);
+  assert.deepEqual(
+    campos.map(c => c.type),
+    ['text', 'text'],
+  );
   assert.equal(b.textContent, 'Ocultar senha');
   assert.equal(attrs['aria-pressed'], 'true');
   alternarSenha(b);
-  assert.deepEqual(campos.map(c => c.type), ['password', 'password']);
+  assert.deepEqual(
+    campos.map(c => c.type),
+    ['password', 'password'],
+  );
   assert.equal(b.textContent, 'Mostrar senha');
   assert.equal(attrs['aria-pressed'], 'false');
 });

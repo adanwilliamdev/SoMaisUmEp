@@ -1,7 +1,13 @@
 // Peças de HTML usadas por mais de uma tela: estado da interface (UI), capa/placeholder, esqueleto de carregamento e ícones.
 import { html, raw, hue, ler, lerJSON } from '../util.js';
 
-export const UI = { filtro: ler('smue:filtro', 'todas'), busca: '', ordem: ler('smue:ordem', 'recente'), descTipo: 'tv', fechados: new Set(lerJSON('smue:grupos', [])) }; // fechados: grupos recolhidos da estante
+export const UI = {
+  filtro: ler('smue:filtro', 'todas'),
+  busca: '',
+  ordem: ler('smue:ordem', 'recente'),
+  descTipo: 'tv',
+  fechados: new Set(lerJSON('smue:grupos', [])),
+}; // fechados: grupos recolhidos da estante
 
 export const capa = (nome, img, urgente) =>
   img
