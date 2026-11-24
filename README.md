@@ -221,6 +221,11 @@ A importação utiliza a API do TMDb para localizar os títulos. Duplicados são
 - Senhas protegidas com scrypt no custo recomendado pela OWASP (N=2^17); os parâmetros ficam gravados no próprio hash, e hashes mais antigos são atualizados sozinhos no próximo login.
 - Texto vindo de fora (TMDb, backups, o que a pessoa digita) é escapado por padrão ao montar HTML (`html```), com testes que travam o uso de `innerHTML` sem ele.
 - CSP restrita: scripts, estilos e fontes só do próprio site, sem `unsafe-inline`.
+- `SESSION_SECRET` com menos de 32 caracteres é recusado em produção.
+- Capas enviadas precisam começar como JPEG de verdade (assinatura `FF D8 FF`), não só ter o rótulo.
+- Limite por conta nas consultas ao TMDb (1500 por hora), para proteger a cota da chave do servidor.
+- Auditoria de dependências (`npm audit`) e análise estática (CodeQL) na integração contínua.
+- Política de divulgação de vulnerabilidades em [`SECURITY.md`](SECURITY.md).
 - Bloqueio temporário contra tentativas de login.
 - Recuperação de senha por e-mail.
 - Alteração de senha e e-mail.
@@ -407,7 +412,7 @@ Configure as variáveis em **Vercel → Settings → Environment Variables**.
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `SESSION_SECRET` | Sim | Segredo para proteção das sessões |
+| `SESSION_SECRET` | Sim | Segredo para proteção das sessões (mínimo de 32 caracteres; gere com `openssl rand -hex 32`) |
 | `DATABASE_URL` | Sim | Connection string do Neon |
 | `TMDB_READ_TOKEN` | Sim | Token de leitura da API TMDb |
 | `TMDB_API_KEY` | Alternativa | Chave da API v3 do TMDb |

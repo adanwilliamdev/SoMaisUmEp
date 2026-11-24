@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "test": "node --test",
-    "test:cobertura": "node --test --experimental-test-coverage --test-coverage-exclude=test/** --test-coverage-exclude=integracao/** --test-coverage-lines=50 --test-coverage-branches=65 --test-coverage-functions=60",
+    "test:cobertura": "node --test --experimental-test-coverage --test-coverage-exclude=test/** --test-coverage-exclude=integracao/** --test-coverage-lines=54 --test-coverage-branches=69 --test-coverage-functions=66",
     "test:integracao": "node --test --test-concurrency=1 \"integracao/*.integracao.js\"",
     "e2e": "node --test --test-concurrency=1 \"e2e/*.e2e.js\"",
     "lint": "eslint .",

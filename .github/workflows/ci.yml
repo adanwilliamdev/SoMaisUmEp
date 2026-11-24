@@ -24,6 +24,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Auditoria das dependências de produção (vulnerabilidades altas ou críticas)
+        run: npm audit --omit=dev --audit-level=high
       - name: Lint (ESLint)
         run: npm run lint
       - name: Formatação (Prettier)

@@ -4,6 +4,9 @@ const { erro } = require('./_erro');
 const { origemOk } = require('./_origem');
 
 const OBRIGATORIAS = ['SESSION_SECRET', 'DATABASE_URL'];
+const SEGREDO_MIN = 32; // o segredo assina todas as sessões: curto demais pode ser adivinhado por força bruta offline
+const producao = () => process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+const segredoFraco = () => String(process.env.SESSION_SECRET || '').length < SEGREDO_MIN;
 
 let _sql;
 const db = () => (_sql = _sql || neon(process.env.DATABASE_URL)); // use: await db()`select ...`
@@ -118,6 +121,8 @@ const rota =
       if (!origemOk(req)) return res.status(403).json({ erro: 'Origem não permitida' }); // CSRF: antes de qualquer acesso ao banco
       const falta = OBRIGATORIAS.filter(k => !process.env[k]);
       if (falta.length) throw erro('Variáveis de ambiente ausentes: ' + falta.join(', '), 500);
+      if (producao() && segredoFraco())
+        throw erro(`SESSION_SECRET muito curto: use pelo menos ${SEGREDO_MIN} caracteres aleatórios (veja .env.example).`, 500);
       let usuario = null;
       if (!publica) {
         usuario = await logado(req);
@@ -143,6 +148,7 @@ module.exports = {
   lerHash,
   HASH_FALSO,
   SCRYPT,
+  segredoFraco,
   criarSessao,
   encerrarSessao,
   renovarSessao,

@@ -14,7 +14,8 @@ const num = (v, min, max, casas = 0) =>
 function capaOk(c, userId) {
   if (typeof c !== 'string' || c.length > 120000) return null;
   if (/^https:\/\/image\.tmdb\.org\//.test(c)) return c;
-  if (/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(c)) return c;
+  // "/9j/" é a assinatura de JPEG (FF D8 FF) em base64: não aceita outro conteúdo só porque tem o rótulo de JPEG.
+  if (/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/=]*$/.test(c)) return c;
   if (
     userId &&
     ID.test(userId) &&

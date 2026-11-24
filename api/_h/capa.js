@@ -8,7 +8,7 @@ const POR_HORA = 30,
 module.exports = rota('POST', async (req, res, u) => {
   if (!process.env.BLOB_READ_WRITE_TOKEN) throw erro('Armazenamento de capas não configurado no servidor.', 501);
   const img = String((req.body || {}).imagem || '');
-  if (img.length > 120000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(img)) throw erro('Imagem inválida');
+  if (img.length > 120000 || !/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/=]*$/.test(img)) throw erro('Imagem inválida');
 
   const sql = db();
   const [c] = await sql`select count(*) filter (where criado > ${Date.now() - 36e5})::int as hora, count(*)::int as total from capas where user_id = ${u.id}`;
