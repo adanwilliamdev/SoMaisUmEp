@@ -121,8 +121,7 @@ const rota =
       if (!origemOk(req)) return res.status(403).json({ erro: 'Origem não permitida' }); // CSRF: antes de qualquer acesso ao banco
       const falta = OBRIGATORIAS.filter(k => !process.env[k]);
       if (falta.length) throw erro('Variáveis de ambiente ausentes: ' + falta.join(', '), 500);
-      if (producao() && segredoFraco())
-        throw erro(`SESSION_SECRET muito curto: use pelo menos ${SEGREDO_MIN} caracteres aleatórios (veja .env.example).`, 500);
+      if (producao() && segredoFraco()) throw erro(`SESSION_SECRET muito curto: use pelo menos ${SEGREDO_MIN} caracteres aleatórios (veja .env.example).`, 500);
       let usuario = null;
       if (!publica) {
         usuario = await logado(req);
